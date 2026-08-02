@@ -70,7 +70,7 @@ pnpm dev:web           # :4200
 Full guide: [`docs/DOCKER.md`](docs/DOCKER.md).
 
 ```bash
-# Dev — API + Postgres in containers (Postgres on host :5433)
+# Dev — API + Postgres in containers (Postgres on host :5432)
 pnpm docker:dev
 
 # Prod-like — Postgres not published on host; set secrets in .env
@@ -79,9 +79,8 @@ pnpm docker:prod
 pnpm docker:down
 ```
 
-**Why host port 5433?** Another Postgres may already bind **5432** on the machine. Dev maps `5433→5432` so Compose does not fail with `Bind for 0.0.0.0:5432 failed`. Inside Docker the DB remains on **5432** (`@postgres:5432`).
+Day-to-day: Postgres in Docker (`localhost:5432`) + Nest on the host (`pnpm dev:api`). Full `docker:dev` validates prod-like topology.
 
-Day-to-day: Postgres in Docker (`localhost:5433`) + Nest on the host (`pnpm dev:api`). Full `docker:dev` validates prod-like topology.
 ## Git
 
 - `main` — production

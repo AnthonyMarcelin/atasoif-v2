@@ -32,22 +32,13 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env 
 
 The Compose project is explicitly named **`atasoif`** (`name: atasoif` in `docker-compose.yml`).
 
-If OrbStack (or Docker Desktop) also shows an **`atasoif-v2`** group, it is a leftover from the first runs when the project name defaulted to the folder name. Keep **`atasoif`** only; remove the orphan with:
-
-```bash
-docker stop atasoif-v2-postgres-1
-docker rm atasoif-v2-postgres-1
-docker volume rm atasoif-v2_atasoif_pg
-docker network rm atasoif-v2_default
-```
-
-(or remove the `atasoif-v2` group from the OrbStack UI).
+If OrbStack still shows an orphan **`atasoif-v2`** group (from early folder-named runs), remove it — only **`atasoif`** should remain.
 
 ## Ports
 
 | Environment | Service | Host → container | Notes |
 |---|---|---|---|
-| **Dev** | Postgres | **5433 → 5432** | Avoids clash with another local Postgres already on **5432** (e.g. older `atasoif-v2` compose) |
+| **Dev** | Postgres | **5432 → 5432** | Standard Postgres port on the host |
 | **Dev** | API | **3000 → 3000** | `GET /health` |
 | **Prod** | Postgres | *(not published)* | Reachable only on the Compose network as hostname `postgres` |
 | **Prod** | API | `${API_PORT:-3000} → 3000` | Put TLS reverse proxy in front later (E0.7) |
@@ -58,11 +49,13 @@ Inside the Compose network, the API always uses:
 postgresql://…@postgres:5432/atasoif_v2
 ```
 
+If host **5432** is already taken by another Postgres, stop that service or temporarily remap in `docker-compose.dev.yml`.
+
 ## `DATABASE_URL` cheat sheet
 
 | How you run | `DATABASE_URL` host |
 |---|---|
-| Nest on host + Postgres via `docker:dev` | `localhost:5433` |
+| Nest on host + Postgres via `docker:dev` | `localhost:5432` |
 | Full `docker:dev` / `docker:prod` (API in container) | `postgres:5432` |
 
 See `.env.example`.
@@ -70,7 +63,7 @@ See `.env.example`.
 ## Recommended day-to-day workflow
 
 1. Start stack (or Postgres only via the same compose files).
-2. Point local `.env` at `localhost:5433`.
+2. Point local `.env` at `localhost:5432`.
 3. Iterate with `pnpm dev:api` / `pnpm dev:web` on the host (faster reload).
 4. Use full `pnpm docker:dev` when you want to validate the same topology as production.
 

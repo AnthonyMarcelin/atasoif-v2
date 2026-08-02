@@ -109,7 +109,7 @@ Never infer legal, privacy, or retention requirements that are not documented. F
 
 Critical conversion UX documented in `docs/UX-ADD-BOTTLE.md`.  
 Delivery plan: `docs/EPICS.md` + `docs/SPRINTS.md` + `docs/tickets/` (orchestrator tickets for sub-agents).  
-Docker: `docs/DOCKER.md` (API + Postgres; host Postgres port **5433** in dev).
+Docker: `docs/DOCKER.md` (API + Postgres; host Postgres port **5432** in dev).
 
 ## Testing strategy
 
