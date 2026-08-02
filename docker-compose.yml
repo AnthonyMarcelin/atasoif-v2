@@ -1,15 +1,50 @@
+# Shared base — use with docker-compose.dev.yml or docker-compose.prod.yml
+#
+# Dev:  pnpm docker:dev
+# Prod: pnpm docker:prod
+
+name: atasoif
+
 services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: atasoif
-      POSTGRES_PASSWORD: atasoif
-      POSTGRES_DB: atasoif_v2
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-atasoif}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atasoif}
+      POSTGRES_DB: ${POSTGRES_DB:-atasoif_v2}
     volumes:
       - atasoif_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atasoif} -d ${POSTGRES_DB:-atasoif_v2}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://atasoif:atasoif@postgres:5432/atasoif_v2?schema=public}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-min-32-chars-long-secret!!}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+    ports:
+      - "${API_PORT:-3000}:3000"
 
 volumes:
   atasoif_pg:

@@ -11,7 +11,10 @@
     "lint": "pnpm -r run lint",
     "db:generate": "pnpm --filter @atasoif/api prisma:generate",
     "db:migrate": "pnpm --filter @atasoif/api prisma:migrate",
-    "db:seed": "pnpm --filter @atasoif/api prisma:seed"
+    "db:seed": "pnpm --filter @atasoif/api prisma:seed",
+    "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+    "docker:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build",
+    "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,17 @@
+# Local full stack (API + DB in Docker)
+# Usage: pnpm docker:dev
+
+services:
+  postgres:
+    ports:
+      # Host 5433 avoids clashing with an older local Postgres on 5432
+      - "5433:5432"
+
+  api:
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://atasoif:atasoif@postgres:5432/atasoif_v2?schema=public
+      BETTER_AUTH_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:4200
+    ports:
+      - "3000:3000"

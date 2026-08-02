@@ -17,7 +17,8 @@ Everything below is ranked for that outcome. Social and growth come after memory
 | E0.3 | Cursor rules + product docs | Done |
 | E0.4 | Local Postgres + migrate + seed categories | Done |
 | E0.5 | Wire Prisma into Nest + `/health` | Done |
-| E0.6 | OVH VPS baseline (API + Postgres + TLS) | Should (before stores) |
+| E0.6 | Docker Compose API + Postgres (dev/prod) | Done |
+| E0.7 | OVH VPS + TLS reverse proxy | Should (before stores) |
 
 **Out of scope:** fancy CI, staging env.
 

@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.angular
+coverage
+tmp
+uploads
+apps/web
+apps/web/**
+**/*.md
+docs
+.cursor
+.env
+.env.*
+!**/.env.example
+**/node_modules
+**/.DS_Store

@@ -55,22 +55,31 @@ Later: optional i18n via a `locales/` folder — not in scope until requested.
 
 ```bash
 cd atasoif-v2
-cp .env.example .env   # then set DATABASE_URL
+cp .env.example .env
 pnpm install
 pnpm --filter @atasoif/shared build
 pnpm db:generate
 pnpm db:migrate
 pnpm db:seed
-pnpm dev:api           # :3000
+pnpm dev:api           # :3000 (API on host)
 pnpm dev:web           # :4200
 ```
 
-Local Postgres:
+### Docker (API + Postgres)
 
 ```bash
-docker compose up -d
+# Dev — API + Postgres in containers (Postgres on host :5433)
+pnpm docker:dev
+
+# Prod-like — Postgres not published on host; set secrets in .env
+pnpm docker:prod
+
+pnpm docker:down
 ```
 
+Day-to-day coding often uses **Postgres in Docker** (`:5433`) and Nest on the host (`pnpm dev:api` + `DATABASE_URL=...@localhost:5433`). Full `docker:dev` matches production topology.
+
+Health check: `GET http://localhost:3000/health`
 ## Git
 
 - `main` — production

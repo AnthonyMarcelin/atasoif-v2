@@ -4,7 +4,7 @@ Orchestrator breaks epics into tickets here. Sub-agents pick **one ticket per th
 
 | Epic | File | Sprint focus |
 |---|---|---|
-| E0 Platform foundation | Closed (local) — E0.6 OVH later | S0 ✅ |
+| E0 Platform foundation | Closed locally — E0.7 OVH/TLS later | S0 ✅ · [`E0-docker.md`](./E0-docker.md) |
 | E1 Identity & access | [`E1-identity.md`](./E1-identity.md) | S1 (+ T09 in S5) |
 
 ## Rules for workers
