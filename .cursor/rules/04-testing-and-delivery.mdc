@@ -1,0 +1,47 @@
+---
+description: Apply when writing tests, fixing regressions, validating before merge, or preparing delivery, health checks, or rollback.
+alwaysApply: false
+---
+
+# Testing and delivery
+
+## Testing strategy
+
+- Prioritize tests that protect business-critical behavior, security-sensitive flows, integrations, and production risks.
+- Prefer meaningful feature, integration, and end-to-end tests over tests that merely reproduce implementation details.
+- Do not add low-value tests solely to increase a coverage percentage.
+- Do not impose a global coverage threshold unless the project explicitly requires one.
+- Add or update tests when changing critical behavior or fixing a regression.
+- A regression fix should include a test that fails before the fix and passes after it when practical.
+- Keep tests deterministic, isolated, readable, and fast enough for their intended CI stage.
+
+## Merge gates
+
+- Required critical tests must pass before merging into `main`.
+- Linting, static analysis, build validation, dependency auditing, and migration validation should be blocking when configured as required checks.
+- Never bypass a failed required check without understanding and documenting the reason.
+- Do not change or delete a valid test merely to make an incorrect implementation pass.
+
+## Production readiness
+
+- Keep `main` deployable.
+- Validate production configuration separately from local development configuration.
+- Provide a health check for deployable services when the architecture supports it.
+- A healthy HTTP service should expose an endpoint suitable for infrastructure checks and return a successful status only when the application can operate as intended.
+- Do not report a healthy state when critical dependencies required for service operation are unavailable.
+
+## Deployment safety
+
+- Prefer automated, repeatable deployment steps over undocumented manual operations.
+- Validate database migrations, environment requirements, build output, and startup behavior before production rollout.
+- Design deployments so that rollback or recovery is possible.
+- Document rollback steps for changes that can affect availability, data integrity, or compatibility.
+- Use backward-compatible migrations and phased rollout techniques when required by zero-downtime constraints.
+- Do not destroy production data or run irreversible operations without explicit confirmation and a recovery strategy.
+
+## Agent behavior
+
+- Identify the tests and checks relevant to each change.
+- Run the narrowest useful checks during implementation, then the required project checks before completion.
+- Report exactly which checks were run, which were not run, and any remaining delivery risk.
+- Never claim validation succeeded when a command was not executed or its result is unknown.

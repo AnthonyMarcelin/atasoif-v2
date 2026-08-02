@@ -1,57 +1,58 @@
 # À ta soif ! — v2
 
-Cave numérique multi-alcools (whisky, rhum, bière, vin…).  
-Monorepo **privé** recommandé (app payante + secrets stores / OAuth).
+Digital multi-alcohol cellar (whisky, rum, beer, wine, and more).  
+**Private** repository recommended (paid app + store / OAuth secrets).
 
 ## Stack
 
-| Couche | Techno |
+| Layer | Technology |
 |---|---|
 | API | NestJS + Prisma + PostgreSQL |
 | Auth | Better Auth (email + Google + Apple) |
 | Front | Angular 20 + Capacitor (iOS / Android) |
-| Host | VPS OVH |
-| Billing | IAP (RevenueCat) — 3,99€/mois · 39,99€/an |
+| Host | OVH VPS |
+| Billing | IAP (RevenueCat) — €3.99/month · €39.99/year |
 
 ## Structure
 
 ```
 atasoif-v2/
 ├── apps/api          # NestJS
-├── apps/web          # Angular (+ Capacitor plus tard)
-├── packages/shared   # constantes / types partagés
-└── docs/             # produit, UX, sprints
+├── apps/web          # Angular (+ Capacitor later)
+├── packages/shared   # shared constants / types
+└── docs/             # product, UX, sprints
 ```
 
-Monorepo OK pour les stores : Capacitor build depuis `apps/web` uniquement.
+Monorepo is fine for store builds: Capacitor builds from `apps/web` only.
 
-## Décisions produit
+## Product decisions
 
-- Catalogue **global** + collection **perso**
-- Freemium : **10 bouteilles** total, puis abo
-- Social : amis + partage collection + messagerie (après MVP)
-- IA : **hors app** (com TikTok uniquement)
-- Seed start : Open Food Facts + migration v1 + catégories
+- **Global** catalog + **personal** collection
+- Freemium: **10 bottles** total, then subscription
+- Social: friends + collection sharing + messaging (after MVP)
+- AI: **outside the app** (TikTok content only)
+- Start seed: Open Food Facts + v1 migration + categories
 
-## UX critique — ajout bouteille (conversion)
+## Critical UX — add bottle (conversion)
 
-1. Recherche catalogue (debounce)
-2. Hit → formulaire **prérempli**
-3. Tous les champs + photo **modifiables** (overrides `UserBottle`)
-4. Miss → création fiche catalogue + ajout collection
-5. Gate freemium claire, fun, non culpabilisante
+1. Search catalog (debounce)
+2. Hit → **prefilled** form
+3. All fields + photo **editable** (`UserBottle` overrides)
+4. Miss → create catalog entry + add to collection
+5. Clear, playful freemium gate
 
-Détail : [`docs/UX-ADD-BOTTLE.md`](docs/UX-ADD-BOTTLE.md)
+Details: [`docs/UX-ADD-BOTTLE.md`](docs/UX-ADD-BOTTLE.md)
 
 ## Design
 
-Direction **cave nocturne / ambre** — tokens dans `apps/web/src/styles/_tokens.scss`.
+Direction **dark cellar / amber** — tokens in `apps/web/src/styles/_tokens.scss`.  
+Client-facing copy is **French**; code, commits, and technical docs are **English**.
 
 ## Setup
 
 ```bash
 cd atasoif-v2
-cp .env.example .env   # puis DATABASE_URL
+cp .env.example .env   # then set DATABASE_URL
 pnpm install
 pnpm --filter @atasoif/shared build
 pnpm db:generate
@@ -61,14 +62,19 @@ pnpm dev:api           # :3000
 pnpm dev:web           # :4200
 ```
 
-## Repo Git
-
-Créer un repo GitHub **privé** (pas public) quand tu es prêt :
+Local Postgres:
 
 ```bash
-cd atasoif-v2
-git init
-gh repo create atasoif-v2 --private --source=. --remote=origin
+docker compose up -d
 ```
 
-La v1 (`SpiritsManagement-*`) reste intacte à côté pour migration.
+## Git
+
+- `main` — production
+- `dev` — active development
+- Feature branches from `dev`
+- Conventional Commits in English, no AI co-authors
+
+## Cursor rules
+
+Project rules live in `.cursor/rules/` (from [AnthonyMarcelin/cursor-rules](https://github.com/AnthonyMarcelin/cursor-rules), without Laravel stack rules). See `90-project-context.mdc` for identity and commands.

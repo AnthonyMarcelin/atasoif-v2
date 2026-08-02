@@ -1,0 +1,200 @@
+---
+description: Project-specific purpose, architecture, constraints, commands, and exceptions for À ta soif ! v2.
+alwaysApply: true
+---
+
+# Project context
+
+## Identity
+
+- Project name: À ta soif ! (atasoif-v2)
+- Project type: MOBILE_APPLICATION + API (Angular/Capacitor + NestJS)
+- Status: DEVELOPMENT
+- Primary language for client-facing content: FR
+- Supported locales: FR
+
+## Product purpose
+
+Digital cellar for collecting, rating, and sharing bottles (whisky, rum, beer, wine, and more). Users browse a shared catalog, add bottles to a personal collection (editable overrides + photo), and unlock unlimited bottles via subscription. Growth is driven by TikTok/social content (AI outside the app); the app itself has no in-app AI.
+
+## Scope
+
+### Included
+
+- Shared bottle catalog + personal collection with freemium gate (10 bottles)
+- Auth: email + Google + Apple (Better Auth)
+- Wine and extensible alcohol categories
+- Subscriptions: 3.99€/month, 39.99€/year
+- Capacitor iOS/Android builds from `apps/web`
+- Later: friends, collection sharing, messaging, catalog seed/sync (Open Food Facts)
+
+### Excluded
+
+- In-app AI (recommendations, photo recognition, chat)
+- Bright Data / aggressive scrapers as the primary catalog strategy
+- Laravel or Symfony stacks (legacy experiments live outside this repo)
+
+Do not implement excluded or speculative features without an explicit request.
+
+## Stack
+
+- Backend: NestJS 11 + Prisma 6 + PostgreSQL 16
+- Frontend: Angular 20 (+ Capacitor later)
+- Database: PostgreSQL 16
+- Cache or queue: none yet
+- Infrastructure: OVH VPS (target); local Docker Compose for Postgres
+- Package manager: pnpm workspaces
+
+Use only the stack-specific Cursor rules that match these technologies. No Laravel rules in this project.
+
+## Architecture
+
+- Architectural style: modular monolith (monorepo)
+- Main modules or bounded contexts:
+  - Catalog (`Bottle`, `Category`, `BottleSource`)
+  - Collection (`UserBottle` with field/photo overrides)
+  - Auth (Better Auth models)
+  - Billing (`Subscription`)
+  - Social (friends, messages — post-MVP)
+- Dependency direction: `apps/web` → API HTTP; `apps/api` → Prisma → PostgreSQL; both may import `@atasoif/shared`
+- Important existing abstractions to reuse:
+  - `packages/shared` constants (`FREE_BOTTLE_LIMIT`, plans, categories)
+  - Design tokens in `apps/web/src/styles/_tokens.scss`
+  - Prisma schema in `apps/api/prisma/schema.prisma`
+
+Do not introduce a new architectural pattern without explaining why the existing structure cannot support the requirement.
+
+## Domain rules
+
+- Freemium: max 10 bottles total in collection without an active subscription
+- Catalog is global; personal edits use `UserBottle` overrides (do not mutate global `Bottle` by default on user edit)
+- Add-bottle UX: search catalog first → prefill → all fields + photo editable → confirm (<30s path)
+- Client-facing copy: French, informal “tu”, short and slightly playful
+- Design direction: dark cellar / amber (see `docs/DESIGN.md`)
+
+Domain rules take precedence over technical convenience.
+
+## Data and privacy
+
+- Personal data processed: email, name, pseudo, auth tokens, collection data, messages (when enabled)
+- Sensitive data processed: passwords/hashes via Better Auth; payment handled by store IAP providers
+- Retention requirements: not fully specified — flag before implementing deletion/export flows
+- Regulatory constraints: RGPD (privacy policy, deletion rights); App Store age rating 17+; no promotion of excessive drinking
+
+Never infer legal, privacy, or retention requirements that are not documented. Flag missing decisions.
+
+## Authentication and authorization
+
+- Authentication method: Better Auth (email/password + Google + Apple)
+- Roles and permissions: authenticated user; admin TBD
+- Critical authorization rules:
+  - Users may only mutate their own `UserBottle`, friendships, and messages
+  - Freemium limit enforced server-side
+  - Authorization must be enforced server-side even when the UI hides restricted actions
+
+## Frontend and UX
+
+- Design system or component library: custom tokens (cave nocturne); no Material-by-default
+- Responsive targets: mobile-first (store apps primary)
+- Accessibility target: WCAG 2.2 AA
+- Browser or device support: modern iOS/Android WebViews + recent mobile Chrome/Safari; desktop secondary
+- Known component-reuse exceptions: none yet
+
+Critical conversion UX documented in `docs/UX-ADD-BOTTLE.md`.
+
+## Testing strategy
+
+- Critical user journeys:
+  - Register/login → search bottle → add with overrides → hit freemium gate → subscribe
+- Required test levels: unit (API) early; feature/e2e when flows exist
+- Merge-blocking checks:
+  - `pnpm --filter @atasoif/api test`
+  - `pnpm --filter @atasoif/api build`
+  - `pnpm --filter @atasoif/web build` (when frontend changes)
+- Tests intentionally omitted and justification:
+  - Full e2e and IAP flows deferred until Capacitor + billing sprint
+
+## Development commands
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development environment
+docker compose up -d
+pnpm dev:api
+pnpm dev:web
+
+# Lint and format check
+pnpm --filter @atasoif/api lint
+pnpm --filter @atasoif/api format
+
+# Run tests
+pnpm --filter @atasoif/api test
+
+# Run critical or end-to-end tests
+pnpm --filter @atasoif/api test:e2e
+
+# Build production artifacts
+pnpm --filter @atasoif/shared build
+pnpm --filter @atasoif/api build
+pnpm --filter @atasoif/web build
+
+# Database
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
+
+# Dependency vulnerability scan
+pnpm audit
+```
+
+Do not invent commands. Read the repository configuration and use the commands actually defined by the project.
+
+## Git and delivery
+
+- Active development branch: `dev`
+- Production branch: `main`
+- Staging branch enabled: NO
+- Deployment environments: DEVELOPMENT, PRODUCTION (OVH VPS)
+- Health check: `GET /health`
+- Rollback strategy: redeploy previous image/commit; reverse migrations when safe
+
+Feature branches start from an up-to-date `dev` branch unless this project explicitly documents another workflow.
+
+## External services
+
+- PostgreSQL: `DATABASE_URL`
+- Better Auth: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, Google/Apple OAuth env vars
+- Image storage: local disk initially; Cloudflare R2 later
+- Billing: RevenueCat / Apple / Google IAP (sprint 4)
+- Open Food Facts: catalog seed (sprint 3)
+
+Never commit credentials, tokens, private keys, or production configuration values.
+
+## Explicit exceptions to reusable rules
+
+- No NestJS/Angular stack rules exist yet in the shared library — follow official Nest/Angular/Prisma docs via Context7 until stack rules are added.
+- Photo storage may start on the VPS filesystem before object storage — Reason: cost on OVH 8€ VPS — Scope: media upload module
+
+## Current constraints and known risks
+
+- Solo developer; ship MVP (cave + freemium + stores) before social/messaging
+- Catalog quality drives conversion; seed required before growth
+- Acquisition/marketing is the main business risk, not the tech stack
+- Apple Sign In required when shipping social login on iOS
+- Legacy v1 data (~15 bottles) to migrate from Railway Postgres
+
+## Definition of done
+
+A task is complete only when all applicable conditions are met:
+
+- The requested behavior works and respects domain rules.
+- Existing architecture and components were reused where appropriate.
+- Relevant tests were added or updated and pass.
+- Linting, formatting, type checks, and builds pass when applicable.
+- Security and dependency checks pass when applicable.
+- Client-facing content uses French; code/docs/commits use English.
+- Accessibility and responsive behavior were verified for frontend changes.
+- Documentation was updated when commands, architecture, configuration, or behavior changed.
+- No secret, debugging artifact, dead code, or unexplained workaround remains.

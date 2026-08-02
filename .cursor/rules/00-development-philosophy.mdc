@@ -1,0 +1,68 @@
+---
+description: Apply the core development philosophy to all design, implementation, refactoring, and review tasks.
+alwaysApply: true
+---
+
+# Development philosophy
+
+## Core priorities
+
+- Prefer correctness, clarity, maintainability, and security over speed of generation.
+- Keep solutions simple and explicit. Apply KISS and avoid unnecessary abstraction.
+- Establish a coherent architecture before implementing substantial features.
+- Maintain clear separation of concerns between domain logic, application logic, infrastructure, presentation, and configuration.
+- Follow the official documentation of the language, framework, library, or tool before inventing a custom pattern.
+- Use the framework or standard library when it already solves the problem correctly.
+- Do not reinvent existing project abstractions, utilities, components, services, or conventions.
+- Do not add a dependency when the platform or existing codebase can solve the need cleanly.
+- Prefer a small amount of understandable code over a sophisticated but unnecessary design.
+
+## Official documentation first
+
+- Treat official documentation as the primary technical authority. It takes precedence over generic advice, personal preferences, community conventions, and habitual patterns.
+- Follow the documented conventions and recommended usage of the language, framework, library, or tool.
+- Use Context7 MCP to retrieve current, version-specific documentation for every language, framework, library, and external package when documentation is relevant to the task.
+- Do not rely on model memory for version-sensitive APIs, configuration, or conventions when current documentation can be retrieved.
+- If Context7 is unavailable, incomplete, or ambiguous, consult the official documentation directly and state any remaining uncertainty.
+- Depart from official documentation only when a clear technical or business reason justifies the exception.
+- When making an exception, explain the reason, the trade-off, and the impact instead of presenting it as the default practice.
+
+## Framework-agnostic mindset
+
+- Choose technologies and architectural patterns according to the client's needs, the project context, and the constraints of the problem, not personal preference.
+- Do not impose a practice or technology. The agent may recommend an option and explain its trade-offs, but the user makes the final decision.
+
+## Decision process
+
+Before modifying code:
+
+1. Inspect the existing architecture, conventions, and related implementations.
+2. Identify the smallest coherent change that satisfies the requirement.
+3. Reuse existing capabilities where appropriate.
+4. Consider security, error handling, tests, and operational impact.
+5. Implement without introducing unrelated changes.
+
+When requirements, architecture, or expected behavior are materially ambiguous, ask for clarification instead of inventing product rules.
+
+## Language conventions
+
+- Write code, identifiers, filenames, technical comments, technical documentation, commit messages, and developer-facing error details in English.
+- Write client-facing interface content in French by default.
+- Use another client-facing language only when the project explicitly requires localization or a different locale.
+- Keep terminology consistent across code, documentation, tests, and interfaces.
+
+## Comments and documentation
+
+- Do not comment obvious code.
+- Add comments only when they explain non-obvious intent, constraints, trade-offs, business rules, or complex algorithms.
+- Prefer expressive names and small cohesive units over explanatory comments.
+- Keep relevant technical documentation synchronized with architecture or workflow changes.
+- Do not leave misleading comments, obsolete examples, or dead documentation.
+
+## Change discipline
+
+- Modify existing code before creating parallel implementations when the existing design can be extended safely.
+- Do not duplicate logic to avoid understanding the current implementation.
+- Do not perform speculative refactors unrelated to the requested task.
+- Do not knowingly leave broken code, silent failures, dead code, or temporary hacks without explicitly documenting the limitation.
+- Surface meaningful trade-offs and exceptions instead of hiding them.

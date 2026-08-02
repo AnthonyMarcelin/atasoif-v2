@@ -1,4 +1,4 @@
-// À ta soif ! v2 — catalogue global + collections perso
+// À ta soif ! v2 — global catalog + personal collections
 // Auth tables aligned for Better Auth + Prisma adapter
 
 generator client {
@@ -83,19 +83,19 @@ model Verification {
   @@map("verification")
 }
 
-// ─── Catalogue ───────────────────────────────────────────────
+// ─── Catalog ─────────────────────────────────────────────────
 
 model Category {
   id        String   @id @default(cuid())
   slug      String   @unique // whisky | wine | beer | rhum | …
-  name      String
+  name      String // client-facing label (French)
   createdAt DateTime @default(now())
   bottles   Bottle[]
 
   @@map("category")
 }
 
-/// Fiche catalogue globale (partagée). attrs = champs spécifiques (cépage, peat…).
+/// Global shared catalog entry. `attrs` holds category-specific fields (grape, peat…).
 model Bottle {
   id          String   @id @default(cuid())
   name        String
@@ -105,13 +105,13 @@ model Bottle {
   volumeMl    Int?
   barcode     String?
   photoUrl    String?
-  /// Champs spécifiques catégorie (millésime, cépage, peatLevel, beerStyle…)
+  /// Category-specific fields (vintage, grape, peatLevel, beerStyle…)
   attrs       Json     @default("{}")
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  deletedAt   DateTime? // soft-delete sync sources
+  deletedAt   DateTime? // soft-delete from source sync
 
   sources     BottleSource[]
   userBottles UserBottle[]
@@ -138,14 +138,14 @@ model BottleSource {
   @@map("bottle_source")
 }
 
-/// Entrée collection perso. Snapshot éditable = override UX conversion.
+/// Personal collection entry. Editable overrides power the conversion UX.
 model UserBottle {
   id              String   @id @default(cuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   bottleId        String
   bottle          Bottle   @relation(fields: [bottleId], references: [id])
-  /// Overrides optionnels (si null → valeur catalogue)
+  /// Optional overrides (null → use catalog values)
   nameOverride    String?
   brandOverride   String?
   originOverride  String?
