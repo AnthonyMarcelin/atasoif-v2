@@ -10,6 +10,7 @@ alwaysApply: true
 - Project name: À ta soif ! (atasoif-v2)
 - Project type: MOBILE_APPLICATION + API (Angular/Capacitor + NestJS)
 - Status: DEVELOPMENT
+- Repository root: this directory only (`atasoif-v2`). Do **not** place project rules, `package.json`, `pnpm-workspace.yaml`, `node_modules`, or `.pnpm-store` in the parent `atasoif/` folder (legacy projects live there separately).
 - Primary language for client-facing content: FR
 - Supported locales: FR only (MVP)
 - Future i18n: optional evolution via a `locales/` (or equivalent) folder — do not implement until explicitly requested
