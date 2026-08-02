@@ -28,6 +28,21 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build
 ```
 
+## Compose project name
+
+The Compose project is explicitly named **`atasoif`** (`name: atasoif` in `docker-compose.yml`).
+
+If OrbStack (or Docker Desktop) also shows an **`atasoif-v2`** group, it is a leftover from the first runs when the project name defaulted to the folder name. Keep **`atasoif`** only; remove the orphan with:
+
+```bash
+docker stop atasoif-v2-postgres-1
+docker rm atasoif-v2-postgres-1
+docker volume rm atasoif-v2_atasoif_pg
+docker network rm atasoif-v2_default
+```
+
+(or remove the `atasoif-v2` group from the OrbStack UI).
+
 ## Ports
 
 | Environment | Service | Host → container | Notes |
