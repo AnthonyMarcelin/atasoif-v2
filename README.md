@@ -23,7 +23,7 @@ atasoif-v2/
 └── docs/             # product, UX, epics, sprints
 ```
 
-Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/)
+Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DOCKER.md`](docs/DOCKER.md)
 
 Monorepo is fine for store builds: Capacitor builds from `apps/web` only.
 
@@ -67,6 +67,8 @@ pnpm dev:web           # :4200
 
 ### Docker (API + Postgres)
 
+Full guide: [`docs/DOCKER.md`](docs/DOCKER.md).
+
 ```bash
 # Dev — API + Postgres in containers (Postgres on host :5433)
 pnpm docker:dev
@@ -77,9 +79,9 @@ pnpm docker:prod
 pnpm docker:down
 ```
 
-Day-to-day coding often uses **Postgres in Docker** (`:5433`) and Nest on the host (`pnpm dev:api` + `DATABASE_URL=...@localhost:5433`). Full `docker:dev` matches production topology.
+**Why host port 5433?** Another Postgres may already bind **5432** on the machine. Dev maps `5433→5432` so Compose does not fail with `Bind for 0.0.0.0:5432 failed`. Inside Docker the DB remains on **5432** (`@postgres:5432`).
 
-Health check: `GET http://localhost:3000/health`
+Day-to-day: Postgres in Docker (`localhost:5433`) + Nest on the host (`pnpm dev:api`). Full `docker:dev` validates prod-like topology.
 ## Git
 
 - `main` — production

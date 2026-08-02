@@ -20,10 +20,15 @@ Run **API + Postgres** via Docker Compose for local **dev** and **prod** (OVH). 
 - [x] Prod entrypoint runs `prisma migrate deploy` then starts API
 - [x] `.env.example` documents host vs Docker `DATABASE_URL`
 - [x] Root scripts `docker:dev` / `docker:prod`
-- [x] Docs in README
+- [x] Docs in README + [`docs/DOCKER.md`](../DOCKER.md) (incl. host port **5433** rationale)
+- [x] Verified: `GET /health` → `database: up` on `docker:dev`
 
 ## Out of scope
 
-- Caddy/Nginx TLS (later E0.6)
+- Caddy/Nginx TLS (later E0.7)
 - Containerizing Angular / Capacitor
 - Kubernetes
+
+## Port note (dev)
+
+Host **5433 → container 5432** for Postgres so local setups that already use **5432** do not break Compose (`Bind … 5432 failed`). See `docs/DOCKER.md`.
