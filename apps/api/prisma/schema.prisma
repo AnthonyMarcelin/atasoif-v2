@@ -156,6 +156,8 @@ model UserBottle {
   note            Decimal? @db.Decimal(3, 1)
   review          String?
   pricePaid       Decimal? @db.Decimal(10, 2)
+  /// Where the user bought it (shop, trip, gift…) — core memory field
+  boughtAt        String?
   isPublic        Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

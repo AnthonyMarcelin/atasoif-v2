@@ -11,11 +11,14 @@ alwaysApply: true
 - Project type: MOBILE_APPLICATION + API (Angular/Capacitor + NestJS)
 - Status: DEVELOPMENT
 - Primary language for client-facing content: FR
-- Supported locales: FR
+- Supported locales: FR only (MVP)
+- Future i18n: optional evolution via a `locales/` (or equivalent) folder — do not implement until explicitly requested
 
 ## Product purpose
 
-Digital cellar for collecting, rating, and sharing bottles (whisky, rum, beer, wine, and more). Users browse a shared catalog, add bottles to a personal collection (editable overrides + photo), and unlock unlimited bottles via subscription. Growth is driven by TikTok/social content (AI outside the app); the app itself has no in-app AI.
+Core job-to-be-done: remember what you drank. You buy a bottle (e.g. whisky), and months later you still know where you got it, how much you paid, and whether it was good — notes, review, price, place/supplier, photo.
+
+Digital multi-alcohol cellar (whisky, rum, beer, wine, and more) on top of that memory problem: shared catalog for fast add, personal collection with editable overrides, freemium → subscription. Social and growth features are secondary. Do **not** copy the current atasoif.fr v1 UX as the target; use the memory JTBD as the design north star.
 
 ## Scope
 
@@ -32,6 +35,7 @@ Digital cellar for collecting, rating, and sharing bottles (whisky, rum, beer, w
 
 - In-app AI (recommendations, photo recognition, chat)
 - Bright Data / aggressive scrapers as the primary catalog strategy
+- Multilingual UI for MVP (FR only; later possible via `locales/`)
 - Laravel or Symfony stacks (legacy experiments live outside this repo)
 
 Do not implement excluded or speculative features without an explicit request.
@@ -69,8 +73,10 @@ Do not introduce a new architectural pattern without explaining why the existing
 - Freemium: max 10 bottles total in collection without an active subscription
 - Catalog is global; personal edits use `UserBottle` overrides (do not mutate global `Bottle` by default on user edit)
 - Add-bottle UX: search catalog first → prefill → all fields + photo editable → confirm (<30s path)
+- Memory fields matter most: price paid, where bought (supplier/place), personal note/review, photo — not social vanity
 - Client-facing copy: French, informal “tu”, short and slightly playful
 - Design direction: dark cellar / amber (see `docs/DESIGN.md`)
+- Do not treat atasoif.fr v1 UI as the target experience
 
 Domain rules take precedence over technical convenience.
 
@@ -100,7 +106,8 @@ Never infer legal, privacy, or retention requirements that are not documented. F
 - Browser or device support: modern iOS/Android WebViews + recent mobile Chrome/Safari; desktop secondary
 - Known component-reuse exceptions: none yet
 
-Critical conversion UX documented in `docs/UX-ADD-BOTTLE.md`.
+Critical conversion UX documented in `docs/UX-ADD-BOTTLE.md`.  
+Delivery plan: `docs/EPICS.md` + `docs/SPRINTS.md` + `docs/tickets/` (orchestrator tickets for sub-agents).
 
 ## Testing strategy
 

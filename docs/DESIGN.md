@@ -24,5 +24,6 @@ See `apps/web/src/styles/_tokens.scss`.
 
 ## Copy
 
-- Client-facing: French (informal “tu”)
+- Client-facing: French only for MVP (informal “tu”)
+- Future: optional multi-locale via `locales/` (out of scope until requested)
 - Code / technical docs / commits: English

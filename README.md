@@ -20,8 +20,10 @@ atasoif-v2/
 ├── apps/api          # NestJS
 ├── apps/web          # Angular (+ Capacitor later)
 ├── packages/shared   # shared constants / types
-└── docs/             # product, UX, sprints
+└── docs/             # product, UX, epics, sprints
 ```
+
+Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/)
 
 Monorepo is fine for store builds: Capacitor builds from `apps/web` only.
 
@@ -46,7 +48,8 @@ Details: [`docs/UX-ADD-BOTTLE.md`](docs/UX-ADD-BOTTLE.md)
 ## Design
 
 Direction **dark cellar / amber** — tokens in `apps/web/src/styles/_tokens.scss`.  
-Client-facing copy is **French**; code, commits, and technical docs are **English**.
+Client-facing copy is **French only** (MVP); code, commits, and technical docs are **English**.  
+Later: optional i18n via a `locales/` folder — not in scope until requested.
 
 ## Setup
 

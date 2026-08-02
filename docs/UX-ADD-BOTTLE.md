@@ -15,11 +15,13 @@ This is the funnel that moves users from 0 → 10 → paywall.
 
 1. **Search first** — single field, ~250ms debounce, instant results (name, brand, barcode).
 2. **Catalog hit** — prefills name, brand, origin, abv, volume, photo, attrs.
-3. **Everything is editable** — note, review, price paid, and catalog fields via *overrides* (`nameOverride`, `photoUrlOverride`, …). The global catalog row is not overwritten by default.
+3. **Everything is editable** — and the “memory” fields are first-class: **price paid**, **where bought**, **personal note/review**, **photo**. That’s the product: recall in 6 months, not a social feed.
 4. **Photo** — keep catalog photo or replace (upload). Immediate preview.
 5. **Miss** — “Not found? Add it” → create `Bottle` (`source=user`) + `UserBottle`.
 6. **Gate at 10** — on the 11th attempt: subscription paywall (monthly / yearly). Show counter earlier (e.g. `7/10`).
 7. **Errors** — short messages, never a wall of validation.
+
+Do not design this flow by copying atasoif.fr v1. Optimize for “I remember this bottle.”
 
 ## Anti-patterns
 
