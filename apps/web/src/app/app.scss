@@ -1,0 +1,21 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: var(--space-8);
+  gap: var(--space-3);
+}
+
+.brand {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  color: var(--color-amber);
+}
+
+.tagline {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 1.05rem;
+}

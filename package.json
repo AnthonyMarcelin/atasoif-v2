@@ -1,0 +1,19 @@
+{
+  "name": "atasoif-v2",
+  "private": true,
+  "version": "0.1.0",
+  "description": "À ta soif ! — cave numérique multi-alcools (v2)",
+  "packageManager": "pnpm@11.18.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @atasoif/api start:dev",
+    "dev:web": "pnpm --filter @atasoif/web start",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "db:generate": "pnpm --filter @atasoif/api prisma:generate",
+    "db:migrate": "pnpm --filter @atasoif/api prisma:migrate",
+    "db:seed": "pnpm --filter @atasoif/api prisma:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

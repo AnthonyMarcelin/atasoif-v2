@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: atasoif
+      POSTGRES_PASSWORD: atasoif
+      POSTGRES_DB: atasoif_v2
+    ports:
+      - "5432:5432"
+    volumes:
+      - atasoif_pg:/var/lib/postgresql/data
+
+volumes:
+  atasoif_pg:

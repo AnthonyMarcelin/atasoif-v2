@@ -1,0 +1,44 @@
+/* Direction : cave nocturne / ambre — premium + fun */
+:root {
+  /* Surfaces */
+  --color-bg: #12100e;
+  --color-bg-elevated: #1c1814;
+  --color-surface: #241f1a;
+  --color-border: #3a322a;
+
+  /* Brand */
+  --color-amber: #e8a04a;
+  --color-amber-deep: #c47a2a;
+  --color-bottle: #2f5d50;
+  --color-bottle-bright: #3f7a6a;
+
+  /* Text */
+  --color-text: #f3ede3;
+  --color-muted: #9a9186;
+  --color-inverse: #12100e;
+
+  /* State */
+  --color-success: #4a8f5c;
+  --color-danger: #c45c5c;
+  --color-warning: #d4a017;
+
+  /* Type */
+  --font-display: "Fraunces", "Libre Baskerville", Georgia, serif;
+  --font-body: "DM Sans", "Segoe UI", sans-serif;
+
+  /* Space / radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-med: 280ms;
+}

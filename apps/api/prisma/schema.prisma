@@ -1,0 +1,242 @@
+// À ta soif ! v2 — catalogue global + collections perso
+// Auth tables aligned for Better Auth + Prisma adapter
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Better Auth ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  pseudo        String?   @unique
+  isPublic      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  bottles       UserBottle[]
+  friendshipsA  Friendship[] @relation("FriendshipA")
+  friendshipsB  Friendship[] @relation("FriendshipB")
+  messagesSent  Message[]    @relation("MessagesSent")
+  messagesRecv  Message[]    @relation("MessagesRecv")
+  subscription  Subscription?
+  reports       Report[]     @relation("Reporter")
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ─── Catalogue ───────────────────────────────────────────────
+
+model Category {
+  id        String   @id @default(cuid())
+  slug      String   @unique // whisky | wine | beer | rhum | …
+  name      String
+  createdAt DateTime @default(now())
+  bottles   Bottle[]
+
+  @@map("category")
+}
+
+/// Fiche catalogue globale (partagée). attrs = champs spécifiques (cépage, peat…).
+model Bottle {
+  id          String   @id @default(cuid())
+  name        String
+  brand       String?
+  origin      String?
+  abv         Decimal? @db.Decimal(5, 2)
+  volumeMl    Int?
+  barcode     String?
+  photoUrl    String?
+  /// Champs spécifiques catégorie (millésime, cépage, peatLevel, beerStyle…)
+  attrs       Json     @default("{}")
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // soft-delete sync sources
+
+  sources     BottleSource[]
+  userBottles UserBottle[]
+
+  @@index([name])
+  @@index([brand])
+  @@index([barcode])
+  @@index([categoryId])
+  @@map("bottle")
+}
+
+model BottleSource {
+  id           String   @id @default(cuid())
+  bottleId     String
+  bottle       Bottle   @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  source       String // openfoodfacts | manual | user | brightdata_…
+  externalId   String
+  rawHash      String?
+  lastSyncedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@unique([source, externalId])
+  @@index([bottleId])
+  @@map("bottle_source")
+}
+
+/// Entrée collection perso. Snapshot éditable = override UX conversion.
+model UserBottle {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bottleId        String
+  bottle          Bottle   @relation(fields: [bottleId], references: [id])
+  /// Overrides optionnels (si null → valeur catalogue)
+  nameOverride    String?
+  brandOverride   String?
+  originOverride  String?
+  abvOverride     Decimal? @db.Decimal(5, 2)
+  volumeMlOverride Int?
+  photoUrlOverride String?
+  attrsOverride   Json?
+  note            Decimal? @db.Decimal(3, 1)
+  review          String?
+  pricePaid       Decimal? @db.Decimal(10, 2)
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, bottleId])
+  @@index([userId])
+  @@map("user_bottle")
+}
+
+// ─── Social ──────────────────────────────────────────────────
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+model Friendship {
+  id        String           @id @default(cuid())
+  userAId   String
+  userBId   String
+  userA     User             @relation("FriendshipA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User             @relation("FriendshipB", fields: [userBId], references: [id], onDelete: Cascade)
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userAId, userBId])
+  @@index([userBId])
+  @@map("friendship")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  sender     User     @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("MessagesRecv", fields: [receiverId], references: [id], onDelete: Cascade)
+  body       String
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([senderId, receiverId])
+  @@index([receiverId])
+  @@map("message")
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  reporter   User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType String // user | message | bottle
+  targetId   String
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@map("report")
+}
+
+// ─── Billing ─────────────────────────────────────────────────
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                   String // monthly | yearly
+  status                 SubscriptionStatus @default(ACTIVE)
+  provider               String // revenuecat | stripe | apple | google
+  providerCustomerId     String?
+  providerSubscriptionId String?
+  currentPeriodEnd       DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@map("subscription")
+}
