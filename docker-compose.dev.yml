@@ -9,8 +9,8 @@ services:
   api:
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://atasoif:atasoif@postgres:5432/atasoif_v2?schema=public
-      BETTER_AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      DB_HOST: postgres
       CORS_ORIGIN: http://localhost:4200
     ports:
       - "3000:3000"

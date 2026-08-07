@@ -5,18 +5,19 @@
   "description": "À ta soif ! — cave numérique multi-alcools (v2)",
   "packageManager": "pnpm@11.18.0",
   "scripts": {
-    "dev:api": "pnpm --filter @atasoif/api start:dev",
+    "dev:api": "npm run dev --prefix apps/api",
     "dev:web": "pnpm --filter @atasoif/web start",
-    "build": "pnpm -r run build",
-    "lint": "pnpm -r run lint",
-    "db:generate": "pnpm --filter @atasoif/api prisma:generate",
-    "db:migrate": "pnpm --filter @atasoif/api prisma:migrate",
-    "db:seed": "pnpm --filter @atasoif/api prisma:seed",
+    "build": "npm run build --prefix apps/api && pnpm --filter @atasoif/web build",
+    "build:web": "pnpm --filter @atasoif/web build",
+    "build:api": "npm run build --prefix apps/api",
+    "lint": "npm run lint --prefix apps/api && pnpm --filter @atasoif/web lint",
+    "db:migrate": "npm --prefix apps/api exec -- node ace migration:run",
+    "db:seed": "npm --prefix apps/api exec -- node ace db:seed",
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
     "docker:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build",
     "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   }
 }

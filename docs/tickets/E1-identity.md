@@ -5,15 +5,16 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 
 **Epic goal:** users can create an account and stay signed in.
 
-**Prerequisites (block all E1 API work):** Sprint 0 closed — Postgres up, migrate + seed, `PrismaModule` wired, `GET /health` OK.
+**Prerequisites (block all E1 API work):** Sprint 0 / Adonis bascule closed — Postgres up, Lucid migrate + seed, `GET /health` OK, Ally package installed (Google + Facebook drivers stubbed).
 
-**Stack refs:** Better Auth + Nest + Prisma (official docs via Context7). Schema already has `User` / `Session` / `Account` / `Verification`.
+**Stack refs:** AdonisJS 7 **Auth** (access tokens) + **Ally** (Google, Facebook; Apple via custom driver). Official docs via Context7 (`/adonisjs/v7-docs`). Nest / Prisma / Better Auth are archived under `archive/nest-api` — do not reintroduce them.
 
 **Product rules:**
 - Client-facing copy: **French** (informal “tu”)
 - Code / commits / technical comments: **English**
 - Conventional Commits EN, no AI co-author
 - Do **not** clone atasoif.fr v1 UI
+- Facebook OAuth = **login only** — no Graph import of “all FB friends” (in-app friends remain E6)
 
 ---
 
@@ -21,58 +22,56 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 
 | ID | Title | Priority | Sprint | Depends on | Suggested owner |
 |---|---|---|---|---|---|
-| [E1-T01](#e1-t01--better-auth-nest-bootstrap) | Better Auth Nest bootstrap | Must | S1 | S0 | API |
-| [E1-T02](#e1-t02--email--password-auth-api) | Email + password auth API | Must | S1 | T01 | API |
-| [E1-T03](#e1-t03--session-guard--me) | Session guard + `/me` | Must | S1 | T02 | API |
-| [E1-T04](#e1-t04--email-verification--password-reset) | Email verification + password reset | Must | S1 | T02 | API |
-| [E1-T05](#e1-t05--auth-ui-shell-angular) | Auth UI shell (Angular) | Must | S1 | T02 | Web |
-| [E1-T06](#e1-t06--wire-web-to-auth-api) | Wire web to auth API + guards | Must | S1 | T03, T05 | Web |
-| [E1-T07](#e1-t07--profile-pseudo--visibility) | Profile: pseudo + visibility | Should | S1 | T03, T06 | Full |
-| [E1-T08](#e1-t08--google-oauth) | Google OAuth | Should | S1 | T01, T06 | Full |
-| [E1-T09](#e1-t09--apple-sign-in) | Apple Sign In | Must (stores) | S5 | T08 or T01 | Full |
+| [E1-T01](#e1-t01--adonis-auth-bootstrap--health) | Adonis Auth bootstrap + `/health` | Must | S1 | S0 / Adonis swap | API |
+| [E1-T02](#e1-t02--signup--login--logout--me) | Signup / login / logout / me | Must | S1 | T01 | API |
+| [E1-T03](#e1-t03--verify-email--password-reset) | Verify email + password reset | Must | S1 | T02 | API |
+| [E1-T04](#e1-t04--auth-ui-shell-angular) | Auth UI shell (Angular) | Must | S1 | T02 | Web |
+| [E1-T05](#e1-t05--wire-web--bearer-tokens) | Wire web → Bearer tokens | Must | S1 | T02, T04 | Web |
+| [E1-T06](#e1-t06--profile-pseudo--ispublic) | Profile: pseudo + isPublic | Should | S1 | T02, T05 | Full |
+| [E1-T07](#e1-t07--ally-google) | Ally Google | Should | S1 | T01, T05 | Full |
+| [E1-T08](#e1-t08--ally-facebook) | Ally Facebook | Should | S1 | T01, T05 | Full |
+| [E1-T09](#e1-t09--ally-apple) | Ally Apple (stores) | Must (stores) | S5 | T07 or T01 | Full |
 
-**Recommended order:** T01 → T02 → T03 → T05 ∥ T04 → T06 → T07 → T08 · T09 later
+**Recommended order:** T01 → T02 → T04 ∥ T03 → T05 → T06 → T07 ∥ T08 · T09 later (S5)
 
 ---
 
-## E1-T01 — Better Auth Nest bootstrap
+## E1-T01 — Adonis Auth bootstrap + `/health`
 
 | | |
 |---|---|
 | **Type** | chore / feat |
 | **Priority** | Must |
 | **Area** | `apps/api` |
-| **Depends on** | S0 complete |
-| **Blocks** | T02–T04, T08 |
+| **Depends on** | Adonis swap + Lucid domain |
+| **Blocks** | T02–T03, T07–T09 |
 
 ### Goal
-Install and configure Better Auth on Nest with Prisma adapter, env vars, and HTTP mount point.
+Confirm Adonis Auth (access tokens guard) is wired, env documented, CORS ready, and ops contract `GET /health` stays green.
 
 ### Acceptance criteria
-- [ ] Dependencies added (`better-auth`, Prisma adapter as required by current docs)
-- [ ] Auth instance config lives in a dedicated module (e.g. `apps/api/src/auth/`)
-- [ ] Auth routes mounted (e.g. `/api/auth/*`) without breaking `/health`
-- [ ] `.env.example` documents `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `DATABASE_URL`, `CORS_ORIGIN`
-- [ ] CORS allows credentials from `apps/web` origin
-- [ ] Prisma `User` / `Session` / `Account` / `Verification` models match Better Auth expectations (adjust schema + migrate if docs require it)
-- [ ] Short note in `docs/` or README: how to run auth locally
+- [ ] `@adonisjs/auth` access tokens guard usable (kit routes under `/api/v1/auth/*` + `/api/v1/account/*` or equivalent)
+- [ ] `users` + `auth_access_tokens` (or kit tables) migrated via Lucid
+- [ ] `.env.example` documents `APP_KEY`, `DB_*`, `CORS_ORIGIN`, Ally placeholders
+- [ ] CORS allows `apps/web` origin
+- [ ] `GET /health` returns DB ping + `status: ok` when Postgres is up
+- [ ] Short note in README / `docs/STACK-ADONIS.md`: how to run auth locally (Node ≥ 24)
 
 ### Out of scope
 - Login/register UI
-- Google / Apple providers
+- Full OAuth flows
 - Email sending
 
 ### Tech notes
-- Use Context7 / official Better Auth Nest + Prisma docs — do not invent adapter wiring from memory.
-- Align field names with existing schema; migrate rather than duplicate user tables.
-- Keep secrets out of git.
+- Use Context7 Adonis Auth docs — do not invent token APIs from memory.
+- Nest/Better Auth must not be restored.
 
 ### Suggested commit
-`feat: bootstrap Better Auth on Nest API`
+`feat: bootstrap Adonis Auth and health check`
 
 ---
 
-## E1-T02 — Email + password auth API
+## E1-T02 — Signup / login / logout / me
 
 | | |
 |---|---|
@@ -83,27 +82,28 @@ Install and configure Better Auth on Nest with Prisma adapter, env vars, and HTT
 | **Blocks** | T03–T06 |
 
 ### Goal
-Enable sign-up, sign-in, sign-out with email/password via Better Auth.
+Email/password signup, login (issue access token), logout (revoke token), and authenticated “me/profile”.
 
 ### Acceptance criteria
-- [ ] Sign-up with email + password creates user + credential account
-- [ ] Sign-in returns session (cookie or documented token strategy)
-- [ ] Sign-out invalidates session
-- [ ] Basic validation errors return safe, actionable messages (EN for API internals OK; map to FR on UI later)
-- [ ] Unit or e2e smoke tests for register + login happy path (at least one automated check)
-- [ ] Password never logged or returned in JSON
+- [ ] `POST` signup creates user + returns token (or login step)
+- [ ] `POST` login validates credentials + returns Bearer access token
+- [ ] `POST` logout revokes current token when authenticated
+- [ ] `GET` me/profile returns current user (id, email, pseudo, isPublic, …)
+- [ ] Invalid credentials → 401 with clear JSON error
+- [ ] Password hashed via Adonis hash (never stored plaintext)
+- [ ] API tests cover happy path + bad password
 
 ### Out of scope
-- Verification email (T04)
-- OAuth (T08/T09)
-- Angular screens (T05)
+- Email verification UI
+- Social OAuth
+- Angular forms (T04)
 
 ### Suggested commit
-`feat: enable email password auth endpoints`
+`feat: add email password auth endpoints`
 
 ---
 
-## E1-T03 — Session guard + `/me`
+## E1-T03 — Verify email + password reset
 
 | | |
 |---|---|
@@ -111,231 +111,190 @@ Enable sign-up, sign-in, sign-out with email/password via Better Auth.
 | **Priority** | Must |
 | **Area** | `apps/api` |
 | **Depends on** | T02 |
-| **Blocks** | T06, T07, all future protected cellar APIs |
 
 ### Goal
-Protect API routes and expose current user.
+Email verification + forgot/reset password using Adonis patterns (tokens / signed URLs + mailer).
 
 ### Acceptance criteria
-- [ ] `GET /me` (or `/api/me`) returns `{ id, email, name, pseudo, … }` for authenticated session
-- [ ] Unauthenticated → `401`
-- [ ] Nest guard/middleware reusable for future modules
-- [ ] At least one protected dummy or real route demonstrates the guard
-- [ ] Test: 401 without session, 200 with session
+- [ ] Verification flow configured (mail transport can be ethereal/log in dev)
+- [ ] Unverified users handled per product rule (block sensitive actions or soft-warn — document choice)
+- [ ] Forgot password + reset endpoints work end-to-end in tests
+- [ ] FR copy for email templates (informal “tu”)
+- [ ] Env vars for SMTP / mail documented in `.env.example`
 
 ### Out of scope
-- Profile update (T07)
-- Role/admin ACL (later)
-
-### Suggested commit
-`feat: add session guard and me endpoint`
-
----
-
-## E1-T04 — Email verification + password reset
-
-| | |
-|---|---|
-| **Type** | feat |
-| **Priority** | Must |
-| **Area** | `apps/api` (+ mailer util) |
-| **Depends on** | T02 |
-| **Blocks** | Production hardening (can ship S1 with documented dev bypass) |
-
-### Goal
-Verify email on register; allow forgot/reset password.
-
-### Acceptance criteria
-- [ ] Verification flow configured (Better Auth + mail transport)
-- [ ] Forgot-password + reset-password flows work end-to-end in local/dev
-- [ ] Tokens expire; reuse of spent token fails
-- [ ] Dev mode: documented bypass or Ethereal/Mailpit/Mailhog — **no secrets in repo**
-- [ ] Email templates minimal, French client-facing subject/body
-- [ ] `.env.example` lists SMTP (or provider) vars without values
-
-### Out of scope
-- Fancy HTML marketing templates
-- Changing email on profile (later)
+- Changing mail provider in prod (can stay log driver until E0.7)
 
 ### Suggested commit
 `feat: add email verification and password reset`
 
 ---
 
-## E1-T05 — Auth UI shell (Angular)
+## E1-T04 — Auth UI shell (Angular)
 
 | | |
 |---|---|
 | **Type** | feat |
 | **Priority** | Must |
 | **Area** | `apps/web` |
-| **Depends on** | Design tokens exist; can start in parallel after T02 API contract known |
-| **Blocks** | T06 |
+| **Depends on** | T02 (API contract known) |
 
 ### Goal
-Minimal FR auth screens — not a clone of atasoif.fr.
-
-### Screens
-- Login
-- Register
-- Forgot password
-- Reset password (token from query)
-- Email verified / pending state (simple)
+French auth screens: signup, login, logout entry, basic empty states — no v1 clone.
 
 ### Acceptance criteria
-- [ ] Routes exist under e.g. `/login`, `/register`, `/forgot-password`, `/reset-password`
-- [ ] Dark cellar / amber tokens used (`_tokens.scss`)
-- [ ] Copy French, informal “tu”, short
-- [ ] Forms accessible: labels, errors, keyboard
-- [ ] Mobile-first layout
-- [ ] Loading + error states present (can be wired to fake/local until T06)
+- [ ] Routes for login / signup (and stubs for forgot password)
+- [ ] Forms validate client-side (email + password rules)
+- [ ] Copy in French (“tu”)
+- [ ] Accessible labels / focus states
+- [ ] Design follows `docs/DESIGN.md` (no generic purple dashboard look)
 
 ### Out of scope
-- Google/Apple buttons (T08/T09)
-- Full profile page polish (T07)
-- Capacitor
+- Wiring real API (T05)
+- Social buttons until T07/T08
 
 ### Suggested commit
-`feat: add auth screens shell`
+`feat: add Angular auth UI shell`
 
 ---
 
-## E1-T06 — Wire web to auth API + guards
+## E1-T05 — Wire web → Bearer tokens
 
 | | |
 |---|---|
 | **Type** | feat |
 | **Priority** | Must |
-| **Area** | `apps/web` (+ minor API CORS if needed) |
-| **Depends on** | T03, T05 |
-| **Blocks** | T07, T08 UI, Sprint 2 UI |
+| **Area** | `apps/web` (+ thin API tweaks if needed) |
+| **Depends on** | T02, T04 |
 
 ### Goal
-Real auth loop in the browser: register → (verify) → login → session → logout; route guards.
+Angular calls Adonis auth with `Authorization: Bearer <token>`, persists token securely enough for web MVP, guards routes.
 
 ### Acceptance criteria
-- [ ] Auth service calls Better Auth / API with credentials (cookies)
-- [ ] After login, user lands on a simple authenticated home/shell
-- [ ] Auth guard redirects anonymous users to `/login`
-- [ ] Guest guard redirects authenticated users away from login/register
-- [ ] Logout clears session and returns to login/home
-- [ ] `/me` used to hydrate current user in UI
-- [ ] Manual checklist documented in ticket PR description
+- [ ] Auth service stores access token (memory + secure storage strategy documented)
+- [ ] HTTP interceptor attaches Bearer token
+- [ ] 401 clears session and redirects to login
+- [ ] Route guards protect cellar routes
+- [ ] Login/signup forms call real API successfully against local Adonis
 
 ### Out of scope
-- Collection features
-- Remember-me beyond Better Auth defaults
+- Refresh-token rotation sophistication beyond Adonis defaults
+- Capacitor secure storage (later mobile epic)
 
 ### Suggested commit
-`feat: connect Angular auth flow to API`
+`feat: wire Angular client to Adonis Bearer auth`
 
 ---
 
-## E1-T07 — Profile: pseudo + visibility
+## E1-T06 — Profile: pseudo + isPublic
 
 | | |
 |---|---|
 | **Type** | feat |
 | **Priority** | Should |
-| **Area** | API + web |
-| **Depends on** | T03, T06 |
-| **Blocks** | E6 social (pseudo search) |
+| **Area** | `apps/api` + `apps/web` |
+| **Depends on** | T02, T05 |
 
 ### Goal
-User can set unique `pseudo` and `isPublic` flag.
+User can set display pseudo and public/private visibility (`isPublic`).
 
 ### Acceptance criteria
-- [ ] `PATCH` (or Better Auth update + custom fields) for `pseudo` + `isPublic`
-- [ ] Pseudo unique; validation errors clear in FR on UI
-- [ ] Profile screen shows email (read-only), pseudo, public/private toggle
-- [ ] `/me` returns updated fields
-- [ ] Empty pseudo allowed until social (or required — pick one and document; prefer optional until E6)
+- [ ] Lucid `users.pseudo` + `users.is_public` (already migrated) exposed via update endpoint
+- [ ] Validation: pseudo uniqueness / length rules documented
+- [ ] Angular profile form updates and reflects values
+- [ ] FR UI copy
 
 ### Out of scope
-- Avatar upload
-- Friends / share (E6)
+- Public profile pages / social graph (E6)
 
 ### Suggested commit
-`feat: add profile pseudo and visibility settings`
+`feat: add user pseudo and visibility profile fields`
 
 ---
 
-## E1-T08 — Google OAuth
+## E1-T07 — Ally Google
 
 | | |
 |---|---|
 | **Type** | feat |
 | **Priority** | Should |
-| **Area** | API + web |
-| **Depends on** | T01, T06 |
-| **Blocks** | — |
-| **Note** | If Google ships on iOS later, Apple (T09) becomes required |
+| **Area** | `apps/api` (+ web button) |
+| **Depends on** | T01, T05 |
 
 ### Goal
-Sign in / sign up with Google.
+Google OAuth login via `@adonisjs/ally` → issue Adonis access token.
 
 ### Acceptance criteria
-- [ ] Google provider configured in Better Auth
-- [ ] Env vars in `.env.example` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
-- [ ] Web has “Continuer avec Google” button on login/register
-- [ ] Successful OAuth creates/links account and session
-- [ ] Failure shows FR error without leaking secrets
+- [ ] Redirect + callback routes for Google
+- [ ] Env `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` documented and used
+- [ ] First login creates user; subsequent login links same email/account
+- [ ] Returns same Bearer token shape as email login
+- [ ] Angular “Continuer avec Google” button
+- [ ] No dependency on Better Auth
 
 ### Out of scope
-- Apple (T09)
-- Account linking edge-case admin UI
+- Calendar/Drive scopes — email/profile only
 
 ### Suggested commit
-`feat: add Google OAuth sign-in`
+`feat: add Google OAuth via Ally`
 
 ---
 
-## E1-T09 — Apple Sign In
+## E1-T08 — Ally Facebook
 
 | | |
 |---|---|
 | **Type** | feat |
-| **Priority** | Must before iOS store if social login exists |
-| **Area** | API + web/Capacitor |
-| **Depends on** | T01; ideally after Capacitor (Sprint 4/5) |
-| **Sprint** | **S5** (not S1) |
+| **Priority** | Should |
+| **Area** | `apps/api` (+ web button) |
+| **Depends on** | T01, T05 |
 
 ### Goal
-Sign in with Apple for App Store compliance.
+Facebook OAuth **login** via Ally (accelerator). Friends stay in-app (E6) — do **not** import Graph “all friends”.
 
 ### Acceptance criteria
-- [ ] Apple provider configured (client secret JWT / Better Auth Apple docs)
-- [ ] Works on Capacitor iOS build
-- [ ] Env vars documented; secrets never committed
-- [ ] Same session model as email/Google
+- [ ] Redirect + callback for Facebook
+- [ ] Env `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET`
+- [ ] Login creates/links user + issues Bearer token
+- [ ] Angular “Continuer avec Facebook”
+- [ ] Explicitly no friends-list sync
 
 ### Out of scope
-- Android-only flows
+- Meta friends graph / social import
 
 ### Suggested commit
-`feat: add Apple Sign In`
+`feat: add Facebook OAuth via Ally`
 
 ---
 
-## Sub-agent brief (copy-paste)
+## E1-T09 — Ally Apple (stores)
 
-When launching a worker on a ticket:
+| | |
+|---|---|
+| **Type** | feat |
+| **Priority** | Must (App Store / Play when shipping native) |
+| **Sprint** | **S5** (deferred) |
+| **Area** | `apps/api` + Capacitor |
+| **Depends on** | T01 (and preferably T07 pattern) |
 
-```text
-You are implementing ticket <ID> from docs/tickets/E1-identity.md in atasoif-v2.
-Branch from up-to-date `dev`: feature/e1-<slug>
-Follow .cursor/rules (EN code/docs, FR UI). Use Context7 for Better Auth / Nest / Angular.
-Do not implement other E1 tickets. Do not copy atasoif.fr v1 UI.
-Open a PR into `dev` when acceptance criteria are met. Conventional Commit EN, no AI co-author.
-Report: files changed, checks run, leftover risks.
-```
+### Goal
+Sign in with Apple for store compliance. Ally **does not ship an Apple driver** — implement a **custom Ally driver** (or approved community package) using Apple’s OAuth/OIDC.
+
+### Acceptance criteria
+- [ ] Custom Apple Ally driver registered alongside Google/Facebook
+- [ ] Env for Apple client id / secret (JWT client secret as required by Apple)
+- [ ] Web + native Capacitor flows documented
+- [ ] Issues same Bearer token as other providers
+- [ ] Store guideline checklist noted in ticket PR
+
+### Out of scope
+- Shipping to stores in S1
+
+### Suggested commit
+`feat: add Apple Sign In via custom Ally driver`
 
 ---
 
-## Definition of done (every ticket)
+## Orchestrator notes
 
-- Acceptance criteria checked
-- Relevant tests / lint / build run and reported
-- No secrets committed
-- Docs/env example updated if new config
-- PR targets `dev`
+Follow `.cursor/rules` (EN code/docs, FR UI). Use Context7 for Adonis Auth / Ally / Lucid. Prefer smallest PR per ticket. Archive Nest tree is reference-only for data-model migration.

@@ -13,11 +13,11 @@ Everything below is ranked for that outcome. Social and growth come after memory
 | ID | Story | Priority |
 |---|---|---|
 | E0.1 | Monorepo (API + web + shared) | Done |
-| E0.2 | Prisma schema (catalog, collection, auth, billing, social stubs) | Done |
+| E0.2 | Domain schema (catalog, collection, auth, billing, social stubs) — Lucid | Done |
 | E0.3 | Cursor rules + product docs | Done |
-| E0.4 | Local Postgres + migrate + seed categories | Done |
-| E0.5 | Wire Prisma into Nest + `/health` | Done |
-| E0.6 | Docker Compose API + Postgres (dev/prod) | Done |
+| E0.4 | Local Postgres + Lucid migrate + seed categories | Done |
+| E0.5 | AdonisJS 7 API + `/health` (DB ping) | Done |
+| E0.6 | Docker Compose Adonis API + Postgres (dev/prod, Node 24) | Done |
 | E0.7 | OVH VPS + TLS reverse proxy | Should (before stores) |
 
 **Out of scope:** fancy CI, staging env.
@@ -32,13 +32,13 @@ Everything below is ranked for that outcome. Social and growth come after memory
 
 | ID | Story | Priority | Ticket |
 |---|---|---|---|
-| E1.1 | Better Auth email + password | Must | T01–T02 |
-| E1.2 | Email verification + password reset | Must | T04 |
-| E1.3 | Google OAuth | Should | T08 |
-| E1.4 | Session guard on API (`/me`) | Must | T03 |
-| E1.5 | Apple Sign In | Must before iOS store if Google is offered | T09 (S5) |
-| E1.6 | Profile: pseudo, public/private flag | Should | T07 |
-| — | Auth UI + wire-up | Must | T05–T06 |
+| E1.1 | Adonis Auth email + password + tokens | Must | T01–T02 |
+| E1.2 | Email verification + password reset | Must | T03 |
+| E1.3 | Ally Google OAuth | Should | T07 |
+| E1.4 | Ally Facebook OAuth (login only) | Should | T08 |
+| E1.5 | Apple Sign In (custom Ally driver) | Must before iOS store if social login offered | T09 (S5) |
+| E1.6 | Profile: pseudo, public/private flag | Should | T06 |
+| — | Auth UI + Bearer wire-up | Must | T04–T05 |
 
 ---
 

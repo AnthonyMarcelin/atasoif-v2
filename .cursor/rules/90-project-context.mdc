@@ -8,7 +8,7 @@ alwaysApply: true
 ## Identity
 
 - Project name: À ta soif ! (atasoif-v2)
-- Project type: MOBILE_APPLICATION + API (Angular/Capacitor + NestJS)
+- Project type: MOBILE_APPLICATION + API (Angular/Capacitor + AdonisJS)
 - Status: DEVELOPMENT
 - Repository root: this directory only (`atasoif-v2`). Do **not** place project rules, `package.json`, `pnpm-workspace.yaml`, `node_modules`, or `.pnpm-store` in the parent `atasoif/` folder (legacy projects live there separately).
 - Primary language for client-facing content: FR
@@ -26,7 +26,7 @@ Digital multi-alcohol cellar (whisky, rum, beer, wine, and more) on top of that 
 ### Included
 
 - Shared bottle catalog + personal collection with freemium gate (10 bottles)
-- Auth: email + Google + Apple (Better Auth)
+- Auth: email/password + Ally social (Google, Apple, **Facebook**)
 - Wine and extensible alcohol categories
 - Subscriptions: 3.99€/month, 39.99€/year
 - Capacitor iOS/Android builds from `apps/web`
@@ -37,35 +37,36 @@ Digital multi-alcohol cellar (whisky, rum, beer, wine, and more) on top of that 
 - In-app AI (recommendations, photo recognition, chat)
 - Bright Data / aggressive scrapers as the primary catalog strategy
 - Multilingual UI for MVP (FR only; later possible via `locales/`)
-- Laravel or Symfony stacks (legacy experiments live outside this repo)
+- NestJS / Prisma / Better Auth (replaced by Adonis — see `docs/STACK-ADONIS.md`)
+- Relying on Facebook Graph “all friends” import (Meta-restricted; use in-app friends + optional FB login)
 
 Do not implement excluded or speculative features without an explicit request.
 
 ## Stack
 
-- Backend: NestJS 11 + Prisma 6 + PostgreSQL 16
+- Backend: **AdonisJS 7** (API) + **Lucid** + **Auth** + **Ally** + PostgreSQL 16
 - Frontend: Angular 20 (+ Capacitor later)
 - Database: PostgreSQL 16
 - Cache or queue: none yet
-- Infrastructure: OVH VPS (target); local Docker Compose for Postgres
-- Package manager: pnpm workspaces
+- Infrastructure: OVH VPS (target); Docker Compose for API + Postgres
+- Package manager: pnpm at monorepo root; Adonis app may use its own lockfile under `apps/api`
+- Node: **≥ 24** for Adonis 7 (Docker + local via nvm/Herd)
 
-Use only the stack-specific Cursor rules that match these technologies. No Laravel rules in this project.
+See `docs/STACK-ADONIS.md`.
 
 ## Architecture
 
-- Architectural style: modular monolith (monorepo)
+- Architectural style: modular monolith (monorepo) with Adonis MVC API
 - Main modules or bounded contexts:
   - Catalog (`Bottle`, `Category`, `BottleSource`)
   - Collection (`UserBottle` with field/photo overrides)
-  - Auth (Better Auth models)
+  - Auth (Adonis Auth + Ally providers)
   - Billing (`Subscription`)
   - Social (friends, messages — post-MVP)
-- Dependency direction: `apps/web` → API HTTP; `apps/api` → Prisma → PostgreSQL; both may import `@atasoif/shared`
+- Dependency direction: `apps/web` → API HTTP; `apps/api` → Lucid → PostgreSQL; shared constants via `@atasoif/shared` when practical
 - Important existing abstractions to reuse:
   - `packages/shared` constants (`FREE_BOTTLE_LIMIT`, plans, categories)
   - Design tokens in `apps/web/src/styles/_tokens.scss`
-  - Prisma schema in `apps/api/prisma/schema.prisma`
 
 Do not introduce a new architectural pattern without explaining why the existing structure cannot support the requirement.
 
@@ -83,8 +84,8 @@ Domain rules take precedence over technical convenience.
 
 ## Data and privacy
 
-- Personal data processed: email, name, pseudo, auth tokens, collection data, messages (when enabled)
-- Sensitive data processed: passwords/hashes via Better Auth; payment handled by store IAP providers
+- Personal data processed: email, name, pseudo, auth tokens, collection data, messages (when enabled), OAuth profile data from Ally providers
+- Sensitive data processed: password hashes via Adonis Auth; payment handled by store IAP providers
 - Retention requirements: not fully specified — flag before implementing deletion/export flows
 - Regulatory constraints: RGPD (privacy policy, deletion rights); App Store age rating 17+; no promotion of excessive drinking
 
@@ -92,12 +93,14 @@ Never infer legal, privacy, or retention requirements that are not documented. F
 
 ## Authentication and authorization
 
-- Authentication method: Better Auth (email/password + Google + Apple)
+- Authentication method: Adonis Auth (email/password + access tokens) + Ally (Google, Apple, Facebook)
 - Roles and permissions: authenticated user; admin TBD
 - Critical authorization rules:
   - Users may only mutate their own `UserBottle`, friendships, and messages
   - Freemium limit enforced server-side
   - Authorization must be enforced server-side even when the UI hides restricted actions
+
+Facebook via Ally is for **login**. In-app friends (E6) remain the source of truth — do not depend on Meta friend-list APIs.
 
 ## Frontend and UX
 
@@ -109,53 +112,34 @@ Never infer legal, privacy, or retention requirements that are not documented. F
 
 Critical conversion UX documented in `docs/UX-ADD-BOTTLE.md`.  
 Delivery plan: `docs/EPICS.md` + `docs/SPRINTS.md` + `docs/tickets/` (orchestrator tickets for sub-agents).  
-Docker: `docs/DOCKER.md` (API + Postgres; host Postgres port **5432** in dev).
+Docker: `docs/DOCKER.md` (API + Postgres; host Postgres port **5432** in dev).  
+Stack switch: `docs/STACK-ADONIS.md`.
 
 ## Testing strategy
 
 - Critical user journeys:
-  - Register/login → search bottle → add with overrides → hit freemium gate → subscribe
-- Required test levels: unit (API) early; feature/e2e when flows exist
-- Merge-blocking checks:
-  - `pnpm --filter @atasoif/api test`
-  - `pnpm --filter @atasoif/api build`
-  - `pnpm --filter @atasoif/web build` (when frontend changes)
+  - Register/login (email or Ally) → search bottle → add with overrides → hit freemium gate → subscribe
+- Required test levels: unit/feature early; e2e when flows exist
+- Merge-blocking checks: Adonis tests + Angular build when frontend changes
 - Tests intentionally omitted and justification:
   - Full e2e and IAP flows deferred until Capacitor + billing sprint
 
 ## Development commands
 
 ```bash
-# Install dependencies
+# Install (root)
 pnpm install
 
-# Start development environment
-docker compose up -d
-pnpm dev:api
+# API (Adonis) — requires Node ≥ 24
+cd apps/api && node ace serve --hmr
+
+# Web
 pnpm dev:web
 
-# Lint and format check
-pnpm --filter @atasoif/api lint
-pnpm --filter @atasoif/api format
-
-# Run tests
-pnpm --filter @atasoif/api test
-
-# Run critical or end-to-end tests
-pnpm --filter @atasoif/api test:e2e
-
-# Build production artifacts
-pnpm --filter @atasoif/shared build
-pnpm --filter @atasoif/api build
-pnpm --filter @atasoif/web build
-
-# Database
-pnpm db:generate
-pnpm db:migrate
-pnpm db:seed
-
-# Dependency vulnerability scan
-pnpm audit
+# Docker
+pnpm docker:dev
+pnpm docker:prod
+pnpm docker:down
 ```
 
 Do not invent commands. Read the repository configuration and use the commands actually defined by the project.
@@ -166,15 +150,15 @@ Do not invent commands. Read the repository configuration and use the commands a
 - Production branch: `main`
 - Staging branch enabled: NO
 - Deployment environments: DEVELOPMENT, PRODUCTION (OVH VPS)
-- Health check: `GET /health`
+- Health check: `GET /health` (or Adonis equivalent)
 - Rollback strategy: redeploy previous image/commit; reverse migrations when safe
 
 Feature branches start from an up-to-date `dev` branch unless this project explicitly documents another workflow.
 
 ## External services
 
-- PostgreSQL: `DATABASE_URL`
-- Better Auth: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, Google/Apple OAuth env vars
+- PostgreSQL: `DB_*` (no Prisma `DATABASE_URL`)
+- Ally OAuth: Google / Apple / Facebook client IDs & secrets
 - Image storage: local disk initially; Cloudflare R2 later
 - Billing: RevenueCat / Apple / Google IAP (sprint 4)
 - Open Food Facts: catalog seed (sprint 3)
@@ -183,16 +167,17 @@ Never commit credentials, tokens, private keys, or production configuration valu
 
 ## Explicit exceptions to reusable rules
 
-- No NestJS/Angular stack rules exist yet in the shared library — follow official Nest/Angular/Prisma docs via Context7 until stack rules are added.
+- No dedicated Adonis stack rules in the shared cursor-rules library yet — follow official Adonis/Lucid/Ally docs via Context7.
 - Photo storage may start on the VPS filesystem before object storage — Reason: cost on OVH 8€ VPS — Scope: media upload module
 
 ## Current constraints and known risks
 
 - Solo developer; ship MVP (cave + freemium + stores) before social/messaging
+- Adonis scaffold landed; implement E1 Auth/Ally tickets next (Nest only in `archive/nest-api`)
 - Catalog quality drives conversion; seed required before growth
 - Acquisition/marketing is the main business risk, not the tech stack
 - Apple Sign In required when shipping social login on iOS
-- Legacy v1 data (~15 bottles) to migrate from Railway Postgres
+- Legacy v1 data (~9 bottles) to migrate from Railway Postgres
 
 ## Definition of done
 

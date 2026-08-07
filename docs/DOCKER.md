@@ -6,8 +6,8 @@ Containerize **API + database** only. Angular/Capacitor stay on the host for nat
 
 | File | Role |
 |---|---|
-| `Dockerfile` | Multi-stage Nest API image (`@atasoif/shared` + Prisma generate + build) |
-| `apps/api/docker-entrypoint.sh` | `prisma migrate deploy` then start Nest |
+| `Dockerfile` | Multi-stage AdonisJS 7 API image (Node 24, `node ace build`, start from `build/`) |
+| `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
 | `docker-compose.prod.yml` | OVH / prod-like overrides |
@@ -32,8 +32,6 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env 
 
 The Compose project is explicitly named **`atasoif`** (`name: atasoif` in `docker-compose.yml`).
 
-If OrbStack still shows an orphan **`atasoif-v2`** group (from early folder-named runs), remove it — only **`atasoif`** should remain.
-
 ## Ports
 
 | Environment | Service | Host → container | Notes |
@@ -43,28 +41,20 @@ If OrbStack still shows an orphan **`atasoif-v2`** group (from early folder-name
 | **Prod** | Postgres | *(not published)* | Reachable only on the Compose network as hostname `postgres` |
 | **Prod** | API | `${API_PORT:-3000} → 3000` | Put TLS reverse proxy in front later (E0.7) |
 
-Inside the Compose network, the API always uses:
+## `DB_*` cheat sheet
 
-```text
-postgresql://…@postgres:5432/atasoif_v2
-```
-
-If host **5432** is already taken by another Postgres, stop that service or temporarily remap in `docker-compose.dev.yml`.
-
-## `DATABASE_URL` cheat sheet
-
-| How you run | `DATABASE_URL` host |
+| How you run | `DB_HOST` |
 |---|---|
-| Nest on host + Postgres via `docker:dev` | `localhost:5432` |
-| Full `docker:dev` / `docker:prod` (API in container) | `postgres:5432` |
+| Adonis on host + Postgres via `docker:dev` | `localhost` |
+| Full `docker:dev` / `docker:prod` (API in container) | `postgres` |
 
-See `.env.example`.
+See `.env.example`. Required runtime vars include `APP_KEY` (generate with `node ace generate:key` in `apps/api`).
 
 ## Recommended day-to-day workflow
 
-1. Start stack (or Postgres only via the same compose files).
-2. Point local `.env` at `localhost:5432`.
-3. Iterate with `pnpm dev:api` / `pnpm dev:web` on the host (faster reload).
+1. Start Postgres (or full stack).
+2. Point `apps/api/.env` at `DB_HOST=localhost`.
+3. Iterate with `pnpm dev:api` / `pnpm dev:web` on the host (Node ≥ 24).
 4. Use full `pnpm docker:dev` when you want to validate the same topology as production.
 
 ## Health check
@@ -74,7 +64,7 @@ curl -s http://localhost:3000/health
 # {"app":"atasoif-api",…,"database":"up","status":"ok"}
 ```
 
-On API start, the entrypoint applies pending Prisma migrations (`migrate deploy`), then boots Nest.
+On API start, the entrypoint applies pending Lucid migrations, then boots Adonis.
 
 ## Out of scope (for now)
 

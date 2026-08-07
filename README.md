@@ -7,8 +7,8 @@ Digital multi-alcohol cellar (whisky, rum, beer, wine, and more).
 
 | Layer | Technology |
 |---|---|
-| API | NestJS + Prisma + PostgreSQL |
-| Auth | Better Auth (email + Google + Apple) |
+| API | AdonisJS 7 + Lucid + PostgreSQL |
+| Auth | Adonis Auth (access tokens) + Ally (Google, Facebook; Apple custom driver) |
 | Front | Angular 20 + Capacitor (iOS / Android) |
 | Host | OVH VPS |
 | Billing | IAP (RevenueCat) — €3.99/month · €39.99/year |
@@ -17,15 +17,16 @@ Digital multi-alcohol cellar (whisky, rum, beer, wine, and more).
 
 ```
 atasoif-v2/
-├── apps/api          # NestJS
+├── apps/api          # AdonisJS 7 (standalone npm, Node ≥ 24)
 ├── apps/web          # Angular (+ Capacitor later)
 ├── packages/shared   # shared constants / types
+├── archive/nest-api  # former Nest/Prisma API (reference only)
 └── docs/             # product, UX, epics, sprints
 ```
 
-Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DOCKER.md`](docs/DOCKER.md)
+Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DOCKER.md`](docs/DOCKER.md) · [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md)
 
-Monorepo is fine for store builds: Capacitor builds from `apps/web` only.
+pnpm workspace covers `apps/web` + `packages/*`. The API uses its own `package-lock.json` under `apps/api`.
 
 ## Product decisions
 
@@ -53,12 +54,17 @@ Later: optional i18n via a `locales/` folder — not in scope until requested.
 
 ## Setup
 
+Requires **Node ≥ 24** (Adonis 7).
+
 ```bash
 cd atasoif-v2
 cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+# set APP_KEY: cd apps/api && node ace generate:key
+
 pnpm install
 pnpm --filter @atasoif/shared build
-pnpm db:generate
+npm install --prefix apps/api
 pnpm db:migrate
 pnpm db:seed
 pnpm dev:api           # :3000 (API on host)
@@ -79,7 +85,7 @@ pnpm docker:prod
 pnpm docker:down
 ```
 
-Day-to-day: Postgres in Docker (`localhost:5432`) + Nest on the host (`pnpm dev:api`). Full `docker:dev` validates prod-like topology.
+Day-to-day: Postgres in Docker (`localhost:5432`) + Adonis on the host (`pnpm dev:api`). Full `docker:dev` validates prod-like topology.
 
 ## Git
 

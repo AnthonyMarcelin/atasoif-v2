@@ -16,3 +16,4 @@ apps/web/ios
 apps/web/android
 uploads
 tmp
+.pnpm-store/

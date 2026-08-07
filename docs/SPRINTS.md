@@ -24,21 +24,21 @@ Epics: [`EPICS.md`](./EPICS.md)
 **Epics:** E0  
 **Status:** ✅ Closed
 
-- [x] pnpm monorepo (`apps/api`, `apps/web`, `packages/shared`)
-- [x] Prisma schema (catalog, collection, social, billing, auth)
+- [x] pnpm monorepo (`apps/web`, `packages/shared`) + standalone Adonis `apps/api`
+- [x] Lucid domain migrations (catalog, collection, social, billing, auth)
 - [x] Dark cellar design tokens
 - [x] Add-bottle UX doc
-- [x] `pnpm install` + Prisma generate + API tests
+- [x] Adonis 7 install (Node ≥ 24) + Ally stubs (Google/Facebook)
 - [x] Cursor rules (global + project context)
-- [x] Local Postgres (`docker compose up -d`) + migrate + seed
-- [x] Wire `PrismaModule` into `AppModule`
+- [x] Local Postgres (`docker compose`) + migrate + seed
+- [x] Nest archived under `archive/nest-api`
 - [x] `GET /health` reports `database: up`
 
 ### Exit criteria
 
-- API boots against local Postgres
+- Adonis API boots against local Postgres
 - Categories seeded (9)
-- Prisma client used from Nest
+- Lucid migrations applied
 - `/health` → `{ status: "ok", database: "up" }`
 
 ---
@@ -47,29 +47,29 @@ Epics: [`EPICS.md`](./EPICS.md)
 
 **Epics:** E1  
 **Tickets:** [`docs/tickets/E1-identity.md`](./tickets/E1-identity.md) — T01→T08 (T09 deferred to S5)  
-**Depends on:** Sprint 0 closed
+**Depends on:** Sprint 0 closed + Adonis API up
 
 ### Scope
 
-- T01 Better Auth bootstrap
-- T02 Email/password API
-- T03 Guard + `/me`
-- T04 Verification + reset
-- T05 Auth UI shell
-- T06 Wire web + guards
-- T07 Pseudo + visibility (should)
-- T08 Google OAuth (should)
+- T01 Adonis Auth bootstrap + `/health`
+- T02 Signup / login / logout / me
+- T03 Verify email + password reset
+- T04 Auth UI shell (Angular)
+- T05 Wire web → Bearer tokens
+- T06 Pseudo + visibility (should)
+- T07 Ally Google (should)
+- T08 Ally Facebook (should)
 
 ### Explicitly out
 
-- Apple Sign In → **E1-T09 / Sprint 5**
-- Social friends
+- Apple Sign In → **E1-T09 / Sprint 5** (custom Ally driver)
+- Social friends / FB friends import
 
 ### Exit criteria
 
 - New user can register, verify (or dev bypass documented), sign in, hit a protected route
 - Unauthenticated requests rejected server-side
-- All Must tickets T01–T06 done (T04 may ship with documented mail bypass)
+- All Must tickets T01–T05 done (T03 may ship with documented mail bypass)
 ---
 
 ## Sprint 2 — Memory cellar MVP

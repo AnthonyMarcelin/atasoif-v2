@@ -32,17 +32,24 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: ${NODE_ENV:-production}
+      HOST: 0.0.0.0
       PORT: 3000
-      DATABASE_URL: ${DATABASE_URL:-postgresql://atasoif:atasoif@postgres:5432/atasoif_v2?schema=public}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-min-32-chars-long-secret!!}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APP_KEY: ${APP_KEY:?set APP_KEY}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      SESSION_DRIVER: cookie
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-atasoif}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-atasoif}
+      DB_DATABASE: ${POSTGRES_DB:-atasoif_v2}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-}
       APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
-      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
-      APPLE_KEY_ID: ${APPLE_KEY_ID:-}
-      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+      APPLE_CLIENT_SECRET: ${APPLE_CLIENT_SECRET:-}
     ports:
       - "${API_PORT:-3000}:3000"
 
