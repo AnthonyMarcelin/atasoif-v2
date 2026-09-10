@@ -77,7 +77,7 @@ Do not introduce a new architectural pattern without explaining why the existing
 - Add-bottle UX: search catalog first → prefill → all fields + photo editable → confirm (<30s path)
 - Memory fields matter most: price paid, where bought (supplier/place), personal note/review, photo — not social vanity
 - Client-facing copy: French, informal “tu”, short and slightly playful
-- Design direction: dark cellar / amber (see `docs/DESIGN.md`)
+- Design direction: **Nuit** only (`docs/conception/design-system/`) · Carnet / Cave removed
 - Do not treat atasoif.fr v1 UI as the target experience
 
 Domain rules take precedence over technical convenience.
