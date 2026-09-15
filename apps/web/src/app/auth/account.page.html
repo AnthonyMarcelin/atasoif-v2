@@ -1,29 +1,47 @@
 <section class="auth-page">
   <div class="auth-page__inner">
     <h1 class="auth-title">Moi</h1>
-    <p class="auth-lead">Ton espace perso. Profil et session arriveront juste après l'auth.</p>
+    <p class="auth-lead">Ton espace perso.</p>
 
-    @if (!loggedOut()) {
-      <div class="auth-empty" role="status">
-        <div class="auth-empty__mark" aria-hidden="true">
-          <div class="auth-empty__mark-fill"><span></span></div>
-        </div>
-        <p class="auth-lead">
-          Tu n'as pas encore de session branchée. Tu peux déjà tester la sortie de compte.
-        </p>
-        <div class="auth-actions">
-          <button class="auth-btn auth-btn--primary" type="button" (click)="logout()">
-            Se déconnecter
-          </button>
-          <a class="auth-btn auth-btn--ghost" routerLink="/auth/login">Aller à la connexion</a>
-        </div>
-      </div>
-    } @else {
+    @if (loggedOut()) {
       <div class="auth-empty" role="status">
         <p class="auth-status auth-status--ok">Tu es sorti de ta cave. À tout de suite.</p>
         <div class="auth-actions">
           <a class="auth-btn auth-btn--primary" routerLink="/auth/login">Se reconnecter</a>
           <a class="auth-btn auth-btn--secondary" routerLink="/auth/register">Créer une cave</a>
+        </div>
+      </div>
+    } @else if (loading()) {
+      <p class="auth-status" role="status">Chargement de ton profil…</p>
+    } @else {
+      <div class="auth-empty" role="status">
+        <div class="auth-empty__mark" aria-hidden="true">
+          <div class="auth-empty__mark-fill"><span></span></div>
+        </div>
+        @if (user(); as profile) {
+          <p class="auth-lead">
+            Connecté en tant que
+            <strong>{{ profile.pseudo || profile.email }}</strong>
+          </p>
+          <p class="auth-meta" style="justify-content: center">
+            <span>{{ profile.email }}</span>
+          </p>
+          @if (!profile.emailVerified) {
+            <p class="auth-lead">Confirme ton e-mail pour sécuriser ton compte.</p>
+          }
+        } @else {
+          <p class="auth-lead">Profil indisponible pour le moment. Réessaie un peu plus tard.</p>
+        }
+        <div class="auth-actions">
+          <button
+            class="auth-btn auth-btn--primary"
+            type="button"
+            (click)="logout()"
+            [disabled]="loggingOut()"
+          >
+            {{ loggingOut() ? 'Déconnexion…' : 'Se déconnecter' }}
+          </button>
+          <a class="auth-btn auth-btn--ghost" routerLink="/">Accueil</a>
         </div>
       </div>
     }

@@ -311,6 +311,17 @@
   color: var(--color-success);
 }
 
+.auth-status--error {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.auth-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .auth-footer {
   margin-top: auto;
   padding-top: var(--space-lg);

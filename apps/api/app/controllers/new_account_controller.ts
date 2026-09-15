@@ -9,13 +9,13 @@ import UserTransformer from '#transformers/user_transformer'
 
 export default class NewAccountController {
   async store({ request, serialize }: HttpContext) {
-    const { fullName, email, password } = await request.validateUsing(signupValidator)
+    const { fullName, email, password, pseudo } = await request.validateUsing(signupValidator)
 
     const user = await User.create({
       fullName: fullName ?? null,
       email,
       password,
-      pseudo: null,
+      pseudo: pseudo ?? null,
       isPublic: false,
       emailVerified: false,
     })

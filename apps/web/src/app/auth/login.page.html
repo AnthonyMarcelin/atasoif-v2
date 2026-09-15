@@ -53,14 +53,18 @@
         }
       </div>
 
+      @if (formError(); as message) {
+        <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+      }
+
       <div class="auth-actions">
-        <button class="auth-btn auth-btn--primary" type="submit">Entrer dans ma cave</button>
+        <button class="auth-btn auth-btn--primary" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Connexion…' : 'Entrer dans ma cave' }}
+        </button>
       </div>
 
       @if (submittedOk()) {
-        <p class="auth-status auth-status--ok" role="status">
-          Formulaire prêt. Le jeton Bearer sera branché ensuite.
-        </p>
+        <p class="auth-status auth-status--ok" role="status">Bienvenue · on ouvre ta cave.</p>
       }
     </form>
 

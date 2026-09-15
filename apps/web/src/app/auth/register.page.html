@@ -112,14 +112,18 @@
         }
       </div>
 
+      @if (formError(); as message) {
+        <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+      }
+
       <div class="auth-actions">
-        <button class="auth-btn auth-btn--primary" type="submit">Créer ma cave</button>
+        <button class="auth-btn auth-btn--primary" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Création…' : 'Créer ma cave' }}
+        </button>
       </div>
 
       @if (submittedOk()) {
-        <p class="auth-status auth-status--ok" role="status">
-          Formulaire prêt. La connexion à l'API arrive juste après (branchement Bearer).
-        </p>
+        <p class="auth-status auth-status--ok" role="status">Compte créé · bienvenue dans ta cave.</p>
       }
     </form>
 

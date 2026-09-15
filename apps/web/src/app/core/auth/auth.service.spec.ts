@@ -1,0 +1,84 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter, Router } from '@angular/router';
+
+import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
+import { TokenStorage } from './token-storage';
+
+const sampleUser = {
+  id: 1,
+  email: 'a@b.c',
+  fullName: null,
+  pseudo: 'soif',
+  isPublic: false,
+  emailVerified: false,
+};
+
+describe('AuthService', () => {
+  let service: AuthService;
+  let httpMock: HttpTestingController;
+  let storage: TokenStorage;
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), AuthService],
+    });
+    service = TestBed.inject(AuthService);
+    httpMock = TestBed.inject(HttpTestingController);
+    storage = TestBed.inject(TokenStorage);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.clear();
+  });
+
+  it('stores bearer token after login', () => {
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`);
+    expect(req.request.method).toBe('POST');
+    req.flush({
+      data: { type: 'bearer', token: 'tok-abc', user: sampleUser },
+    });
+
+    expect(service.getAccessToken()).toBe('tok-abc');
+    expect(storage.getToken()).toBe('tok-abc');
+    expect(service.isAuthenticated()).toBeTrue();
+  });
+
+  it('clears session on logout', () => {
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
+      .flush({ data: { type: 'bearer', token: 'tok-xyz', user: sampleUser } });
+
+    service.logout().subscribe();
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/account/logout`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ message: 'ok' });
+
+    expect(service.getAccessToken()).toBeNull();
+    expect(storage.getToken()).toBeNull();
+  });
+
+  it('handleUnauthorized clears token and navigates to login', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
+
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
+      .flush({ data: { type: 'bearer', token: 'stale', user: sampleUser } });
+
+    service.handleUnauthorized('/me');
+
+    expect(service.getAccessToken()).toBeNull();
+    expect(navigateSpy).toHaveBeenCalledWith(['/auth/login'], {
+      queryParams: { returnUrl: '/me' },
+    });
+  });
+});

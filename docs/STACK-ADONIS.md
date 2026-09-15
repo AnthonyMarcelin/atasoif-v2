@@ -50,7 +50,7 @@ curl -s http://localhost:3000/health
 # → {"status":"ok","database":"up",…}
 
 # Auth routes (E1-T02 + E1-T03)
-# POST /api/v1/auth/signup            { email, password, passwordConfirmation, fullName? }
+# POST /api/v1/auth/signup            { email, password, passwordConfirmation, fullName?, pseudo? }
 # POST /api/v1/auth/login             { email, password }
 # POST /api/v1/auth/email/verify      { token }
 # POST /api/v1/auth/forgot-password   { email }
@@ -74,6 +74,17 @@ Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Pass
 **Rate limiting:** not wired yet (no `@adonisjs/limiter` in the kit). Protect `POST /api/v1/auth/login`, `POST /api/v1/auth/signup`, and password-reset endpoints before production traffic — e.g. Adonis Limiter or reverse-proxy limits.
 
 Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API. Ally placeholders (`GOOGLE_*`, `FACEBOOK_*`, `APPLE_*`) stay unused until E1-T07+.
+
+### Angular Bearer client (E1-T05)
+
+`apps/web` talks to Adonis with `Authorization: Bearer <token>`:
+
+1. `AuthService` keeps the token in memory (signals) and persists it in `localStorage` (`atasoif.auth.access_token`) for web MVP refreshes.
+2. Functional `authInterceptor` attaches the header to API calls and, on **401** (except login/signup/forgot/reset), clears the session and redirects to `/auth/login`.
+3. `authGuard` protects `/me` and `/cellar` (future collection surface).
+4. API base URL: `environment.apiBaseUrl` (dev default `http://localhost:3000`).
+
+**Storage note:** `localStorage` is XSS-readable. Acceptable for web MVP; Capacitor Secure Storage is planned for native builds (E5). Never log the raw token. Do not store passwords.
 
 ## What we drop
 

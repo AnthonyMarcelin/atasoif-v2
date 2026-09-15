@@ -10,6 +10,13 @@ export interface ApiDefinition {
     accessTokens: {
       store: typeof routes['auth.access_tokens.store']
     }
+    emailVerifications: {
+      store: typeof routes['auth.email_verifications.store']
+    }
+    passwordResets: {
+      store: typeof routes['auth.password_resets.store']
+      update: typeof routes['auth.password_resets.update']
+    }
   }
   profile: {
     profile: {
@@ -17,6 +24,9 @@ export interface ApiDefinition {
     }
     accessTokens: {
       destroy: typeof routes['profile.access_tokens.destroy']
+    }
+    emailVerifications: {
+      resend: typeof routes['profile.email_verifications.resend']
     }
   }
 }

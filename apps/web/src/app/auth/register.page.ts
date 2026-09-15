@@ -1,8 +1,11 @@
 import { NgClass } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
+import { apiErrorMessage } from '../core/auth/api-error';
+import { AuthService } from '../core/auth/auth.service';
 import { AuthTabs } from './auth-tabs';
 import {
   controlErrorMessage,
@@ -20,9 +23,13 @@ import { evaluatePasswordStrength } from './password-strength';
 })
 export class RegisterPage {
   private readonly fb = new FormBuilder().nonNullable;
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly showPassword = signal(false);
   readonly submittedOk = signal(false);
+  readonly submitting = signal(false);
+  readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
 
   readonly form = this.fb.group(
@@ -59,12 +66,28 @@ export class RegisterPage {
 
   onSubmit(): void {
     this.submittedOk.set(false);
+    this.formError.set(null);
     this.form.markAllAsTouched();
-    if (this.form.invalid) {
+    if (this.form.invalid || this.submitting()) {
       return;
     }
-    // API wiring lands in E1-T05 — shell only validates locally.
-    this.submittedOk.set(true);
+
+    this.submitting.set(true);
+    const { pseudo, email, password, passwordConfirmation } = this.form.getRawValue();
+    this.auth
+      .signup({ pseudo, email, password, passwordConfirmation })
+      .pipe(finalize(() => this.submitting.set(false)))
+      .subscribe({
+        next: () => {
+          this.submittedOk.set(true);
+          void this.router.navigateByUrl('/me');
+        },
+        error: (err: unknown) => {
+          this.formError.set(
+            apiErrorMessage(err, "Impossible de créer le compte. Vérifie tes infos."),
+          );
+        },
+      });
   }
 
   togglePassword(): void {
