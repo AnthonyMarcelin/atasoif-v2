@@ -85,13 +85,13 @@ Confirm Adonis Auth (access tokens guard) is wired, env documented, CORS ready, 
 Email/password signup, login (issue access token), logout (revoke token), and authenticated “me/profile”.
 
 ### Acceptance criteria
-- [ ] `POST` signup creates user + returns token (or login step)
-- [ ] `POST` login validates credentials + returns Bearer access token
-- [ ] `POST` logout revokes current token when authenticated
-- [ ] `GET` me/profile returns current user (id, email, pseudo, isPublic, …)
-- [ ] Invalid credentials → 401 with clear JSON error
-- [ ] Password hashed via Adonis hash (never stored plaintext)
-- [ ] API tests cover happy path + bad password
+- [x] `POST` signup creates user + returns token (or login step)
+- [x] `POST` login validates credentials + returns Bearer access token
+- [x] `POST` logout revokes current token when authenticated
+- [x] `GET` me/profile returns current user (id, email, pseudo, isPublic, …)
+- [x] Invalid credentials → 401 with clear JSON error
+- [x] Password hashed via Adonis hash (never stored plaintext)
+- [x] API tests cover happy path + bad password
 
 ### Out of scope
 - Email verification UI
