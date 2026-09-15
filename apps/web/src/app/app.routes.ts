@@ -10,7 +10,7 @@ export const routes: Routes = [
     loadChildren: () => import('./auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
-    path: 'moi',
+    path: 'me',
     loadChildren: () => import('./auth/auth.routes').then((m) => m.ACCOUNT_ROUTES),
   },
   { path: '**', redirectTo: '' },
