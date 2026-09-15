@@ -37,6 +37,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       APP_KEY: ${APP_KEY:?set APP_KEY}
       APP_URL: ${APP_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       SESSION_DRIVER: cookie
       DB_HOST: postgres
       DB_PORT: 5432
@@ -44,6 +45,13 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-atasoif}
       DB_DATABASE: ${POSTGRES_DB:-atasoif_v2}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200}
+      MAIL_MAILER: ${MAIL_MAILER:-smtp}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-À ta soif}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-hello@atasoif.local}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}

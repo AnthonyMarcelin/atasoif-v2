@@ -38,6 +38,7 @@ The Compose project is explicitly named **`atasoif`** (`name: atasoif` in `docke
 |---|---|---|---|
 | **Dev** | Postgres | **5432 → 5432** | Standard Postgres port on the host |
 | **Dev** | API | **3000 → 3000** | `GET /health` |
+| **Dev** | Mailpit | **1025 → 1025** (SMTP), **8025 → 8025** (UI) | Catch verify/reset emails locally |
 | **Prod** | Postgres | *(not published)* | Reachable only on the Compose network as hostname `postgres` |
 | **Prod** | API | `${API_PORT:-3000} → 3000` | Put TLS reverse proxy in front later (E0.7) |
 
@@ -52,10 +53,11 @@ See `.env.example`. Required runtime vars include `APP_KEY` (generate with `node
 
 ## Recommended day-to-day workflow
 
-1. Start Postgres (or full stack).
-2. Point `apps/api/.env` at `DB_HOST=localhost`.
+1. Start Postgres + Mailpit (or full stack) via `pnpm docker:dev`.
+2. Point `apps/api/.env` at `DB_HOST=localhost`, `SMTP_HOST=localhost`, `SMTP_PORT=1025`.
 3. Iterate with `pnpm dev:api` / `pnpm dev:web` on the host (Node ≥ 24).
-4. Use full `pnpm docker:dev` when you want to validate the same topology as production.
+4. Open Mailpit UI at `http://localhost:8025` to inspect verification / reset mails.
+5. Use full `pnpm docker:dev` when you want to validate the same topology as production (API uses `SMTP_HOST=mailpit`).
 
 ## Health check
 

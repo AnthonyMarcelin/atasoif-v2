@@ -49,16 +49,29 @@ pnpm dev:api   # http://localhost:3000
 curl -s http://localhost:3000/health
 # → {"status":"ok","database":"up",…}
 
-# Auth routes (E1-T02)
-# POST /api/v1/auth/signup   { email, password, passwordConfirmation, fullName? }
-# POST /api/v1/auth/login    { email, password }
-# GET  /api/v1/account/profile   (Authorization: Bearer <token>)
-# POST /api/v1/account/logout    (Authorization: Bearer <token>)
+# Auth routes (E1-T02 + E1-T03)
+# POST /api/v1/auth/signup            { email, password, passwordConfirmation, fullName? }
+# POST /api/v1/auth/login             { email, password }
+# POST /api/v1/auth/email/verify      { token }
+# POST /api/v1/auth/forgot-password   { email }
+# POST /api/v1/auth/reset-password    { token, password, passwordConfirmation }
+# GET  /api/v1/account/profile        (Authorization: Bearer <token>)
+# POST /api/v1/account/logout         (Authorization: Bearer <token>)
+# POST /api/v1/account/email/resend   (Authorization: Bearer <token>)
 ```
 
 Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Passwords are hashed with Adonis scrypt via the AuthFinder mixin — never stored plaintext. Invalid login credentials return **401** JSON (`E_INVALID_CREDENTIALS`).
 
-**Rate limiting:** not wired yet (no `@adonisjs/limiter` in the kit). Protect `POST /api/v1/auth/login` and `POST /api/v1/auth/signup` before production traffic — e.g. Adonis Limiter or reverse-proxy limits.
+### Email verification + password reset (E1-T03)
+
+- Mail via `@adonisjs/mail` SMTP. **Local/dev:** [Mailpit](https://mailpit.axllent.org/) catches SMTP on `:1025`, UI on `http://localhost:8025` (started with `pnpm docker:dev`).
+- Point `SMTP_HOST` / `SMTP_PORT` at Mailpit (`localhost:1025` on host, `mailpit:1025` in Compose). Leave `SMTP_USERNAME` / `SMTP_PASSWORD` empty for Mailpit.
+- Templates use Nuit tokens (dark cellar + amber `#E39A3C`, radius 0) with FR tutoiement; deep links use `FRONTEND_URL`.
+- Tokens are purpose-bound Adonis encryption (`email-verification` 48h, `password-reset` 1h).
+
+**Unverified users (product rule):** soft-warn only. Signup/login and cellar actions stay allowed; `emailVerified: false` is exposed on profile so the client can nudge. Hard gates (billing, social share, etc.) can layer later — do not block the cave memory JTBD on mail delivery in early environments.
+
+**Rate limiting:** not wired yet (no `@adonisjs/limiter` in the kit). Protect `POST /api/v1/auth/login`, `POST /api/v1/auth/signup`, and password-reset endpoints before production traffic — e.g. Adonis Limiter or reverse-proxy limits.
 
 Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API. Ally placeholders (`GOOGLE_*`, `FACEBOOK_*`, `APPLE_*`) stay unused until E1-T07+.
 
