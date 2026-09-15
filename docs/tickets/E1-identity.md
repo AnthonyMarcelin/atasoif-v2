@@ -116,11 +116,11 @@ Email/password signup, login (issue access token), logout (revoke token), and au
 Email verification + forgot/reset password using Adonis patterns (tokens / signed URLs + mailer).
 
 ### Acceptance criteria
-- [ ] Verification flow configured (mail transport can be ethereal/log in dev)
-- [ ] Unverified users handled per product rule (block sensitive actions or soft-warn — document choice)
-- [ ] Forgot password + reset endpoints work end-to-end in tests
-- [ ] FR copy for email templates (informal “tu”)
-- [ ] Env vars for SMTP / mail documented in `.env.example`
+- [x] Verification flow configured (mail transport can be ethereal/log in dev)
+- [x] Unverified users handled per product rule (block sensitive actions or soft-warn — document choice)
+- [x] Forgot password + reset endpoints work end-to-end in tests
+- [x] FR copy for email templates (informal “tu”)
+- [x] Env vars for SMTP / mail documented in `.env.example`
 
 ### Out of scope
 - Changing mail provider in prod (can stay log driver until E0.7)

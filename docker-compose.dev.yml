@@ -6,11 +6,31 @@ services:
     ports:
       - "5432:5432"
 
+  # Local SMTP catcher for verify / reset emails (UI :8025, SMTP :1025)
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
   api:
     environment:
       NODE_ENV: development
       APP_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:4200
       DB_HOST: postgres
       CORS_ORIGIN: http://localhost:4200
+      MAIL_MAILER: smtp
+      MAIL_FROM_NAME: À ta soif
+      MAIL_FROM_ADDRESS: hello@atasoif.local
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
     ports:
       - "3000:3000"
+    depends_on:
+      - mailpit

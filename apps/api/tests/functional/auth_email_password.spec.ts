@@ -1,7 +1,9 @@
 import { test } from '@japa/runner'
 import hash from '@adonisjs/core/services/hash'
 import testUtils from '@adonisjs/core/services/test_utils'
+import mail from '@adonisjs/mail/services/main'
 import User from '#models/user'
+import VerifyEmailNotification from '#mails/verify_email_notification'
 
 test.group('Auth email/password', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
@@ -17,6 +19,7 @@ test.group('Auth email/password', (group) => {
     client,
     assert,
   }) => {
+    using fake = mail.fake()
     const response = await client.post('/api/v1/auth/signup').json(credentials)
 
     response.assertStatus(200)
@@ -34,10 +37,13 @@ test.group('Auth email/password', (group) => {
     const user = await User.findByOrFail('email', credentials.email)
     assert.notEqual(user.password, credentials.password)
     assert.isTrue(await hash.verify(user.password, credentials.password))
+    fake.mails.assertSent(VerifyEmailNotification)
   })
 
   test('login returns bearer token for valid credentials', async ({ client, assert }) => {
+    using fake = mail.fake()
     await client.post('/api/v1/auth/signup').json(credentials)
+    fake.mails.assertSent(VerifyEmailNotification)
 
     const response = await client.post('/api/v1/auth/login').json({
       email: credentials.email,
@@ -54,7 +60,9 @@ test.group('Auth email/password', (group) => {
   })
 
   test('login rejects invalid password with 401 JSON error', async ({ client, assert }) => {
+    using fake = mail.fake()
     await client.post('/api/v1/auth/signup').json(credentials)
+    fake.mails.assertSent(VerifyEmailNotification)
 
     const response = await client
       .post('/api/v1/auth/login')
@@ -73,7 +81,9 @@ test.group('Auth email/password', (group) => {
   })
 
   test('profile returns current user when authenticated', async ({ client, assert }) => {
+    using fake = mail.fake()
     const signup = await client.post('/api/v1/auth/signup').json(credentials)
+    fake.mails.assertSent(VerifyEmailNotification)
     const token = (signup.body() as { data: { token: string } }).data.token
 
     const response = await client
@@ -97,10 +107,13 @@ test.group('Auth email/password', (group) => {
     assert.property(body.data, 'pseudo')
     assert.property(body.data, 'isPublic')
     assert.property(body.data, 'emailVerified')
+    assert.isFalse(body.data.emailVerified)
   })
 
   test('logout revokes the current access token', async ({ client, assert }) => {
+    using fake = mail.fake()
     const signup = await client.post('/api/v1/auth/signup').json(credentials)
+    fake.mails.assertSent(VerifyEmailNotification)
     const token = (signup.body() as { data: { token: string } }).data.token
 
     const logout = await client
