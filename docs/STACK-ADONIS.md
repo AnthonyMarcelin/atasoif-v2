@@ -49,12 +49,16 @@ pnpm dev:api   # http://localhost:3000
 curl -s http://localhost:3000/health
 # → {"status":"ok","database":"up",…}
 
-# Kit auth routes (email/password fleshed in E1-T02)
-# POST /api/v1/auth/signup
-# POST /api/v1/auth/login
-# GET  /api/v1/account/profile   (Bearer)
-# POST /api/v1/account/logout    (Bearer)
+# Auth routes (E1-T02)
+# POST /api/v1/auth/signup   { email, password, passwordConfirmation, fullName? }
+# POST /api/v1/auth/login    { email, password }
+# GET  /api/v1/account/profile   (Authorization: Bearer <token>)
+# POST /api/v1/account/logout    (Authorization: Bearer <token>)
 ```
+
+Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Passwords are hashed with Adonis scrypt via the AuthFinder mixin — never stored plaintext. Invalid login credentials return **401** JSON (`E_INVALID_CREDENTIALS`).
+
+**Rate limiting:** not wired yet (no `@adonisjs/limiter` in the kit). Protect `POST /api/v1/auth/login` and `POST /api/v1/auth/signup` before production traffic — e.g. Adonis Limiter or reverse-proxy limits.
 
 Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API. Ally placeholders (`GOOGLE_*`, `FACEBOOK_*`, `APPLE_*`) stay unused until E1-T07+.
 

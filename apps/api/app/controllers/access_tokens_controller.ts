@@ -12,18 +12,16 @@ export default class AccessTokensController {
 
     return serialize({
       user: UserTransformer.transform(user),
+      type: 'bearer',
       token: token.value!.release(),
     })
   }
 
   async destroy({ auth }: HttpContext) {
-    const user = auth.getUserOrFail()
-    if (user.currentAccessToken) {
-      await User.accessTokens.delete(user, user.currentAccessToken.identifier)
-    }
+    await auth.use('api').invalidateToken()
 
     return {
-      message: 'Logged out successfully',
+      message: 'Déconnexion réussie',
     }
   }
 }

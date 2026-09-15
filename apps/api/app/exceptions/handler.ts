@@ -1,4 +1,5 @@
 import app from '@adonisjs/core/services/app'
+import { errors as authErrors } from '@adonisjs/auth'
 import { type HttpContext, ExceptionHandler } from '@adonisjs/core/http'
 
 export default class HttpExceptionHandler extends ExceptionHandler {
@@ -9,10 +10,15 @@ export default class HttpExceptionHandler extends ExceptionHandler {
   protected debug = !app.inProduction
 
   /**
-   * The method is used for handling errors and returning
-   * response to the client
+   * Map invalid credentials to 401 (ticket E1-T02 AC). Adonis Auth defaults to 400.
    */
   async handle(error: unknown, ctx: HttpContext) {
+    if (error instanceof authErrors.E_INVALID_CREDENTIALS) {
+      return ctx.response.status(401).send({
+        errors: [{ message: 'Identifiants incorrects' }],
+      })
+    }
+
     return super.handle(error, ctx)
   }
 
