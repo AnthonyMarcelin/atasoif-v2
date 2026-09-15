@@ -1,7 +1,7 @@
 <section class="auth-page">
   <div class="auth-page__inner">
     <h1 class="auth-title">Moi</h1>
-    <p class="auth-lead">Ton espace perso · session Bearer branchée.</p>
+    <p class="auth-lead">Ton espace perso.</p>
 
     @if (loggedOut()) {
       <div class="auth-empty" role="status">
@@ -25,12 +25,12 @@
           </p>
           <p class="auth-meta" style="justify-content: center">
             <span>{{ profile.email }}</span>
-            @if (!profile.emailVerified) {
-              <span>E-mail à confirmer</span>
-            }
           </p>
+          @if (!profile.emailVerified) {
+            <p class="auth-lead">Confirme ton e-mail pour sécuriser ton compte.</p>
+          }
         } @else {
-          <p class="auth-lead">Session active · profil indisponible pour le moment.</p>
+          <p class="auth-lead">Profil indisponible pour le moment. Réessaie un peu plus tard.</p>
         }
         <div class="auth-actions">
           <button
