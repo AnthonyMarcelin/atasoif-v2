@@ -50,12 +50,12 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 Confirm Adonis Auth (access tokens guard) is wired, env documented, CORS ready, and ops contract `GET /health` stays green.
 
 ### Acceptance criteria
-- [ ] `@adonisjs/auth` access tokens guard usable (kit routes under `/api/v1/auth/*` + `/api/v1/account/*` or equivalent)
-- [ ] `users` + `auth_access_tokens` (or kit tables) migrated via Lucid
-- [ ] `.env.example` documents `APP_KEY`, `DB_*`, `CORS_ORIGIN`, Ally placeholders
-- [ ] CORS allows `apps/web` origin
-- [ ] `GET /health` returns DB ping + `status: ok` when Postgres is up
-- [ ] Short note in README / `docs/STACK-ADONIS.md`: how to run auth locally (Node ≥ 24)
+- [x] `@adonisjs/auth` access tokens guard usable (kit routes under `/api/v1/auth/*` + `/api/v1/account/*` or equivalent)
+- [x] `users` + `auth_access_tokens` (or kit tables) migrated via Lucid
+- [x] `.env.example` documents `APP_KEY`, `DB_*`, `CORS_ORIGIN`, Ally placeholders
+- [x] CORS allows `apps/web` origin
+- [x] `GET /health` returns DB ping + `status: ok` when Postgres is up
+- [x] Short note in README / `docs/STACK-ADONIS.md`: how to run auth locally (Node ≥ 24)
 
 ### Out of scope
 - Login/register UI
