@@ -28,6 +28,36 @@
 
 - **AdonisJS v7** API kit on **Node ≥ 24** (local Herd/nvm + Docker `node:24-alpine`).
 
+## Local auth (Adonis access tokens)
+
+Requires **Node ≥ 24**. Auth uses the `api` access-tokens guard (`Authorization: Bearer <token>`).
+
+```bash
+# 1. Env
+cp apps/api/.env.example apps/api/.env
+cd apps/api && node ace generate:key   # writes APP_KEY
+
+# 2. Postgres up (Docker host :5432 or local), then:
+npm install --prefix apps/api
+pnpm db:migrate
+pnpm db:seed
+
+# 3. Run API
+pnpm dev:api   # http://localhost:3000
+
+# Ops contract
+curl -s http://localhost:3000/health
+# → {"status":"ok","database":"up",…}
+
+# Kit auth routes (email/password fleshed in E1-T02)
+# POST /api/v1/auth/signup
+# POST /api/v1/auth/login
+# GET  /api/v1/account/profile   (Bearer)
+# POST /api/v1/account/logout    (Bearer)
+```
+
+Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API. Ally placeholders (`GOOGLE_*`, `FACEBOOK_*`, `APPLE_*`) stay unused until E1-T07+.
+
 ## What we drop
 
 - NestJS (archived under `archive/nest-api`)

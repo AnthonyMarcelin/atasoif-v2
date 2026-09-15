@@ -71,6 +71,8 @@ pnpm dev:api           # :3000 (API on host)
 pnpm dev:web           # :4200
 ```
 
+Auth locally (access tokens + `/health`): see [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md#local-auth-adonis-access-tokens). Keep `CORS_ORIGIN=http://localhost:4200` for the Angular app.
+
 ### Docker (API + Postgres)
 
 Full guide: [`docs/DOCKER.md`](docs/DOCKER.md).
