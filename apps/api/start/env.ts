@@ -14,6 +14,10 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   APP_KEY: Env.schema.secret(),
   APP_URL: Env.schema.string({ format: 'url', tld: false }),
+  /**
+   * Frontend origin used in verification / reset email links (apps/web).
+   */
+  WEB_URL: Env.schema.string({ format: 'url', tld: false }),
 
   SESSION_DRIVER: Env.schema.enum(['cookie', 'memory', 'database'] as const),
 
@@ -31,4 +35,19 @@ export default await Env.create(new URL('../', import.meta.url), {
   FACEBOOK_CLIENT_SECRET: Env.schema.string.optional(),
   APPLE_CLIENT_ID: Env.schema.string.optional(),
   APPLE_CLIENT_SECRET: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring the mail package
+  | Dev: point SMTP_* at Mailpit (localhost:1025) or Ethereal.
+  | Tests: mail.fake() intercepts sends — SMTP still needs valid env.
+  |----------------------------------------------------------
+  */
+  MAIL_MAILER: Env.schema.enum(['smtp'] as const),
+  MAIL_FROM_NAME: Env.schema.string(),
+  MAIL_FROM_ADDRESS: Env.schema.string(),
+  SMTP_HOST: Env.schema.string(),
+  SMTP_PORT: Env.schema.number(),
+  SMTP_USERNAME: Env.schema.string.optional(),
+  SMTP_PASSWORD: Env.schema.string.optional(),
 })

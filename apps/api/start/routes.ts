@@ -21,6 +21,9 @@ router
       .group(() => {
         router.post('signup', [controllers.NewAccount, 'store'])
         router.post('login', [controllers.AccessTokens, 'store'])
+        router.post('forgot-password', [controllers.PasswordResets, 'store'])
+        router.post('reset-password', [controllers.PasswordResets, 'update'])
+        router.post('verify-email', [controllers.EmailVerifications, 'store'])
       })
       .prefix('auth')
       .as('auth')
@@ -29,6 +32,7 @@ router
       .group(() => {
         router.get('profile', [controllers.Profile, 'show'])
         router.post('logout', [controllers.AccessTokens, 'destroy'])
+        router.post('resend-verification', [controllers.EmailVerifications, 'resend'])
       })
       .prefix('account')
       .as('profile')

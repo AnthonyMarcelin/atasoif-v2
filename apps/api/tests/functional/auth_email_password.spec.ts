@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import mail from '@adonisjs/mail/services/main'
 import hash from '@adonisjs/core/services/hash'
 import testUtils from '@adonisjs/core/services/test_utils'
 import User from '#models/user'
@@ -17,6 +18,7 @@ test.group('Auth email/password', (group) => {
     client,
     assert,
   }) => {
+    using _fake = mail.fake()
     const response = await client.post('/api/v1/auth/signup').json(credentials)
 
     response.assertStatus(200)
@@ -37,6 +39,7 @@ test.group('Auth email/password', (group) => {
   })
 
   test('login returns bearer token for valid credentials', async ({ client, assert }) => {
+    using _fake = mail.fake()
     await client.post('/api/v1/auth/signup').json(credentials)
 
     const response = await client.post('/api/v1/auth/login').json({
@@ -54,6 +57,7 @@ test.group('Auth email/password', (group) => {
   })
 
   test('login rejects invalid password with 401 JSON error', async ({ client, assert }) => {
+    using _fake = mail.fake()
     await client.post('/api/v1/auth/signup').json(credentials)
 
     const response = await client
@@ -73,6 +77,7 @@ test.group('Auth email/password', (group) => {
   })
 
   test('profile returns current user when authenticated', async ({ client, assert }) => {
+    using _fake = mail.fake()
     const signup = await client.post('/api/v1/auth/signup').json(credentials)
     const token = (signup.body() as { data: { token: string } }).data.token
 
@@ -100,6 +105,7 @@ test.group('Auth email/password', (group) => {
   })
 
   test('logout revokes the current access token', async ({ client, assert }) => {
+    using _fake = mail.fake()
     const signup = await client.post('/api/v1/auth/signup').json(credentials)
     const token = (signup.body() as { data: { token: string } }).data.token
 

@@ -58,6 +58,22 @@ curl -s http://localhost:3000/health
 
 Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Passwords are hashed with Adonis scrypt via the AuthFinder mixin — never stored plaintext. Invalid login credentials return **401** JSON (`E_INVALID_CREDENTIALS`).
 
+### Email verification + password reset (E1-T03)
+
+Mail via `@adonisjs/mail` (SMTP). Dev default: Mailpit / Ethereal on `SMTP_HOST` + `SMTP_PORT` (see `apps/api/.env.example`). Prod provider swap deferred (E0.7).
+
+```bash
+# Auth routes (E1-T03)
+# POST /api/v1/auth/verify-email        { token }
+# POST /api/v1/auth/forgot-password     { email }
+# POST /api/v1/auth/reset-password      { token, password, passwordConfirmation }
+# POST /api/v1/account/resend-verification  (Authorization: Bearer <token>)
+```
+
+Tokens are purpose-bound encrypted values (`email-verification` / `password-reset`) with TTL — see Adonis encryption docs. Email bodies are French (informal “tu”). Links use `WEB_URL` (apps/web).
+
+**Unverified users (product rule — soft-warn):** signup/login and cellar use stay allowed when `emailVerified` is `false`. Profile exposes the flag so the client can soft-warn. Stricter gates (billing, public profile, social) may require verification later — not enforced in T03.
+
 **Rate limiting:** not wired yet (no `@adonisjs/limiter` in the kit). Protect `POST /api/v1/auth/login` and `POST /api/v1/auth/signup` before production traffic — e.g. Adonis Limiter or reverse-proxy limits.
 
 Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API. Ally placeholders (`GOOGLE_*`, `FACEBOOK_*`, `APPLE_*`) stay unused until E1-T07+.
