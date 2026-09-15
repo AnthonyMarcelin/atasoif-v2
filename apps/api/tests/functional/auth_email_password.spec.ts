@@ -20,21 +20,29 @@ test.group('Auth email/password', (group) => {
     assert,
   }) => {
     using fake = mail.fake()
-    const response = await client.post('/api/v1/auth/signup').json(credentials)
+    const response = await client.post('/api/v1/auth/signup').json({
+      ...credentials,
+      pseudo: 'soif_user',
+    })
 
     response.assertStatus(200)
     const body = response.body() as {
-      data: { type: string; token: string; user: { id: number; email: string; pseudo: null } }
+      data: {
+        type: string
+        token: string
+        user: { id: number; email: string; pseudo: string | null }
+      }
     }
 
     assert.equal(body.data.type, 'bearer')
     assert.isString(body.data.token)
     assert.isAbove(body.data.token.length, 10)
     assert.equal(body.data.user.email, credentials.email)
-    assert.property(body.data.user, 'pseudo')
+    assert.equal(body.data.user.pseudo, 'soif_user')
     assert.property(body.data.user, 'isPublic')
 
     const user = await User.findByOrFail('email', credentials.email)
+    assert.equal(user.pseudo, 'soif_user')
     assert.notEqual(user.password, credentials.password)
     assert.isTrue(await hash.verify(user.password, credentials.password))
     fake.mails.assertSent(VerifyEmailNotification)
