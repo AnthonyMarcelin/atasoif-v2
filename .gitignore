@@ -17,3 +17,4 @@ apps/web/android
 uploads
 tmp
 .pnpm-store/
+bun-debug.log*

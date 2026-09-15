@@ -27,10 +27,11 @@
 ## Version
 
 - **AdonisJS v7** API kit on **Node ≥ 24** (local Herd/nvm + Docker `node:24-alpine`).
+- **Bun** is the monorepo package manager; Ace and the API process still run on Node (see [`docs/BUN.md`](./BUN.md)).
 
 ## Local auth (Adonis access tokens)
 
-Requires **Node ≥ 24**. Auth uses the `api` access-tokens guard (`Authorization: Bearer <token>`).
+Requires **Bun** (install) + **Node ≥ 24** (Ace / server). Auth uses the `api` access-tokens guard (`Authorization: Bearer <token>`).
 
 ```bash
 # 1. Env
@@ -38,12 +39,12 @@ cp apps/api/.env.example apps/api/.env
 cd apps/api && node ace generate:key   # writes APP_KEY
 
 # 2. Postgres up (Docker host :5432 or local), then:
-npm install --prefix apps/api
-pnpm db:migrate
-pnpm db:seed
+bun install
+bun run db:migrate
+bun run db:seed
 
-# 3. Run API
-pnpm dev:api   # http://localhost:3000
+# 3. Run API (Node under the hood)
+bun run dev:api   # http://localhost:3000
 
 # Ops contract
 curl -s http://localhost:3000/health
@@ -64,7 +65,7 @@ Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Pass
 
 ### Email verification + password reset (E1-T03)
 
-- Mail via `@adonisjs/mail` SMTP. **Local/dev:** [Mailpit](https://mailpit.axllent.org/) catches SMTP on `:1025`, UI on `http://localhost:8025` (started with `pnpm docker:dev`).
+- Mail via `@adonisjs/mail` SMTP. **Local/dev:** [Mailpit](https://mailpit.axllent.org/) catches SMTP on `:1025`, UI on `http://localhost:8025` (started with `bun run docker:dev`).
 - Point `SMTP_HOST` / `SMTP_PORT` at Mailpit (`localhost:1025` on host, `mailpit:1025` in Compose). Leave `SMTP_USERNAME` / `SMTP_PASSWORD` empty for Mailpit.
 - Templates use Nuit tokens (dark cellar + amber `#E39A3C`, radius 0) with FR tutoiement; deep links use `FRONTEND_URL`.
 - Tokens are purpose-bound Adonis encryption (`email-verification` 48h, `password-reset` 1h).

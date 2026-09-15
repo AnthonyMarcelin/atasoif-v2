@@ -6,7 +6,7 @@ Containerize **API + database** only. Angular/Capacitor stay on the host for nat
 
 | File | Role |
 |---|---|
-| `Dockerfile` | Multi-stage AdonisJS 7 API image (Node 24, `node ace build`, start from `build/`) |
+| `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime) |
 | `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
@@ -16,9 +16,9 @@ Containerize **API + database** only. Angular/Capacitor stay on the host for nat
 ## Commands
 
 ```bash
-pnpm docker:dev     # API + Postgres (dev overlay)
-pnpm docker:prod    # API + Postgres (prod overlay, reads `.env`)
-pnpm docker:down    # stop the dev stack
+bun run docker:dev     # API + Postgres (dev overlay)
+bun run docker:prod    # API + Postgres (prod overlay, reads `.env`)
+bun run docker:down    # stop the dev stack
 ```
 
 Equivalent:
@@ -27,6 +27,18 @@ Equivalent:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build
 ```
+
+## Bun vs Node in the image
+
+| Step | Tool |
+|---|---|
+| `bun install --frozen-lockfile --filter @atasoif/api` | Bun (build stage) |
+| `node ace build --package-manager=bun` | Node |
+| `bun install --production` inside `build/` | Bun (build stage) |
+| Entrypoint migrations + `node bin/server.js` | Node (`node:24-alpine`) |
+| Postgres | unchanged (`postgres:16-alpine`) |
+
+Details: [`docs/BUN.md`](./BUN.md).
 
 ## Compose project name
 
@@ -53,11 +65,11 @@ See `.env.example`. Required runtime vars include `APP_KEY` (generate with `node
 
 ## Recommended day-to-day workflow
 
-1. Start Postgres + Mailpit (or full stack) via `pnpm docker:dev`.
+1. Start Postgres + Mailpit (or full stack) via `bun run docker:dev`.
 2. Point `apps/api/.env` at `DB_HOST=localhost`, `SMTP_HOST=localhost`, `SMTP_PORT=1025`.
-3. Iterate with `pnpm dev:api` / `pnpm dev:web` on the host (Node ≥ 24).
+3. Iterate with `bun run dev:api` / `bun run dev:web` on the host (Bun + Node ≥ 24).
 4. Open Mailpit UI at `http://localhost:8025` to inspect verification / reset mails.
-5. Use full `pnpm docker:dev` when you want to validate the same topology as production (API uses `SMTP_HOST=mailpit`).
+5. Use full `bun run docker:dev` when you want to validate the same topology as production (API uses `SMTP_HOST=mailpit`).
 
 ## Health check
 

@@ -1,5 +1,5 @@
 # OVH / production-like stack
-# Usage: pnpm docker:prod
+# Usage: bun run docker:prod
 # Requires a real .env (never commit secrets).
 # Postgres is not published on the host — only reachable on the compose network.
 
