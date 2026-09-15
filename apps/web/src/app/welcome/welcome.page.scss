@@ -1,0 +1,106 @@
+.welcome {
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding:
+    calc(var(--space-xl) + env(safe-area-inset-top, 0px))
+    var(--space-lg)
+    calc(var(--space-xl) + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.welcome__inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-lg);
+  width: 100%;
+  max-width: 420px;
+  margin-inline: auto;
+}
+
+.welcome__mark {
+  width: 64px;
+  height: 64px;
+  border: var(--stroke) solid var(--color-border);
+  display: grid;
+  place-items: center;
+}
+
+.welcome__gauge {
+  width: 20px;
+  height: 34px;
+  border: var(--stroke) solid var(--color-ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--color-bg);
+}
+
+.welcome__gauge span {
+  display: block;
+  height: 10%;
+  background: var(--color-accent);
+  animation: welcome-fill var(--dur-fill) var(--ease) forwards;
+}
+
+@keyframes welcome-fill {
+  to {
+    height: 62%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome__gauge span {
+    animation: none;
+    height: 62%;
+  }
+}
+
+.welcome__brand {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--text-mono);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.welcome__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.1rem, 8vw, var(--text-display-m));
+  letter-spacing: var(--display-track);
+  text-transform: uppercase;
+  line-height: 0.95;
+  color: var(--color-ink);
+}
+
+.welcome__lead {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.45;
+  color: var(--color-ink-3);
+}
+
+.welcome__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.welcome__note {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-ink-faint);
+}

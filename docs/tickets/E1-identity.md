@@ -143,11 +143,11 @@ Email verification + forgot/reset password using Adonis patterns (tokens / signe
 French auth screens: signup, login, logout entry, basic empty states — no v1 clone.
 
 ### Acceptance criteria
-- [ ] Routes for login / signup (and stubs for forgot password)
-- [ ] Forms validate client-side (email + password rules)
-- [ ] Copy in French (“tu”)
-- [ ] Accessible labels / focus states
-- [ ] Design follows `docs/DESIGN.md` (no generic purple dashboard look)
+- [x] Routes for login / signup (and stubs for forgot password)
+- [x] Forms validate client-side (email + password rules)
+- [x] Copy in French (“tu”)
+- [x] Accessible labels / focus states
+- [x] Design follows `docs/DESIGN.md` (no generic purple dashboard look)
 
 ### Out of scope
 - Wiring real API (T05)

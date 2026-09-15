@@ -1,0 +1,77 @@
+<section class="auth-page">
+  <div class="auth-page__inner">
+    <h1 class="auth-title">Retrouve<br />ta cave</h1>
+
+    <app-auth-tabs mode="login" />
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div [ngClass]="fieldClass('email')">
+        <label class="auth-field__label" for="login-email">Email</label>
+        <input
+          id="login-email"
+          class="auth-field__control"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          inputmode="email"
+          [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+          [attr.aria-describedby]="errorFor('email') ? 'login-email-error' : null"
+          (focus)="setFocused('email')"
+          (blur)="setFocused(null)"
+        />
+        @if (errorFor('email'); as message) {
+          <p id="login-email-error" class="auth-field__error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      <div [ngClass]="fieldClass('password')">
+        <label class="auth-field__label" for="login-password">Mot de passe</label>
+        <div class="auth-field__row">
+          <input
+            id="login-password"
+            class="auth-field__control"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+            [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+            [attr.aria-describedby]="errorFor('password') ? 'login-password-error' : null"
+            (focus)="setFocused('password')"
+            (blur)="setFocused(null)"
+          />
+          <button
+            type="button"
+            class="auth-field__toggle"
+            (click)="togglePassword()"
+            [attr.aria-pressed]="showPassword()"
+            [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          >
+            {{ showPassword() ? 'CACHER' : 'VOIR' }}
+          </button>
+        </div>
+        @if (errorFor('password'); as message) {
+          <p id="login-password-error" class="auth-field__error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      <div class="auth-actions">
+        <button class="auth-btn auth-btn--primary" type="submit">Entrer dans ma cave</button>
+      </div>
+
+      @if (submittedOk()) {
+        <p class="auth-status auth-status--ok" role="status">
+          Formulaire prêt. Le jeton Bearer sera branché ensuite.
+        </p>
+      }
+    </form>
+
+    <p class="auth-meta">
+      <a class="auth-link" routerLink="/auth/forgot-password">Mot de passe oublié ?</a>
+      <a class="auth-link" routerLink="/me">Voir mon compte</a>
+    </p>
+
+    <p class="auth-footer">
+      Pas encore de cave ?
+      <a class="auth-link" routerLink="/auth/register">Créer un compte</a>
+    </p>
+  </div>
+</section>
