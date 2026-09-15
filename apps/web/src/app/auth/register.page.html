@@ -1,0 +1,138 @@
+<section class="auth-page">
+  <div class="auth-page__inner">
+    <h1 class="auth-title">Ouvre ta<br />cave</h1>
+
+    <app-auth-tabs mode="register" />
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div [ngClass]="fieldClass('pseudo')">
+        <label class="auth-field__label" for="register-pseudo">Pseudo</label>
+        <input
+          id="register-pseudo"
+          class="auth-field__control"
+          type="text"
+          formControlName="pseudo"
+          autocomplete="username"
+          autocapitalize="off"
+          spellcheck="false"
+          [attr.aria-invalid]="form.controls.pseudo.touched && form.controls.pseudo.invalid"
+          [attr.aria-describedby]="errorFor('pseudo') ? 'register-pseudo-error' : null"
+          (focus)="setFocused('pseudo')"
+          (blur)="setFocused(null)"
+        />
+        @if (errorFor('pseudo'); as message) {
+          <p id="register-pseudo-error" class="auth-field__error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      <div [ngClass]="fieldClass('email')">
+        <label class="auth-field__label" for="register-email">Email</label>
+        <input
+          id="register-email"
+          class="auth-field__control"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          inputmode="email"
+          [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+          [attr.aria-describedby]="errorFor('email') ? 'register-email-error' : null"
+          (focus)="setFocused('email')"
+          (blur)="setFocused(null)"
+        />
+        @if (errorFor('email'); as message) {
+          <p id="register-email-error" class="auth-field__error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      <div [ngClass]="fieldClass('password')">
+        <label class="auth-field__label" for="register-password">Mot de passe</label>
+        <div class="auth-field__row">
+          <input
+            id="register-password"
+            class="auth-field__control"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="new-password"
+            [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+            [attr.aria-describedby]="
+              errorFor('password') ? 'register-password-error' : 'register-password-strength'
+            "
+            (focus)="setFocused('password')"
+            (blur)="setFocused(null)"
+          />
+          <button
+            type="button"
+            class="auth-field__toggle"
+            (click)="togglePassword()"
+            [attr.aria-pressed]="showPassword()"
+            [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          >
+            {{ showPassword() ? 'CACHER' : 'VOIR' }}
+          </button>
+        </div>
+        @if (errorFor('password'); as message) {
+          <p id="register-password-error" class="auth-field__error" role="alert">{{ message }}</p>
+        }
+        @if (strength().level > 0) {
+          <div class="auth-strength" id="register-password-strength" aria-live="polite">
+            <div class="auth-strength__bars" aria-hidden="true">
+              @for (bar of [1, 2, 3, 4]; track bar) {
+                <span class="auth-strength__bar" [class.is-filled]="strength().level >= bar"></span>
+              }
+            </div>
+            <span class="auth-strength__label">{{ strength().label }}</span>
+          </div>
+        }
+      </div>
+
+      <div [ngClass]="fieldClass('passwordConfirmation')">
+        <label class="auth-field__label" for="register-password-confirmation">Confirmer</label>
+        <input
+          id="register-password-confirmation"
+          class="auth-field__control"
+          [type]="showPassword() ? 'text' : 'password'"
+          formControlName="passwordConfirmation"
+          autocomplete="new-password"
+          [attr.aria-invalid]="
+            (form.controls.passwordConfirmation.touched && form.controls.passwordConfirmation.invalid) ||
+            !!mismatchError()
+          "
+          [attr.aria-describedby]="
+            errorFor('passwordConfirmation') || mismatchError()
+              ? 'register-password-confirmation-error'
+              : null
+          "
+          (focus)="setFocused('passwordConfirmation')"
+          (blur)="setFocused(null)"
+        />
+        @if (errorFor('passwordConfirmation') || mismatchError(); as message) {
+          <p id="register-password-confirmation-error" class="auth-field__error" role="alert">
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <div class="auth-actions">
+        <button class="auth-btn auth-btn--primary" type="submit">Créer ma cave</button>
+      </div>
+
+      @if (submittedOk()) {
+        <p class="auth-status auth-status--ok" role="status">
+          Formulaire prêt. La connexion à l'API arrive juste après (branchement Bearer).
+        </p>
+      }
+    </form>
+
+    <p class="auth-meta">
+      <a class="auth-link" routerLink="/auth/forgot-password">Mot de passe oublié ?</a>
+      <a class="auth-link" routerLink="/moi">Voir mon compte</a>
+    </p>
+
+    <p class="auth-footer">
+      En continuant tu acceptes les
+      <a class="auth-link" href="#cgu">CGU</a>
+      et la
+      <a class="auth-link" href="#privacy">confidentialité</a>. 18 ans et plus.
+    </p>
+  </div>
+</section>
