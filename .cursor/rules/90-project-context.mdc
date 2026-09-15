@@ -10,7 +10,7 @@ alwaysApply: true
 - Project name: À ta soif ! (atasoif-v2)
 - Project type: MOBILE_APPLICATION + API (Angular/Capacitor + AdonisJS)
 - Status: DEVELOPMENT
-- Repository root: this directory only (`atasoif-v2`). Do **not** place project rules, `package.json`, `pnpm-workspace.yaml`, `node_modules`, or `.pnpm-store` in the parent `atasoif/` folder (legacy projects live there separately).
+- Repository root: this directory only (`atasoif-v2`). Do **not** place project rules, `package.json`, `bun.lock`, `node_modules`, or package-manager stores in the parent `atasoif/` folder (legacy projects live there separately).
 - Primary language for client-facing content: FR
 - Supported locales: FR only (MVP)
 - Future i18n: optional evolution via a `locales/` (or equivalent) folder — do not implement until explicitly requested
@@ -49,8 +49,8 @@ Do not implement excluded or speculative features without an explicit request.
 - Database: PostgreSQL 16
 - Cache or queue: none yet
 - Infrastructure: OVH VPS (target); Docker Compose for API + Postgres
-- Package manager: pnpm at monorepo root; Adonis app may use its own lockfile under `apps/api`
-- Node: **≥ 24** for Adonis 7 (Docker + local via nvm/Herd)
+- Package manager: **Bun** at monorepo root (`bun.lock`; workspaces `apps/*` + `packages/*`)
+- Node: **≥ 24** for Adonis 7 runtime (`ace` / server); Bun for installs and most scripts — see `docs/BUN.md`
 
 See `docs/STACK-ADONIS.md`.
 
@@ -127,19 +127,20 @@ Stack switch: `docs/STACK-ADONIS.md`.
 ## Development commands
 
 ```bash
-# Install (root)
-pnpm install
+# Install (root) — Bun ≥ 1.2 + Node ≥ 24
+bun install
 
-# API (Adonis) — requires Node ≥ 24
-cd apps/api && node ace serve --hmr
+# API (Adonis) — Node runtime via package scripts
+bun run dev:api
+# or: cd apps/api && node ace serve --hmr
 
 # Web
-pnpm dev:web
+bun run dev:web
 
 # Docker
-pnpm docker:dev
-pnpm docker:prod
-pnpm docker:down
+bun run docker:dev
+bun run docker:prod
+bun run docker:down
 ```
 
 Do not invent commands. Read the repository configuration and use the commands actually defined by the project.

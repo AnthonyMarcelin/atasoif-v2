@@ -1,7 +1,7 @@
 # Shared base — use with docker-compose.dev.yml or docker-compose.prod.yml
 #
-# Dev:  pnpm docker:dev
-# Prod: pnpm docker:prod
+# Dev:  bun run docker:dev
+# Prod: bun run docker:prod
 
 name: atasoif
 

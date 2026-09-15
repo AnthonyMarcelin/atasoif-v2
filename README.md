@@ -7,6 +7,7 @@ Digital multi-alcohol cellar (whisky, rum, beer, wine, and more).
 
 | Layer | Technology |
 |---|---|
+| Tooling | **Bun** (package manager + scripts) · **Node ≥ 24** (Adonis runtime) |
 | API | AdonisJS 7 + Lucid + PostgreSQL |
 | Auth | Adonis Auth (access tokens) + Ally (Google, Facebook; Apple custom driver) |
 | Front | Angular 20 + Capacitor (iOS / Android) |
@@ -17,16 +18,16 @@ Digital multi-alcohol cellar (whisky, rum, beer, wine, and more).
 
 ```
 atasoif-v2/
-├── apps/api          # AdonisJS 7 (standalone npm, Node ≥ 24)
+├── apps/api          # AdonisJS 7 (Bun workspace; Node ≥ 24 to run ace/server)
 ├── apps/web          # Angular (+ Capacitor later)
 ├── packages/shared   # shared constants / types
 ├── archive/nest-api  # former Nest/Prisma API (reference only)
 └── docs/             # product, UX, epics, sprints
 ```
 
-Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DOCKER.md`](docs/DOCKER.md) · [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md)
+Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DOCKER.md`](docs/DOCKER.md) · [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md) · [`docs/BUN.md`](docs/BUN.md)
 
-pnpm workspace covers `apps/web` + `packages/*`. The API uses its own `package-lock.json` under `apps/api`.
+Bun workspaces cover `apps/*` + `packages/*` (single root `bun.lock`).
 
 ## Product decisions
 
@@ -54,7 +55,7 @@ Later: optional i18n via a `locales/` folder — not in scope until requested.
 
 ## Setup
 
-Requires **Node ≥ 24** (Adonis 7).
+Requires **Bun ≥ 1.2** and **Node ≥ 24** (Adonis 7 runtime). See [`docs/BUN.md`](docs/BUN.md).
 
 ```bash
 cd atasoif-v2
@@ -62,13 +63,12 @@ cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 # set APP_KEY: cd apps/api && node ace generate:key
 
-pnpm install
-pnpm --filter @atasoif/shared build
-npm install --prefix apps/api
-pnpm db:migrate
-pnpm db:seed
-pnpm dev:api           # :3000 (API on host)
-pnpm dev:web           # :4200
+bun install
+bun run --filter @atasoif/shared build
+bun run db:migrate
+bun run db:seed
+bun run dev:api           # :3000 (Node ace serve)
+bun run dev:web           # :4200
 ```
 
 Auth locally (access tokens + `/health`): see [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md#local-auth-adonis-access-tokens). Keep `CORS_ORIGIN=http://localhost:4200` for the Angular app.
@@ -79,15 +79,15 @@ Full guide: [`docs/DOCKER.md`](docs/DOCKER.md).
 
 ```bash
 # Dev — API + Postgres in containers (Postgres on host :5432)
-pnpm docker:dev
+bun run docker:dev
 
 # Prod-like — Postgres not published on host; set secrets in .env
-pnpm docker:prod
+bun run docker:prod
 
-pnpm docker:down
+bun run docker:down
 ```
 
-Day-to-day: Postgres in Docker (`localhost:5432`) + Adonis on the host (`pnpm dev:api`). Full `docker:dev` validates prod-like topology.
+Day-to-day: Postgres in Docker (`localhost:5432`) + Adonis on the host (`bun run dev:api`). Full `docker:dev` validates prod-like topology.
 
 ## Git
 

@@ -24,7 +24,7 @@ Epics: [`EPICS.md`](./EPICS.md)
 **Epics:** E0  
 **Status:** ✅ Closed
 
-- [x] pnpm monorepo (`apps/web`, `packages/shared`) + standalone Adonis `apps/api`
+- [x] Bun monorepo (`apps/*`, `packages/*`) + Adonis `apps/api` on Node ≥ 24 (was pnpm + standalone npm lock)
 - [x] Lucid domain migrations (catalog, collection, social, billing, auth)
 - [x] Dark cellar design tokens
 - [x] Add-bottle UX doc

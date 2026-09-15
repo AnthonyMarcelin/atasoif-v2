@@ -3,21 +3,27 @@
   "private": true,
   "version": "0.1.0",
   "description": "À ta soif ! — cave numérique multi-alcools (v2)",
-  "packageManager": "pnpm@11.18.0",
+  "packageManager": "bun@1.4.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev:api": "npm run dev --prefix apps/api",
-    "dev:web": "pnpm --filter @atasoif/web start",
-    "build": "npm run build --prefix apps/api && pnpm --filter @atasoif/web build",
-    "build:web": "pnpm --filter @atasoif/web build",
-    "build:api": "npm run build --prefix apps/api",
-    "lint": "npm run lint --prefix apps/api && pnpm --filter @atasoif/web lint",
-    "db:migrate": "npm --prefix apps/api exec -- node ace migration:run",
-    "db:seed": "npm --prefix apps/api exec -- node ace db:seed",
+    "dev:api": "bun run --filter @atasoif/api dev",
+    "dev:web": "bun run --filter @atasoif/web start",
+    "build": "bun run build:api && bun run build:web",
+    "build:web": "bun run --filter @atasoif/web build",
+    "build:api": "bun run --filter @atasoif/api build",
+    "lint": "bun run --filter @atasoif/api lint && bun run --filter @atasoif/web lint",
+    "test:api": "bun run --filter @atasoif/api test",
+    "db:migrate": "bun run --filter @atasoif/api migration:run",
+    "db:seed": "bun run --filter @atasoif/api db:seed",
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
     "docker:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build",
     "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=24",
+    "bun": ">=1.2.0"
   }
 }

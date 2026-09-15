@@ -1,5 +1,5 @@
 # Local full stack (API + DB in Docker)
-# Usage: pnpm docker:dev
+# Usage: bun run docker:dev
 
 services:
   postgres:
