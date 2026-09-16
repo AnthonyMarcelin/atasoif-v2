@@ -120,6 +120,9 @@
         <button class="auth-btn auth-btn--primary" type="submit" [disabled]="submitting()">
           {{ submitting() ? 'Création…' : 'Créer ma cave' }}
         </button>
+        <button class="auth-btn auth-btn--secondary" type="button" (click)="continueWithGoogle()">
+          Continuer avec Google
+        </button>
       </div>
 
       @if (submittedOk()) {

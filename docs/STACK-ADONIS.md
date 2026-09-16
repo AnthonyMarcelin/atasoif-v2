@@ -82,7 +82,36 @@ Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Pass
 
 **Rate limiting:** not wired yet (no `@adonisjs/limiter` in the kit). Protect `POST /api/v1/auth/login`, `POST /api/v1/auth/signup`, and password-reset endpoints before production traffic — e.g. Adonis Limiter or reverse-proxy limits.
 
-Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API. Ally placeholders (`GOOGLE_*`, `FACEBOOK_*`, `APPLE_*`) stay unused until E1-T07+.
+Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API.
+
+### Google OAuth via Ally (E1-T07)
+
+```bash
+# Google Cloud Console → OAuth client (Web)
+# Authorized redirect URI must match exactly:
+#   {APP_URL}/api/v1/auth/google/callback
+# e.g. http://localhost:3000/api/v1/auth/google/callback
+# (Same path shape as Spawnzone Adonis on Dokploy.)
+
+# apps/api/.env
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+APP_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:4200
+```
+
+Flow:
+
+1. Angular « Continuer avec Google » → `GET /api/v1/auth/google/redirect`
+2. Ally redirects to Google (scopes: openid / userinfo.email / userinfo.profile only)
+3. Google → `GET /api/v1/auth/google/callback` on the API
+4. Find-or-create user by email (same address links to an existing password account)
+5. Issue Bearer access token → redirect to `{FRONTEND_URL}/auth/oauth/callback?token=…`
+6. SPA stores the token and calls `/api/v1/account/profile`
+
+Google-verified emails set `emailVerified: true` so the hard-gate does not block social users.
+
+Facebook / Apple stay stubbed until E1-T08 / E1-T09.
 
 ### Angular Bearer client (E1-T05)
 

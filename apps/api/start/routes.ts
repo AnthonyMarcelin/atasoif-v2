@@ -8,6 +8,7 @@ import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
 import { controllers } from '#generated/controllers'
 const HealthController = () => import('#controllers/health_controller')
+const GoogleAuthController = () => import('#controllers/google_auth_controller')
 
 router.get('/health', [HealthController, 'handle'])
 
@@ -24,6 +25,8 @@ router
         router.post('email/verify', [controllers.EmailVerifications, 'store'])
         router.post('forgot-password', [controllers.PasswordResets, 'store'])
         router.post('reset-password', [controllers.PasswordResets, 'update'])
+        router.get('google/redirect', [GoogleAuthController, 'redirect'])
+        router.get('google/callback', [GoogleAuthController, 'callback'])
       })
       .prefix('auth')
       .as('auth')

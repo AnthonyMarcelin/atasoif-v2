@@ -6,6 +6,7 @@ import { AuthShell } from './auth-shell';
 import { AccountPage } from './account.page';
 import { ForgotPasswordPage } from './forgot-password.page';
 import { LoginPage } from './login.page';
+import { OauthCallbackPage } from './oauth-callback.page';
 import { RegisterPage } from './register.page';
 import { VerifyEmailPage } from './verify-email.page';
 
@@ -18,6 +19,7 @@ export const AUTH_ROUTES: Routes = [
       { path: 'login', component: LoginPage },
       { path: 'forgot-password', component: ForgotPasswordPage },
       { path: 'verify-email', component: VerifyEmailPage },
+      { path: 'oauth/callback', component: OauthCallbackPage },
       { path: '', pathMatch: 'full', redirectTo: 'register' },
     ],
   },
