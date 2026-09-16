@@ -253,11 +253,11 @@ Google OAuth login via `@adonisjs/ally` → issue Adonis access token.
 Facebook OAuth **login** via Ally (accelerator). Friends stay in-app (E6) — do **not** import Graph “all friends”.
 
 ### Acceptance criteria
-- [ ] Redirect + callback for Facebook
-- [ ] Env `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET`
-- [ ] Login creates/links user + issues Bearer token
-- [ ] Angular “Continuer avec Facebook”
-- [ ] Explicitly no friends-list sync
+- [x] Redirect + callback for Facebook
+- [x] Env `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET`
+- [x] Login creates/links user + issues Bearer token
+- [x] Angular “Continuer avec Facebook”
+- [x] Explicitly no friends-list sync
 
 ### Out of scope
 - Meta friends graph / social import

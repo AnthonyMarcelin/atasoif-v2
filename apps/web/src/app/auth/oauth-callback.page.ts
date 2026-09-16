@@ -21,7 +21,7 @@ export class OauthCallbackPage implements OnInit {
     const token = this.route.snapshot.queryParamMap.get('token');
     if (!token) {
       this.loading.set(false);
-      this.error.set('Connexion Google incomplète. Réessaie depuis la page de connexion.');
+      this.error.set('Connexion sociale incomplète. Réessaie depuis la page de connexion.');
       return;
     }
 
@@ -37,7 +37,7 @@ export class OauthCallbackPage implements OnInit {
           void this.router.navigateByUrl(this.auth.postAuthPath('/me'));
         },
         error: () => {
-          this.error.set('Impossible de finaliser la connexion Google. Réessaie.');
+          this.error.set('Impossible de finaliser la connexion sociale. Réessaie.');
         },
       });
   }

@@ -54,6 +54,15 @@ export class AuthService {
     window.location.assign(this.googleAuthUrl());
   }
 
+  /** Browser navigation into Ally Facebook OAuth (full-page redirect). */
+  facebookAuthUrl(): string {
+    return `${this.apiBase}/api/v1/auth/facebook/redirect`;
+  }
+
+  startFacebookLogin(): void {
+    window.location.assign(this.facebookAuthUrl());
+  }
+
   /**
    * Completes the Ally redirect: stores the Bearer token then loads `/account/profile`.
    */

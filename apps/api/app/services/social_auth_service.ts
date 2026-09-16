@@ -9,14 +9,30 @@ export type AllyProfile = {
   emailVerificationState: 'verified' | 'unverified' | 'unsupported'
 }
 
+export type SocialProvider = 'google' | 'facebook'
+
+const EMAIL_MISSING_MESSAGE: Record<SocialProvider, string> = {
+  google: 'Google n’a pas fourni d’e-mail',
+  facebook: 'Facebook n’a pas fourni d’e-mail',
+}
+
 /**
  * Find or create a local user from an Ally social profile.
  * Matching key: email (same address = same account as email/password signup).
+ * Login only — never sync friends graphs from Meta.
  */
 export default class SocialAuthService {
   async findOrCreateFromGoogle(profile: AllyProfile): Promise<User> {
+    return this.findOrCreateFromAlly(profile, 'google')
+  }
+
+  async findOrCreateFromFacebook(profile: AllyProfile): Promise<User> {
+    return this.findOrCreateFromAlly(profile, 'facebook')
+  }
+
+  async findOrCreateFromAlly(profile: AllyProfile, provider: SocialProvider): Promise<User> {
     if (!profile.email) {
-      throw new SocialAuthError('E_SOCIAL_EMAIL_REQUIRED', 'Google n’a pas fourni d’e-mail')
+      throw new SocialAuthError('E_SOCIAL_EMAIL_REQUIRED', EMAIL_MISSING_MESSAGE[provider])
     }
 
     const email = profile.email.trim().toLowerCase()

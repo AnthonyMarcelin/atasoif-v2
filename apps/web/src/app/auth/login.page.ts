@@ -14,6 +14,10 @@ const OAUTH_ERROR_COPY: Record<string, string> = {
   google_state: 'Session Google expirée. Réessaie.',
   google_error: 'Google a renvoyé une erreur. Réessaie.',
   google_email: 'Google n’a pas fourni d’e-mail utilisable.',
+  facebook_denied: 'Connexion Facebook annulée.',
+  facebook_state: 'Session Facebook expirée. Réessaie.',
+  facebook_error: 'Facebook a renvoyé une erreur. Réessaie.',
+  facebook_email: 'Facebook n’a pas fourni d’e-mail utilisable.',
 };
 
 @Component({
@@ -42,7 +46,7 @@ export class LoginPage implements OnInit {
     const oauthError = this.route.snapshot.queryParamMap.get('oauthError');
     if (oauthError) {
       this.formError.set(
-        OAUTH_ERROR_COPY[oauthError] ?? 'Connexion Google impossible. Réessaie.',
+        OAUTH_ERROR_COPY[oauthError] ?? 'Connexion sociale impossible. Réessaie.',
       );
     }
   }
@@ -84,6 +88,10 @@ export class LoginPage implements OnInit {
 
   continueWithGoogle(): void {
     this.auth.startGoogleLogin();
+  }
+
+  continueWithFacebook(): void {
+    this.auth.startFacebookLogin();
   }
 
   togglePassword(): void {
