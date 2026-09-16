@@ -90,5 +90,11 @@
     "esbuild": true,
     "fsevents": true
   },
+  "trustedDependencies": [
+    "@swc/core",
+    "better-sqlite3",
+    "esbuild",
+    "fsevents"
+  ],
   "prettier": "@adonisjs/prettier-config"
 }

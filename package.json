@@ -2,26 +2,38 @@
   "name": "atasoif-v2",
   "private": true,
   "version": "0.1.0",
-  "description": "À ta soif ! — cave numérique multi-alcools (v2)",
+  "description": "À ta soif ! · cave numérique multi-alcools (v2)",
   "packageManager": "bun@1.4.2",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev:api": "bun run --filter @atasoif/api dev",
-    "dev:web": "bun run --filter @atasoif/web start",
-    "build": "bun run build:api && bun run build:web",
-    "build:web": "bun run --filter @atasoif/web build",
-    "build:api": "bun run --filter @atasoif/api build",
-    "lint": "bun run --filter @atasoif/api lint && bun run --filter @atasoif/web lint",
-    "test:api": "bun run --filter @atasoif/api test",
-    "db:migrate": "bun run --filter @atasoif/api migration:run",
-    "db:seed": "bun run --filter @atasoif/api db:seed",
+    "dev": "bun --filter @atasoif/api --filter @atasoif/web --parallel --if-present --no-exit-on-error dev",
+    "dev:api": "bun --filter @atasoif/api dev",
+    "dev:web": "bun --bun --filter @atasoif/web dev",
+    "build": "bun --filter @atasoif/shared --filter @atasoif/api --filter @atasoif/web --sequential --if-present build",
+    "build:shared": "bun --bun --filter @atasoif/shared build",
+    "build:api": "bun --filter @atasoif/api build",
+    "build:web": "bun --bun --filter @atasoif/web build",
+    "lint": "bun --filter '@atasoif/*' --parallel --if-present --no-exit-on-error lint",
+    "test": "bun --filter '@atasoif/*' --parallel --if-present --no-exit-on-error test",
+    "test:api": "bun --filter @atasoif/api test",
+    "db:migrate": "bun --filter @atasoif/api migration:run",
+    "db:seed": "bun --filter @atasoif/api db:seed",
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
     "docker:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build",
     "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down"
   },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "@swc/core",
+    "better-sqlite3",
+    "esbuild",
+    "fsevents",
+    "lmdb",
+    "msgpackr-extract"
+  ],
   "engines": {
     "node": ">=24",
     "bun": ">=1.2.0"

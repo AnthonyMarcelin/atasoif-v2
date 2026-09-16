@@ -1,0 +1,15 @@
+# Bun project config: https://bun.sh/docs/runtime/bunfig
+# Keep Node as Node for Adonis (ace / server). Force Bun only via `bun --bun`
+# on web/shared root scripts.
+
+[install]
+exact = false
+auto = true
+peer = true
+optional = true
+
+[run]
+# Do NOT set bun = true: that aliases `node` to Bun and would break Adonis.
+bun = false
+# Faster script spawning than /bin/bash on Linux
+shell = "bun"
