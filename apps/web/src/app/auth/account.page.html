@@ -15,11 +15,20 @@
       <p class="auth-status" role="status">Chargement de ton profil…</p>
     } @else if (user(); as profile) {
       <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-        <p class="auth-meta" style="justify-content: flex-start">
-          <span>{{ profile.email }}</span>
+        <p class="auth-meta auth-meta--profile">
+          <span class="auth-email-row">
+            <span>{{ profile.email }}</span>
+            @if (profile.emailVerified) {
+              <span class="auth-verified" title="E-mail confirmé" aria-label="E-mail confirmé">
+                <span class="auth-verified__mark" aria-hidden="true"></span>
+              </span>
+            }
+          </span>
         </p>
 
-        @if (!profile.emailVerified) {
+        @if (profile.emailVerified) {
+          <p class="auth-lead auth-lead--ok">E-mail confirmé.</p>
+        } @else {
           <p class="auth-lead">Confirme ton e-mail pour sécuriser ton compte.</p>
         }
 

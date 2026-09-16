@@ -295,6 +295,41 @@
   font-size: var(--text-body-s);
 }
 
+.auth-meta--profile {
+  justify-content: flex-start;
+}
+
+.auth-email-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.auth-verified {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: var(--stroke) solid var(--color-success);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.auth-verified__mark {
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.auth-lead--ok {
+  color: var(--color-success);
+}
+
 .auth-status {
   margin: 0;
   padding: var(--space-md);
