@@ -115,7 +115,8 @@ Epics: [`EPICS.md`](./EPICS.md)
 ## Sprint 3 — Catalog seed
 
 **Epics:** E3.1–E3.3, E2.13 migrate v1  
-**Depends on:** Sprint 2 (search exists); can start import scripts earlier
+**Depends on:** Sprint 2 (search exists); can start import scripts earlier  
+**Plan:** [`DATABASE.md`](./DATABASE.md) (OFF dump primary · cache-first EAN · UPCitemdb nurse)
 
 ### Scope
 
@@ -123,6 +124,7 @@ Epics: [`EPICS.md`](./EPICS.md)
 - One-shot script + documented runbook
 - Cron/diff skeleton (schedule + soft-delete)
 - Migrate personal ~15 bottles from v1 DB
+- Optional: UPCitemdb ~100/day nurse from curated EAN list (pre-launch gaps only)
 
 ### Exit criteria
 

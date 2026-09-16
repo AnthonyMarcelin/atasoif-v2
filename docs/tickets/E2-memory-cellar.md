@@ -7,7 +7,7 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 
 **Prerequisites (block E2 API work):** Sprint 1 Must closed enough that Bearer auth works locally; `emailVerified` hard-gate middleware exists (E1) and must be applied to cellar routes (see T03). Lucid `bottles` / `user_bottles` / categories migrated.
 
-**Stack refs:** AdonisJS 7 + Lucid · Angular 20 · `@atasoif/shared` (`FREE_BOTTLE_LIMIT`) · Nuit design (`docs/DESIGN.md`, `docs/conception/assets/`) · add-flow law (`docs/UX-ADD-BOTTLE.md`) · ops KPI source of truth (`docs/conception/ops/`).
+**Stack refs:** AdonisJS 7 + Lucid · Angular 20 · `@atasoif/shared` (`FREE_BOTTLE_LIMIT`) · Nuit design (`docs/DESIGN.md`, `docs/conception/assets/`) · add-flow law (`docs/UX-ADD-BOTTLE.md`) · DB/catalog plan (`docs/DATABASE.md`) · ops KPI source of truth (`docs/conception/ops/`).
 
 **Product rules:**
 - Client-facing copy: **French** (informal “tu”)
