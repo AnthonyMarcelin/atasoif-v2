@@ -18,6 +18,9 @@ const allyConfig = defineConfig({
     clientId: env.get('FACEBOOK_CLIENT_ID') || '',
     clientSecret: env.get('FACEBOOK_CLIENT_SECRET') || '',
     callbackUrl: `${appUrl}/api/v1/auth/facebook/callback`,
+    // Login only — never request user_friends / friends graph (E6 is in-app).
+    scopes: ['email', 'public_profile'],
+    userFields: ['id', 'name', 'email', 'picture'],
   }),
 })
 

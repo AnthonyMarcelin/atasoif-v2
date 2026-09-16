@@ -145,6 +145,12 @@ describe('AuthService', () => {
     expect(service.googleAuthUrl()).toBe(`${environment.apiBaseUrl}/api/v1/auth/google/redirect`);
   });
 
+  it('builds the Facebook Ally redirect URL', () => {
+    expect(service.facebookAuthUrl()).toBe(
+      `${environment.apiBaseUrl}/api/v1/auth/facebook/redirect`,
+    );
+  });
+
   it('completeOAuthLogin stores the token then loads the profile', () => {
     service.completeOAuthLogin('oauth-tok').subscribe();
 

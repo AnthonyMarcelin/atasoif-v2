@@ -111,7 +111,21 @@ Flow:
 
 Google-verified emails set `emailVerified: true` so the hard-gate does not block social users.
 
-Facebook / Apple stay stubbed until E1-T08 / E1-T09.
+### Facebook OAuth via Ally (E1-T08)
+
+```bash
+# Meta Developer → Facebook Login; Valid OAuth Redirect URI:
+#   {APP_URL}/api/v1/auth/facebook/callback
+# e.g. http://localhost:3000/api/v1/auth/facebook/callback
+
+FACEBOOK_CLIENT_ID=...
+FACEBOOK_CLIENT_SECRET=...
+```
+
+Same handoff as Google (`/auth/oauth/callback?token=…`). Scopes: `email` + `public_profile` only.  
+**No** `user_friends` / Graph friends import — in-app friends remain E6.
+
+Apple stays deferred until E1-T09.
 
 ### Angular Bearer client (E1-T05)
 

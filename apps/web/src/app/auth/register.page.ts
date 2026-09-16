@@ -94,6 +94,10 @@ export class RegisterPage {
     this.auth.startGoogleLogin();
   }
 
+  continueWithFacebook(): void {
+    this.auth.startFacebookLogin();
+  }
+
   togglePassword(): void {
     this.showPassword.update((value) => !value);
   }
