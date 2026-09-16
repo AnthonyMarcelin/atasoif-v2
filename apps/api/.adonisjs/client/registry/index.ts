@@ -48,12 +48,6 @@ const routes = {
     tokens: [{"old":"/api/v1/account/profile","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile","type":0,"val":"profile","end":""}],
     types: placeholder as Registry['profile.profile.show']['types'],
   },
-  'profile.profile.update': {
-    methods: ["PATCH"],
-    pattern: '/api/v1/account/profile',
-    tokens: [{"old":"/api/v1/account/profile","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile","type":0,"val":"profile","end":""}],
-    types: placeholder as Registry['profile.profile.update']['types'],
-  },
   'profile.access_tokens.destroy': {
     methods: ["POST"],
     pattern: '/api/v1/account/logout',
@@ -65,6 +59,12 @@ const routes = {
     pattern: '/api/v1/account/email/resend',
     tokens: [{"old":"/api/v1/account/email/resend","type":0,"val":"api","end":""},{"old":"/api/v1/account/email/resend","type":0,"val":"v1","end":""},{"old":"/api/v1/account/email/resend","type":0,"val":"account","end":""},{"old":"/api/v1/account/email/resend","type":0,"val":"email","end":""},{"old":"/api/v1/account/email/resend","type":0,"val":"resend","end":""}],
     types: placeholder as Registry['profile.email_verifications.resend']['types'],
+  },
+  'profile.profile.update': {
+    methods: ["PATCH"],
+    pattern: '/api/v1/account/profile',
+    tokens: [{"old":"/api/v1/account/profile","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile","type":0,"val":"profile","end":""}],
+    types: placeholder as Registry['profile.profile.update']['types'],
   },
 } as const satisfies Record<string, AdonisEndpoint>
 

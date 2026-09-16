@@ -56,7 +56,7 @@ export class LoginPage {
         next: () => {
           this.submittedOk.set(true);
           const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/me';
-          void this.router.navigateByUrl(returnUrl);
+          void this.router.navigateByUrl(this.auth.postAuthPath(returnUrl));
         },
         error: (err: unknown) => {
           this.formError.set(

@@ -88,7 +88,7 @@ describe('AuthService', () => {
       .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
       .flush({ data: { type: 'bearer', token: 'tok-prof', user: sampleUser } });
 
-    const updated = { ...sampleUser, pseudo: 'nouveau', isPublic: true };
+    const updated = { ...sampleUser, emailVerified: true, pseudo: 'nouveau', isPublic: true };
     service.updateProfile({ pseudo: 'nouveau', isPublic: true }).subscribe();
 
     const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/account/profile`);
@@ -98,5 +98,46 @@ describe('AuthService', () => {
 
     expect(service.user()?.pseudo).toBe('nouveau');
     expect(service.user()?.isPublic).toBeTrue();
+  });
+
+  it('postAuthPath sends unverified users to verify-email', () => {
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
+      .flush({ data: { type: 'bearer', token: 'tok', user: sampleUser } });
+
+    expect(service.postAuthPath('/me')).toBe('/auth/verify-email');
+  });
+
+  it('verifyEmail updates the session user when logged in', () => {
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
+      .flush({ data: { type: 'bearer', token: 'tok', user: sampleUser } });
+
+    service.verifyEmail('verify-token').subscribe();
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/auth/email/verify`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ data: { ...sampleUser, emailVerified: true } });
+
+    expect(service.isEmailVerified()).toBeTrue();
+    expect(service.postAuthPath('/me')).toBe('/me');
+  });
+
+  it('handleEmailUnverified keeps the token and navigates to verify-email', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
+
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
+      .flush({ data: { type: 'bearer', token: 'tok', user: sampleUser } });
+
+    service.handleEmailUnverified('/me');
+
+    expect(service.getAccessToken()).toBe('tok');
+    expect(navigateSpy).toHaveBeenCalledWith(['/auth/verify-email'], {
+      queryParams: { returnUrl: '/me' },
+    });
   });
 });

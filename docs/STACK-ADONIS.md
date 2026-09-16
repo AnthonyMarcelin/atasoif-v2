@@ -77,7 +77,8 @@ Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Pass
 - Templates use Nuit tokens (dark cellar + amber `#E39A3C`, radius 0) with FR tutoiement; deep links use `FRONTEND_URL`.
 - Tokens are purpose-bound Adonis encryption (`email-verification` 48h, `password-reset` 1h).
 
-**Unverified users (product rule):** soft-warn only. Signup/login and cellar actions stay allowed; `emailVerified: false` is exposed on profile so the client can nudge. Hard gates (billing, social share, etc.) can layer later — do not block the cave memory JTBD on mail delivery in early environments.
+**Unverified users (product rule):** hard gate on app usage. Signup/login still issue a Bearer token so the client can reach the verify screen and resend mail, but protected app actions (profile update, future cellar routes, etc.) return **403** `E_EMAIL_UNVERIFIED` until `emailVerified` is true. `GET /api/v1/account/profile`, logout, and email resend stay available while unverified.
+
 
 **Rate limiting:** not wired yet (no `@adonisjs/limiter` in the kit). Protect `POST /api/v1/auth/login`, `POST /api/v1/auth/signup`, and password-reset endpoints before production traffic — e.g. Adonis Limiter or reverse-proxy limits.
 
@@ -89,7 +90,7 @@ Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API. Ally pla
 
 1. `AuthService` keeps the token in memory (signals) and persists it in `localStorage` (`atasoif.auth.access_token`) for web MVP refreshes.
 2. Functional `authInterceptor` attaches the header to API calls and, on **401** (except login/signup/forgot/reset), clears the session and redirects to `/auth/login`.
-3. `authGuard` protects `/me` and `/cellar` (future collection surface).
+3. `authGuard` + `emailVerifiedGuard` protect `/me` and `/cellar`. Unverified sessions land on `/auth/verify-email` (resend + deep-link confirm).
 4. API base URL: `environment.apiBaseUrl` (dev default `http://localhost:3000`).
 
 **Storage note:** `localStorage` is XSS-readable. Acceptable for web MVP; Capacitor Secure Storage is planned for native builds (E5). Never log the raw token. Do not store passwords.

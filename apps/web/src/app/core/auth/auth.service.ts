@@ -37,11 +37,17 @@ export class AuthService {
   readonly token = this.tokenSignal.asReadonly();
   readonly user = this.userSignal.asReadonly();
   readonly isAuthenticated = computed(() => Boolean(this.tokenSignal()));
+  readonly isEmailVerified = computed(() => Boolean(this.userSignal()?.emailVerified));
 
   private readonly apiBase = environment.apiBaseUrl.replace(/\/$/, '');
 
   getAccessToken(): string | null {
     return this.tokenSignal();
+  }
+
+  /** Where to land after signup/login: cave only when email is confirmed. */
+  postAuthPath(fallback = '/me'): string {
+    return this.isEmailVerified() ? fallback : '/auth/verify-email';
   }
 
   signup(payload: SignupPayload): Observable<AuthTokenResponse> {
@@ -66,6 +72,23 @@ export class AuthService {
     return this.http.post<{ message: string }>(`${this.apiBase}/api/v1/auth/forgot-password`, {
       email,
     });
+  }
+
+  verifyEmail(token: string): Observable<AuthUser> {
+    return this.http
+      .post<ApiDataEnvelope<AuthUser>>(`${this.apiBase}/api/v1/auth/email/verify`, { token })
+      .pipe(
+        map((body) => body.data),
+        tap((user) => {
+          if (this.tokenSignal()) {
+            this.setUser(user);
+          }
+        }),
+      );
+  }
+
+  resendVerificationEmail(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiBase}/api/v1/account/email/resend`, {});
   }
 
   loadProfile(): Observable<AuthUser | null> {
@@ -115,6 +138,12 @@ export class AuthService {
     this.clearSession();
     const query = returnUrl ? { queryParams: { returnUrl } } : undefined;
     void this.router.navigate(['/auth/login'], query);
+  }
+
+  /** Keeps the session but sends the user to confirm their email. */
+  handleEmailUnverified(returnUrl?: string): void {
+    const query = returnUrl ? { queryParams: { returnUrl } } : undefined;
+    void this.router.navigate(['/auth/verify-email'], query);
   }
 
   clearSession(): void {

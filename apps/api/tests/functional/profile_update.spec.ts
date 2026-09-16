@@ -2,6 +2,7 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import mail from '@adonisjs/mail/services/main'
 import User from '#models/user'
+import AuthEmailTokenService from '#services/auth_email_token_service'
 import VerifyEmailNotification from '#mails/verify_email_notification'
 
 test.group('Profile update', (group) => {
@@ -15,11 +16,22 @@ test.group('Profile update', (group) => {
     pseudo: 'profil_base',
   }
 
-  test('patch profile updates pseudo and isPublic', async ({ client, assert }) => {
+  // Japa ApiClient — keep helper typing loose for readable setup.
+  async function signupAndVerify(client: any) {
     using fake = mail.fake()
     const signup = await client.post('/api/v1/auth/signup').json(credentials)
     fake.mails.assertSent(VerifyEmailNotification)
     const token = (signup.body() as { data: { token: string } }).data.token
+
+    const user = await User.findByOrFail('email', credentials.email)
+    const verifyToken = new AuthEmailTokenService().createEmailVerificationToken(user.id)
+    await client.post('/api/v1/auth/email/verify').json({ token: verifyToken })
+
+    return token as string
+  }
+
+  test('patch profile updates pseudo and isPublic', async ({ client, assert }) => {
+    const token = await signupAndVerify(client)
 
     const response = await client
       .patch('/api/v1/account/profile')
@@ -44,10 +56,7 @@ test.group('Profile update', (group) => {
   })
 
   test('patch profile keeps own pseudo when unchanged', async ({ client, assert }) => {
-    using fake = mail.fake()
-    const signup = await client.post('/api/v1/auth/signup').json(credentials)
-    fake.mails.assertSent(VerifyEmailNotification)
-    const token = (signup.body() as { data: { token: string } }).data.token
+    const token = await signupAndVerify(client)
 
     const response = await client
       .patch('/api/v1/account/profile')
@@ -74,9 +83,7 @@ test.group('Profile update', (group) => {
     })
     fake.mails.assertSent(VerifyEmailNotification)
 
-    const signup = await client.post('/api/v1/auth/signup').json(credentials)
-    fake.mails.assertSent(VerifyEmailNotification)
-    const token = (signup.body() as { data: { token: string } }).data.token
+    const token = await signupAndVerify(client)
 
     const response = await client
       .patch('/api/v1/account/profile')
@@ -97,10 +104,7 @@ test.group('Profile update', (group) => {
   })
 
   test('patch profile rejects invalid pseudo length', async ({ client }) => {
-    using fake = mail.fake()
-    const signup = await client.post('/api/v1/auth/signup').json(credentials)
-    fake.mails.assertSent(VerifyEmailNotification)
-    const token = (signup.body() as { data: { token: string } }).data.token
+    const token = await signupAndVerify(client)
 
     const response = await client
       .patch('/api/v1/account/profile')
@@ -124,5 +128,26 @@ test.group('Profile update', (group) => {
       })
 
     response.assertStatus(401)
+  })
+
+  test('patch profile rejects unverified email with 403', async ({ client, assert }) => {
+    using fake = mail.fake()
+    const signup = await client.post('/api/v1/auth/signup').json(credentials)
+    fake.mails.assertSent(VerifyEmailNotification)
+    const token = (signup.body() as { data: { token: string } }).data.token
+
+    const response = await client
+      .patch('/api/v1/account/profile')
+      .bearerToken(token)
+      .header('Accept', 'application/json')
+      .json({
+        pseudo: 'bloqué',
+        isPublic: false,
+      })
+
+    response.assertStatus(403)
+    const body = response.body() as { code?: string; message?: string }
+    assert.equal(body.code, 'E_EMAIL_UNVERIFIED')
+    assert.isString(body.message)
   })
 })
