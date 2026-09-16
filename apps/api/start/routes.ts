@@ -33,6 +33,12 @@ router
         router.get('profile', [controllers.Profile, 'show'])
         router.post('logout', [controllers.AccessTokens, 'destroy'])
         router.post('email/resend', [controllers.EmailVerifications, 'resend'])
+
+        router
+          .group(() => {
+            router.patch('profile', [controllers.Profile, 'update'])
+          })
+          .use(middleware.emailVerified())
       })
       .prefix('account')
       .as('profile')

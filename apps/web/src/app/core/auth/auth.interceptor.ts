@@ -20,9 +20,15 @@ function isAuthCredentialRequest(url: string): boolean {
   );
 }
 
+function isEmailUnverifiedError(error: HttpErrorResponse): boolean {
+  const body = error.error as { code?: string } | null;
+  return error.status === 403 && body?.code === 'E_EMAIL_UNVERIFIED';
+}
+
 /**
  * Attaches `Authorization: Bearer <token>` to Adonis API calls.
  * On 401 (except credential endpoints), clears the session and redirects to login.
+ * On 403 `E_EMAIL_UNVERIFIED`, keeps the session and sends the user to confirm email.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -37,13 +43,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(withAuth).pipe(
     catchError((error: unknown) => {
-      if (
-        error instanceof HttpErrorResponse &&
-        error.status === 401 &&
-        isApiRequest(withAuth.url) &&
-        !isAuthCredentialRequest(withAuth.url)
-      ) {
-        auth.handleUnauthorized();
+      if (error instanceof HttpErrorResponse && isApiRequest(withAuth.url)) {
+        if (isEmailUnverifiedError(error)) {
+          auth.handleEmailUnverified();
+        } else if (error.status === 401 && !isAuthCredentialRequest(withAuth.url)) {
+          auth.handleUnauthorized();
+        }
       }
       return throwError(() => error);
     }),

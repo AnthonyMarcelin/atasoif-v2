@@ -295,6 +295,41 @@
   font-size: var(--text-body-s);
 }
 
+.auth-meta--profile {
+  justify-content: flex-start;
+}
+
+.auth-email-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.auth-verified {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: var(--stroke) solid var(--color-success);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.auth-verified__mark {
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.auth-lead--ok {
+  color: var(--color-success);
+}
+
 .auth-status {
   margin: 0;
   padding: var(--space-md);
@@ -363,6 +398,74 @@
   display: block;
   height: 62%;
   background: var(--color-accent);
+}
+
+.auth-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  min-height: var(--tap-min);
+}
+
+.auth-switch__input {
+  appearance: none;
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  margin-top: 2px;
+  border: var(--stroke) solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  position: relative;
+  cursor: pointer;
+  transition: background-color var(--dur-tap) var(--ease), border-color var(--dur-tap) var(--ease);
+}
+
+.auth-switch__input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-ink-muted);
+  transition: transform var(--dur-tap) var(--ease), background-color var(--dur-tap) var(--ease);
+}
+
+.auth-switch__input:checked {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.auth-switch__input:checked::after {
+  transform: translateX(18px);
+  background: var(--color-on-accent);
+}
+
+.auth-switch__input:focus-visible {
+  outline: var(--stroke-accent) solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.auth-switch__label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.auth-switch__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.auth-switch__hint {
+  font-size: var(--text-body-s);
+  color: var(--color-ink-muted);
+  line-height: 1.4;
 }
 
 @media (min-width: 768px) {

@@ -80,7 +80,7 @@ export class RegisterPage {
       .subscribe({
         next: () => {
           this.submittedOk.set(true);
-          void this.router.navigateByUrl('/me');
+          void this.router.navigateByUrl(this.auth.postAuthPath('/me'));
         },
         error: (err: unknown) => {
           this.formError.set(

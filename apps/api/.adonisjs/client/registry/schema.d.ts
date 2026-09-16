@@ -115,4 +115,16 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/email_verifications_controller').default['resend']>>>
     }
   }
+  'profile.profile.update': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/account/profile'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/user').updateProfileValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/user').updateProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
 }

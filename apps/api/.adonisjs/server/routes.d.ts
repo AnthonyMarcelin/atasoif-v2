@@ -13,6 +13,7 @@ export type ScannedRoutes = {
     'profile.profile.show': { paramsTuple?: []; params?: {} }
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'profile.email_verifications.resend': { paramsTuple?: []; params?: {} }
+    'profile.profile.update': { paramsTuple?: []; params?: {} }
   }
   GET: {
     'health': { paramsTuple?: []; params?: {} }
@@ -30,6 +31,9 @@ export type ScannedRoutes = {
     'auth.password_resets.update': { paramsTuple?: []; params?: {} }
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'profile.email_verifications.resend': { paramsTuple?: []; params?: {} }
+  }
+  PATCH: {
+    'profile.profile.update': { paramsTuple?: []; params?: {} }
   }
 }
 declare module '@adonisjs/core/types/http' {

@@ -93,4 +93,36 @@ describe('authInterceptor', () => {
     expect(handleSpy).toHaveBeenCalled();
     expect(auth.getAccessToken()).toBeNull();
   });
+
+  it('keeps session and routes to verify-email on E_EMAIL_UNVERIFIED', () => {
+    const handleSpy = spyOn(auth, 'handleEmailUnverified').and.callThrough();
+
+    auth.login({ email: 'a@b.c', password: 'x' }).subscribe();
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`).flush({
+      data: {
+        type: 'bearer',
+        token: 'tok-123',
+        user: {
+          id: 1,
+          email: 'a@b.c',
+          fullName: null,
+          pseudo: null,
+          isPublic: false,
+          emailVerified: false,
+        },
+      },
+    });
+
+    http.patch(`${environment.apiBaseUrl}/api/v1/account/profile`, {}).subscribe({
+      error: () => undefined,
+    });
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/account/profile`);
+    req.flush(
+      { code: 'E_EMAIL_UNVERIFIED', message: 'Confirme ton e-mail pour continuer' },
+      { status: 403, statusText: 'Forbidden' },
+    );
+
+    expect(handleSpy).toHaveBeenCalled();
+    expect(auth.getAccessToken()).toBe('tok-123');
+  });
 });
