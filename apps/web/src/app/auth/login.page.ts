@@ -6,6 +6,7 @@ import { finalize } from 'rxjs';
 
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
+import { safeInternalPath } from '../core/auth/safe-internal-path';
 import { AuthTabs } from './auth-tabs';
 import { controlErrorMessage, emailValidators, passwordValidators } from './auth-validators';
 
@@ -14,10 +15,14 @@ const OAUTH_ERROR_COPY: Record<string, string> = {
   google_state: 'Session Google expirée. Réessaie.',
   google_error: 'Google a renvoyé une erreur. Réessaie.',
   google_email: 'Google n’a pas fourni d’e-mail utilisable.',
+  google_unverified:
+    'Cet e-mail a déjà un compte non confirmé. Valide le lien reçu par mail, puis réessaie Google.',
   facebook_denied: 'Connexion Facebook annulée.',
   facebook_state: 'Session Facebook expirée. Réessaie.',
   facebook_error: 'Facebook a renvoyé une erreur. Réessaie.',
   facebook_email: 'Facebook n’a pas fourni d’e-mail utilisable.',
+  facebook_unverified:
+    'Cet e-mail a déjà un compte non confirmé. Valide le lien reçu par mail, puis réessaie Facebook.',
 };
 
 @Component({
@@ -75,7 +80,7 @@ export class LoginPage implements OnInit {
       .subscribe({
         next: () => {
           this.submittedOk.set(true);
-          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/me';
+          const returnUrl = safeInternalPath(this.route.snapshot.queryParamMap.get('returnUrl'));
           void this.router.navigateByUrl(this.auth.postAuthPath(returnUrl));
         },
         error: (err: unknown) => {

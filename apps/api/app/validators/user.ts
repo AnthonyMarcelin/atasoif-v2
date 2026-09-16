@@ -27,7 +27,9 @@ const pseudoRule = () =>
 export const signupValidator = vine.create({
   fullName: vine.string().maxLength(255).nullable().optional(),
   pseudo: pseudoRule().unique({ table: 'users', column: 'pseudo' }).optional(),
-  email: email().unique({ table: 'users', column: 'email' }),
+  // Email uniqueness is enforced in NewAccountController with a generic 422
+  // (avoids account enumeration via the `email` field name).
+  email: email(),
   password: password(),
   passwordConfirmation: password().sameAs('password'),
 })

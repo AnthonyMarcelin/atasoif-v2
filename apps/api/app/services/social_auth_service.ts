@@ -16,60 +16,98 @@ const EMAIL_MISSING_MESSAGE: Record<SocialProvider, string> = {
   facebook: 'Facebook n’a pas fourni d’e-mail',
 }
 
+const EMAIL_UNVERIFIED_LINK_MESSAGE =
+  'Confirme cet e-mail (lien reçu à l’inscription) avant de lier un compte social'
+
+export type SocialAuthResult = {
+  user: User
+  /** True when this OAuth callback created the local row (not a link). */
+  created: boolean
+}
+
 /**
  * Find or create a local user from an Ally social profile.
- * Matching key: email (same address = same account as email/password signup).
+ * Matching key: normalized email (same address = same account as email/password signup).
  * Login only — never sync friends graphs from Meta.
+ *
+ * Security:
+ * - Auto-link only when the local email is already verified, or the provider marks email verified.
+ * - Unverified local accounts + verified OAuth email → reclaim (rotate password, revoke tokens).
+ * - Unverified local + unverified/unsupported OAuth email → refuse (blocks pre-hijack squat).
  */
 export default class SocialAuthService {
-  async findOrCreateFromGoogle(profile: AllyProfile): Promise<User> {
+  async findOrCreateFromGoogle(profile: AllyProfile): Promise<SocialAuthResult> {
     return this.findOrCreateFromAlly(profile, 'google')
   }
 
-  async findOrCreateFromFacebook(profile: AllyProfile): Promise<User> {
+  async findOrCreateFromFacebook(profile: AllyProfile): Promise<SocialAuthResult> {
     return this.findOrCreateFromAlly(profile, 'facebook')
   }
 
-  async findOrCreateFromAlly(profile: AllyProfile, provider: SocialProvider): Promise<User> {
+  async findOrCreateFromAlly(profile: AllyProfile, provider: SocialProvider): Promise<SocialAuthResult> {
     if (!profile.email) {
       throw new SocialAuthError('E_SOCIAL_EMAIL_REQUIRED', EMAIL_MISSING_MESSAGE[provider])
     }
 
     const email = profile.email.trim().toLowerCase()
-    const emailVerified = profile.emailVerificationState === 'verified'
+    const providerEmailVerified = profile.emailVerificationState === 'verified'
     const existing = await User.findBy('email', email)
 
     if (existing) {
-      let dirty = false
-      if (emailVerified && !existing.emailVerified) {
-        existing.emailVerified = true
-        dirty = true
-      }
-      if (!existing.fullName && profile.name) {
-        existing.fullName = profile.name
-        dirty = true
-      }
-      if (!existing.image && profile.avatarUrl) {
-        existing.image = profile.avatarUrl
-        dirty = true
-      }
-      if (dirty) {
-        await existing.save()
-      }
-      return existing
+      const user = await this.linkExistingAccount(existing, profile, providerEmailVerified)
+      return { user, created: false }
     }
 
     const pseudo = await this.allocatePseudo(profile.nickName || email.split('@')[0] || 'soif')
 
-    return User.create({
+    const user = await User.create({
       email,
       fullName: profile.name || null,
       password: randomUUID(),
       pseudo,
       image: profile.avatarUrl ?? null,
       isPublic: false,
-      emailVerified,
+      emailVerified: providerEmailVerified,
     })
+
+    return { user, created: true }
+  }
+
+  /**
+   * Attach OAuth login to an existing email/password (or prior social) account.
+   */
+  private async linkExistingAccount(
+    existing: User,
+    profile: AllyProfile,
+    providerEmailVerified: boolean
+  ): Promise<User> {
+    if (!existing.emailVerified && !providerEmailVerified) {
+      throw new SocialAuthError('E_SOCIAL_EMAIL_UNVERIFIED', EMAIL_UNVERIFIED_LINK_MESSAGE)
+    }
+
+    let dirty = false
+
+    if (!existing.emailVerified && providerEmailVerified) {
+      // Squatted unverified signup: OAuth proves email ownership → reclaim.
+      existing.password = randomUUID()
+      existing.emailVerified = true
+      dirty = true
+      await existing.save()
+      await User.accessTokens.deleteAll(existing)
+    }
+
+    if (!existing.fullName && profile.name) {
+      existing.fullName = profile.name
+      dirty = true
+    }
+    if (!existing.image && profile.avatarUrl) {
+      existing.image = profile.avatarUrl
+      dirty = true
+    }
+    if (dirty) {
+      await existing.save()
+    }
+    return existing
   }
 
   /**

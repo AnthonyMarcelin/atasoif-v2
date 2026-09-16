@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
+import { safeInternalPath } from '../core/auth/safe-internal-path';
 
 @Component({
   selector: 'app-verify-email-page',
@@ -80,6 +81,6 @@ export class VerifyEmailPage implements OnInit {
   }
 
   private returnUrl(): string {
-    return this.route.snapshot.queryParamMap.get('returnUrl') || '/me';
+    return safeInternalPath(this.route.snapshot.queryParamMap.get('returnUrl'));
   }
 }
