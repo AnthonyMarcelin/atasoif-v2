@@ -112,7 +112,7 @@ Epics: [`EPICS.md`](./EPICS.md)
 
 ## Sprint 3 — Catalog seed
 
-**Epics:** E3.1–E3.3, E2.9 migrate v1  
+**Epics:** E3.1–E3.3, E2.13 migrate v1  
 **Depends on:** Sprint 2 (search exists); can start import scripts earlier
 
 ### Scope
