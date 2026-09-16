@@ -1,0 +1,17 @@
+<section class="auth-page">
+  <div class="auth-page__inner">
+    <h1 class="auth-title">Google</h1>
+    <p class="auth-lead">On finalise ta connexion…</p>
+
+    @if (loading()) {
+      <p class="auth-status" role="status">Ouverture de ta cave…</p>
+    }
+
+    @if (error(); as message) {
+      <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+      <div class="auth-actions">
+        <a class="auth-btn auth-btn--primary" routerLink="/auth/login">Retour connexion</a>
+      </div>
+    }
+  </div>
+</section>

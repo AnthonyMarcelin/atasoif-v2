@@ -8,12 +8,18 @@ import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
 import { controllers } from '#generated/controllers'
 const HealthController = () => import('#controllers/health_controller')
+const GoogleAuthController = () => import('#controllers/google_auth_controller')
 
 router.get('/health', [HealthController, 'handle'])
 
 router.get('/', () => {
   return { hello: 'world', app: 'atasoif-api' }
 })
+
+/**
+ * Ally Google callback must match `config/ally.ts` (`APP_URL/oauth/google/callback`).
+ */
+router.get('/oauth/google/callback', [GoogleAuthController, 'callback'])
 
 router
   .group(() => {
@@ -24,6 +30,7 @@ router
         router.post('email/verify', [controllers.EmailVerifications, 'store'])
         router.post('forgot-password', [controllers.PasswordResets, 'store'])
         router.post('reset-password', [controllers.PasswordResets, 'update'])
+        router.get('google/redirect', [GoogleAuthController, 'redirect'])
       })
       .prefix('auth')
       .as('auth')

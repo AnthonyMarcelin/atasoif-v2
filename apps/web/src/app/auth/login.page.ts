@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -9,12 +9,19 @@ import { AuthService } from '../core/auth/auth.service';
 import { AuthTabs } from './auth-tabs';
 import { controlErrorMessage, emailValidators, passwordValidators } from './auth-validators';
 
+const OAUTH_ERROR_COPY: Record<string, string> = {
+  google_denied: 'Connexion Google annulée.',
+  google_state: 'Session Google expirée. Réessaie.',
+  google_error: 'Google a renvoyé une erreur. Réessaie.',
+  google_email: 'Google n’a pas fourni d’e-mail utilisable.',
+};
+
 @Component({
   selector: 'app-login-page',
   imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs],
   templateUrl: './login.page.html',
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
   private readonly fb = new FormBuilder().nonNullable;
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -30,6 +37,15 @@ export class LoginPage {
     email: ['', emailValidators],
     password: ['', passwordValidators],
   });
+
+  ngOnInit(): void {
+    const oauthError = this.route.snapshot.queryParamMap.get('oauthError');
+    if (oauthError) {
+      this.formError.set(
+        OAUTH_ERROR_COPY[oauthError] ?? 'Connexion Google impossible. Réessaie.',
+      );
+    }
+  }
 
   errorFor(name: 'email' | 'password'): string | null {
     const labels = {
@@ -64,6 +80,10 @@ export class LoginPage {
           );
         },
       });
+  }
+
+  continueWithGoogle(): void {
+    this.auth.startGoogleLogin();
   }
 
   togglePassword(): void {

@@ -90,6 +90,10 @@ export class RegisterPage {
       });
   }
 
+  continueWithGoogle(): void {
+    this.auth.startGoogleLogin();
+  }
+
   togglePassword(): void {
     this.showPassword.update((value) => !value);
   }

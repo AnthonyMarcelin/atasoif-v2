@@ -7,6 +7,9 @@ const allyConfig = defineConfig({
     clientId: env.get('GOOGLE_CLIENT_ID') || '',
     clientSecret: env.get('GOOGLE_CLIENT_SECRET') || '',
     callbackUrl: `${env.get('APP_URL')}/oauth/google/callback`,
+    // Email + basic profile only (no Calendar / Drive).
+    scopes: ['openid', 'profile', 'email'],
+    prompt: 'select_account',
   }),
   facebook: services.facebook({
     clientId: env.get('FACEBOOK_CLIENT_ID') || '',

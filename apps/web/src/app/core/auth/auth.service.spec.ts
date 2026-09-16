@@ -140,4 +140,21 @@ describe('AuthService', () => {
       queryParams: { returnUrl: '/me' },
     });
   });
+
+  it('builds the Google Ally redirect URL', () => {
+    expect(service.googleAuthUrl()).toBe(`${environment.apiBaseUrl}/api/v1/auth/google/redirect`);
+  });
+
+  it('completeOAuthLogin stores the token then loads the profile', () => {
+    service.completeOAuthLogin('oauth-tok').subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/account/profile`);
+    expect(req.request.headers.get('Authorization')).toBeNull();
+    // Interceptor not mounted in this TestBed — token is still stored for later calls.
+    expect(service.getAccessToken()).toBe('oauth-tok');
+    req.flush({
+      data: { ...sampleUser, emailVerified: true },
+    });
+    expect(service.user()?.emailVerified).toBeTrue();
+  });
 });

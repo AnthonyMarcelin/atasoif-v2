@@ -45,6 +45,24 @@ export class AuthService {
     return this.tokenSignal();
   }
 
+  /** Browser navigation into Ally Google OAuth (full-page redirect). */
+  googleAuthUrl(): string {
+    return `${this.apiBase}/api/v1/auth/google/redirect`;
+  }
+
+  startGoogleLogin(): void {
+    window.location.assign(this.googleAuthUrl());
+  }
+
+  /**
+   * Completes the Ally redirect: stores the Bearer token then loads `/account/profile`.
+   */
+  completeOAuthLogin(token: string): Observable<AuthUser | null> {
+    this.tokenSignal.set(token);
+    this.tokenStorage.setToken(token);
+    return this.loadProfile();
+  }
+
   /** Where to land after signup/login: cave only when email is confirmed. */
   postAuthPath(fallback = '/me'): string {
     return this.isEmailVerified() ? fallback : '/auth/verify-email';

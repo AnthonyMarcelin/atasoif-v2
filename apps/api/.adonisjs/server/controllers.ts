@@ -6,6 +6,7 @@
 export const controllers = {
   AccessTokens: () => import('#controllers/access_tokens_controller'),
   EmailVerifications: () => import('#controllers/email_verifications_controller'),
+  GoogleAuth: () => import('#controllers/google_auth_controller'),
   Health: () => import('#controllers/health_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
   PasswordResets: () => import('#controllers/password_resets_controller'),
