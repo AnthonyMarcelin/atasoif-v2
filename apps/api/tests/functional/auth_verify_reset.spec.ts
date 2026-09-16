@@ -109,7 +109,12 @@ test.group('Auth email verification + password reset', (group) => {
     const oldToken = (signup.body() as { data: { token: string } }).data.token
 
     const user = await User.findByOrFail('email', credentials.email)
-    const resetToken = new AuthEmailTokenService().createPasswordResetToken(user.id)
+    user.passwordResetVersion = 1
+    await user.save()
+    const resetToken = new AuthEmailTokenService().createPasswordResetToken(
+      user.id,
+      user.passwordResetVersion
+    )
     const newPassword = 'nouveaumdp1'
 
     const reset = await client.post('/api/v1/auth/reset-password').json({
@@ -121,6 +126,7 @@ test.group('Auth email verification + password reset', (group) => {
 
     await user.refresh()
     assert.isTrue(await hash.verify(user.password, newPassword))
+    assert.equal(user.passwordResetVersion, 2)
 
     const profileWithOld = await client
       .get('/api/v1/account/profile')
@@ -128,12 +134,40 @@ test.group('Auth email verification + password reset', (group) => {
       .header('Accept', 'application/json')
     profileWithOld.assertStatus(401)
 
+    const reuse = await client.post('/api/v1/auth/reset-password').json({
+      token: resetToken,
+      password: 'autremdp12',
+      passwordConfirmation: 'autremdp12',
+    })
+    reuse.assertStatus(400)
+
     const login = await client.post('/api/v1/auth/login').json({
       email: credentials.email,
       password: newPassword,
     })
     login.assertStatus(200)
     fake.mails.assertSent(VerifyEmailNotification)
+  })
+
+  test('signup rejects duplicate email without naming the field', async ({ client, assert }) => {
+    using fake = mail.fake()
+    await client.post('/api/v1/auth/signup').json(credentials)
+    fake.mails.assertSent(VerifyEmailNotification)
+
+    const response = await client
+      .post('/api/v1/auth/signup')
+      .header('Accept', 'application/json')
+      .json({
+        ...credentials,
+        email: credentials.email.toUpperCase(),
+        pseudo: 'autre_pseudo',
+      })
+
+    response.assertStatus(422)
+    const body = response.body() as { errors?: Array<{ field?: string; message?: string }> }
+    assert.isArray(body.errors)
+    assert.isTrue((body.errors ?? []).every((error) => !error.field))
+    assert.include((body.errors?.[0]?.message ?? '').toLowerCase(), 'impossible de créer')
   })
 
   test('reset password rejects invalid token', async ({ client }) => {

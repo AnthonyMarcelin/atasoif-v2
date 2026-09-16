@@ -6,6 +6,7 @@ import { finalize } from 'rxjs';
 
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
+import { safeInternalPath } from '../core/auth/safe-internal-path';
 import { AuthTabs } from './auth-tabs';
 import { controlErrorMessage, emailValidators, passwordValidators } from './auth-validators';
 
@@ -79,7 +80,7 @@ export class LoginPage implements OnInit {
       .subscribe({
         next: () => {
           this.submittedOk.set(true);
-          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/me';
+          const returnUrl = safeInternalPath(this.route.snapshot.queryParamMap.get('returnUrl'));
           void this.router.navigateByUrl(this.auth.postAuthPath(returnUrl));
         },
         error: (err: unknown) => {

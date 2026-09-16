@@ -213,7 +213,7 @@ export class UserBottleSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'isPublic', 'password', 'pseudo', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'isPublic', 'password', 'passwordResetVersion', 'pseudo', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -231,6 +231,8 @@ export class UserSchema extends BaseModel {
   declare isPublic: boolean
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare passwordResetVersion: number
   @column()
   declare pseudo: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })

@@ -33,12 +33,15 @@ router
       })
       .prefix('auth')
       .as('auth')
+      .use(middleware.throttle({ maxAttempts: 30, windowMs: 15 * 60 * 1000 }))
 
     router
       .group(() => {
         router.get('profile', [controllers.Profile, 'show'])
         router.post('logout', [controllers.AccessTokens, 'destroy'])
-        router.post('email/resend', [controllers.EmailVerifications, 'resend'])
+        router
+          .post('email/resend', [controllers.EmailVerifications, 'resend'])
+          .use(middleware.throttle({ maxAttempts: 5, windowMs: 15 * 60 * 1000 }))
 
         router
           .group(() => {

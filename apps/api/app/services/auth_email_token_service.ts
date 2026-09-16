@@ -3,8 +3,14 @@ import encryption from '@adonisjs/core/services/encryption'
 const EMAIL_VERIFICATION_PURPOSE = 'email-verification'
 const PASSWORD_RESET_PURPOSE = 'password-reset'
 
-type TokenPayload = {
+type EmailVerificationPayload = {
   userId: number
+}
+
+type PasswordResetPayload = {
+  userId: number
+  /** Must match `users.password_reset_version` or the token is rejected (single-use / rotate). */
+  version: number
 }
 
 /**
@@ -13,24 +19,28 @@ type TokenPayload = {
  */
 export default class AuthEmailTokenService {
   createEmailVerificationToken(userId: number): string {
-    return encryption.encrypt({ userId } satisfies TokenPayload, {
+    return encryption.encrypt({ userId } satisfies EmailVerificationPayload, {
       expiresIn: '48h',
       purpose: EMAIL_VERIFICATION_PURPOSE,
     })
   }
 
-  verifyEmailVerificationToken(token: string): TokenPayload | null {
-    return encryption.decrypt<TokenPayload>(token, EMAIL_VERIFICATION_PURPOSE)
+  verifyEmailVerificationToken(token: string): EmailVerificationPayload | null {
+    return encryption.decrypt<EmailVerificationPayload>(token, EMAIL_VERIFICATION_PURPOSE)
   }
 
-  createPasswordResetToken(userId: number): string {
-    return encryption.encrypt({ userId } satisfies TokenPayload, {
+  createPasswordResetToken(userId: number, version: number): string {
+    return encryption.encrypt({ userId, version } satisfies PasswordResetPayload, {
       expiresIn: '1h',
       purpose: PASSWORD_RESET_PURPOSE,
     })
   }
 
-  verifyPasswordResetToken(token: string): TokenPayload | null {
-    return encryption.decrypt<TokenPayload>(token, PASSWORD_RESET_PURPOSE)
+  verifyPasswordResetToken(token: string): PasswordResetPayload | null {
+    const payload = encryption.decrypt<PasswordResetPayload>(token, PASSWORD_RESET_PURPOSE)
+    if (!payload || typeof payload.userId !== 'number' || typeof payload.version !== 'number') {
+      return null
+    }
+    return payload
   }
 }

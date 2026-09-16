@@ -30,6 +30,12 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
   @column()
   declare emailVerified: boolean
 
+  /**
+   * Bumped on each forgot/reset so encrypted reset tokens become single-use / rotatable.
+   */
+  @column()
+  declare passwordResetVersion: number
+
   @hasMany(() => UserBottle)
   declare bottles: HasMany<typeof UserBottle>
 
