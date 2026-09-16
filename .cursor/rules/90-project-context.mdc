@@ -73,8 +73,9 @@ Do not introduce a new architectural pattern without explaining why the existing
 ## Domain rules
 
 - Freemium: max 10 bottles total in collection without an active subscription
+- Freemium (aggressive): FREE = catalog/seed photo only; PREMIUM required for user photo override + fill-level jauge — enforce server-side. « Acheté chez », price, notes/review stay free unless a ticket says otherwise
 - Catalog is global; personal edits use `UserBottle` overrides (do not mutate global `Bottle` by default on user edit)
-- Add-bottle UX: search catalog first → prefill → all fields + photo editable → confirm (<30s path)
+- Add-bottle UX: search catalog first → prefill → editable fields (photo replace + jauge = premium) → confirm (<30s path)
 - Memory fields matter most: price paid, where bought (supplier/place), personal note/review, photo — not social vanity
 - Client-facing copy: French, informal “tu”, short and slightly playful
 - Design direction: **Nuit** only (`docs/conception/design-system/`) · Carnet / Cave removed

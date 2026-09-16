@@ -15,14 +15,18 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 - Conventional Commits EN, no AI co-author
 - Do **not** clone atasoif.fr v1 UI — Nuit only
 - Memory fields first: **price paid**, **« Acheté chez » (place)**, **note/review**, **photo**, **fill level (jauge)**
-- Freemium: max **10** bottles without entitlement; enforce **server-side**
-- Photos: catalog `Bottle.photoUrl` + personal `UserBottle.photoUrlOverride`
+- Freemium (aggressive conversion) — enforce **server-side**:
+  - Max **10** bottles without entitlement (`FREE_BOTTLE_LIMIT`)
+  - **FREE:** catalog / seed photo only (`Bottle.photoUrl`)
+  - **PREMIUM required:** user photo override (`UserBottle.photoUrlOverride` + upload) **and** bottle fill-level jauge (set / update `fillLevel`)
+  - **Not gated** in E2 (unless a later ticket says otherwise): « Acheté chez », price, notes/review, boughtAt, catalog search/add
+- Photos: catalog `Bottle.photoUrl` (free) + personal `UserBottle.photoUrlOverride` (premium)
 - Ops in E2: **thin API only** — feed KPIs already defined in ops mockups; **no** admin UI
 
 **User decisions (Must / S2):**
-1. Purchase place « Acheté chez » / lieu — required in schema + UI
-2. Bottle level jauge (swipe) — required in E2 (not deferred)
-3. Photos — catalog + user override; dedicated upload/storage ticket
+1. Purchase place « Acheté chez » / lieu — required in schema + UI (free)
+2. Bottle level jauge (swipe) — in E2 (not deferred); **premium** to set/update; free keeps schema default
+3. Photos — FREE = catalog/DB only; PREMIUM = user override + upload (T04)
 4. Ops — align API with Claude Design KPIs in `docs/conception/ops/` (do not invent a parallel KPI set)
 
 ---
@@ -59,14 +63,15 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 | **Blocks** | T02–T08, T09 |
 
 ### Goal
-Make memory schema match Nuit + UX-ADD-BOTTLE: required purchase place (« Acheté chez »), required bottle fill level for the jauge, without inventing fields ops/mockups do not need.
+Make memory schema match Nuit + UX-ADD-BOTTLE: required purchase place (« Acheté chez »), fill-level column for the jauge (premium write path in T03), without inventing fields ops/mockups do not need.
 
 ### Acceptance criteria
 - [ ] Lucid migration adds **`purchase_place`** (`string`, not null on write path) for « Acheté chez » / lieu
 - [ ] Document existing **`bought_at`**: optional purchase **date** (string/date as already migrated) — do **not** overload it as place
-- [ ] Lucid migration adds **`fill_level`** (`integer` 0–100, not null, default `100`) for jauge
+- [ ] Lucid migration adds **`fill_level`** (`integer` 0–100, not null, default `100`) for jauge storage
 - [ ] Optional thin counter **`fill_level_updates_count`** (default `0`) so ops Habitudes « mises à jour de niveau » can be fed later without a full event store in E2
-- [ ] Models + schema types updated; Vine rules ready for T03 (`purchasePlace` required, `fillLevel` 0–100)
+- [ ] Models + schema types updated; Vine rules ready for T03 (`purchasePlace` required; `fillLevel` 0–100 when accepted)
+- [ ] Document freemium split for T03/T04: free rows keep `fill_level` default; **mutating** `fill_level` / setting `photoUrlOverride` is premium (server-side)
 - [ ] Finished bottle for ops = `fill_level === 0` (document in ticket PR / short schema note)
 - [ ] API tests or migration test prove columns exist
 
@@ -74,10 +79,12 @@ Make memory schema match Nuit + UX-ADD-BOTTLE: required purchase place (« Achet
 - Angular UI
 - Forced enum for purchase place (Nuit is free text; ops « lieux » chart aggregates free text — do not invent a closed category list)
 - Level history timeline UI
+- Entitlement enforcement (T03 / T04)
 
 ### Tech notes
 - Prefer smallest migration; backfill existing rows if any (`purchase_place` placeholder only if seed rows exist — otherwise empty table is fine)
 - Do not mutate global `Bottle` for personal memory fields
+- Schema holds `fill_level` for all plans; **premium gate is on write/update**, not on column presence
 
 ### Suggested commit
 `feat: add purchase place and fill level to user bottles`
@@ -125,28 +132,31 @@ Search the shared local catalog so the add flow can prefill fast (local DB only 
 | **Blocks** | T04–T08, T09 |
 
 ### Goal
-Personal cellar CRUD with memory fields, freemium enforcement, and email-verification hard-gate on all cellar routes (E1 Bugbot forward-looking item).
+Personal cellar CRUD with memory fields, freemium enforcement (bottle cap **and** premium-only jauge / photo override), and email-verification hard-gate on all cellar routes (E1 Bugbot forward-looking item).
 
 ### Acceptance criteria
 - [ ] Routes under `/api/v1/...` for list / show / create / update / delete `UserBottle` (owner-only)
 - [ ] List supports filter by category (and stable sort)
 - [ ] Create supports catalog **hit** (existing `bottleId`) and **miss** (create `Bottle` with user source + `UserBottle` in one flow or documented two-step)
-- [ ] Required on create/update when provided by client: **`purchasePlace`**, **`fillLevel`** (0–100); memory fields `pricePaid`, `boughtAt` (date optional), `note`, `review`, photo override URL
+- [ ] Required on create/update: **`purchasePlace`**; memory fields free for all plans: `pricePaid`, `boughtAt` (date optional), `note`, `review`
 - [ ] Overrides never mutate global `Bottle` by default
-- [ ] Freemium: if no active entitlement and count ≥ `FREE_BOTTLE_LIMIT` (10), create returns **403** with clear JSON (reuse shared constant)
-- [ ] Response includes freemium payload e.g. `{ count, limit, remaining }` for UI counter
+- [ ] Freemium bottle cap: if no active entitlement and count ≥ `FREE_BOTTLE_LIMIT` (10), create returns **403** with clear JSON (reuse shared constant)
+- [ ] **Premium gate — jauge (server-side):** without entitlement, create/update that sets or changes **`fillLevel`** (anything other than leaving the server default `100` untouched) returns **403** with a stable error code (e.g. `E_PREMIUM_REQUIRED` / feature `fillLevel`); free creates persist default `fill_level = 100` and must not accept client-driven level changes
+- [ ] **Premium gate — user photo (server-side):** without entitlement, create/update that sets **`photoUrlOverride`** (non-null) returns **403** with the same premium error shape (feature `photoOverride`); free users keep catalog `Bottle.photoUrl` only
+- [ ] Response includes freemium payload e.g. `{ count, limit, remaining, entitlement }` (or equivalent) so UI can hide/lock jauge + photo replace
 - [ ] All cellar collection routes use **auth + `emailVerified`** (unverified → 403 `E_EMAIL_UNVERIFIED`)
 - [ ] Users can only mutate their own rows
-- [ ] API tests: happy path, 11th bottle blocked, foreign id 403/404, unverified 403
+- [ ] API tests: happy path free (place/notes OK, catalog photo), 11th bottle blocked, free user blocked on `fillLevel` write, free user blocked on `photoUrlOverride`, premium (or stubbed entitlement) can set both, foreign id 403/404, unverified 403
 
 ### Out of scope
-- Photo binary upload (T04)
+- Photo binary upload (T04) — but reject override URL writes here consistently with T04
 - Paywall UI (T10)
-- Subscription IAP verification (E4) — entitlement check may stub “no subscription” until S4
+- Subscription IAP verification (E4) — entitlement check may stub “no subscription” until S4 (gates must still fire)
 
 ### Tech notes
 - Import `FREE_BOTTLE_LIMIT` from `@atasoif/shared` when practical
 - Context7 for Adonis auth middleware composition
+- Do **not** gate « Acheté chez », price, note, or review behind premium
 
 ### Suggested commit
 `feat: add cellar collection API with freemium gate`
@@ -164,20 +174,22 @@ Personal cellar CRUD with memory fields, freemium enforcement, and email-verific
 | **Blocks** | T07 (replace photo path) |
 
 ### Goal
-Upload a personal bottle photo; store URL on `UserBottle.photoUrlOverride`. Catalog photo remains `Bottle.photoUrl`.
+Upload a **premium** personal bottle photo; store URL on `UserBottle.photoUrlOverride`. Catalog / seed photo remains `Bottle.photoUrl` (free).
 
 ### Acceptance criteria
 - [ ] Authenticated + email-verified upload endpoint (multipart) for cellar photos
+- [ ] **Premium required (server-side):** without entitlement, upload returns **403** (`E_PREMIUM_REQUIRED` / feature `photoOverride`) — do not persist file
 - [ ] Validation: mime allowlist (jpeg/png/webp), max size documented, no path traversal
 - [ ] Storage: **local disk** under configured dir (VPS filesystem OK for MVP) — env documented in `.env.example`
-- [ ] Successful upload returns URL/path usable as `photoUrlOverride`
+- [ ] Successful upload (entitled) returns URL/path usable as `photoUrlOverride`
 - [ ] Serving strategy documented (static route or signed path) without exposing other users’ files
-- [ ] API test with fixture image (or storage fake)
+- [ ] API tests: fixture image happy path with entitlement stub; free plan rejected; storage fake OK
 
 ### Out of scope
 - Cloudflare R2 (later)
 - Capacitor camera (E5)
 - Ops UI
+- Free-plan catalog photo seeding (E3 / seed scripts)
 
 ### Suggested commit
 `feat: add cellar photo upload storage`
@@ -200,7 +212,7 @@ Upload a personal bottle photo; store URL on `UserBottle.photoUrlOverride`. Cata
 - [ ] Route `/cave` (or equivalent) lists current user’s bottles
 - [ ] Filter by category works
 - [ ] Counter `x/10` always visible in cellar chrome
-- [ ] Uses catalog photo or override; striped placeholder when missing (`docs/DESIGN.md`)
+- [ ] Photo: catalog `photoUrl` for free; override only when present (premium); striped placeholder when missing (`docs/DESIGN.md`)
 - [ ] FR copy, Nuit tokens, accessible list semantics
 - [ ] Unverified users redirected / blocked consistently with E1 hard-gate
 
@@ -208,6 +220,7 @@ Upload a personal bottle photo; store URL on `UserBottle.photoUrlOverride`. Cata
 - Add flow (T07)
 - Detail page (T06)
 - Friends cave
+- Interactive jauge on list rows (detail / T08)
 
 ### Suggested commit
 `feat: add cellar list and freemium counter`
@@ -224,12 +237,13 @@ Upload a personal bottle photo; store URL on `UserBottle.photoUrlOverride`. Cata
 | **Depends on** | T03, T05 |
 
 ### Goal
-Detail screen prioritises memory: price, « Acheté chez », note/review, photo, and fill-level jauge display.
+Detail screen prioritises memory: price, « Acheté chez », note/review, photo, and fill-level jauge (premium interactive / free locked teaser).
 
 ### Acceptance criteria
-- [ ] Detail route shows memory fields prominently (not buried)
-- [ ] Jauge renders fill level (Nuit: ivory stroke, amber fill)
-- [ ] Photo: override → else catalog → else striped placeholder
+- [ ] Detail route shows memory fields prominently (not buried) — place / price / note free
+- [ ] **Premium:** jauge renders live fill level (Nuit: ivory stroke, amber fill)
+- [ ] **Free:** jauge is locked / teaser (no level edit); CTA toward paywall — do not invent a parallel free “fake level” UX
+- [ ] Photo: override (premium) → else catalog → else striped placeholder
 - [ ] FR copy; matches Nuit hierarchy (`docs/conception/assets/` screen 04)
 - [ ] Empty/error states short and actionable
 
@@ -256,10 +270,11 @@ Add a bottle in &lt;30s per `docs/UX-ADD-BOTTLE.md`: search → editable prefill
 
 ### Acceptance criteria
 - [ ] Search-first step with debounce (~250ms) against catalog API
-- [ ] Hit prefills catalog fields + photo; all editable
-- [ ] Memory fields first-class: **price**, **« Acheté chez » (required)**, note/review, photo replace, **niveau (jauge)**
+- [ ] Hit prefills catalog fields + catalog photo; free fields editable (name/brand/attrs as already allowed)
+- [ ] Memory fields first-class for free: **price**, **« Acheté chez » (required)**, note/review
+- [ ] **Photo replace** and **niveau (jauge)** controls: premium only — free keeps catalog photo; attempting replace / jauge opens paywall (T10) and must not call blocked APIs as if free
 - [ ] Miss path: “Pas trouvé ? Ajoute-la” → create bottle + user bottle
-- [ ] On freemium block (11th), navigate to paywall shell route (T10 may stub)
+- [ ] On freemium block (11th **or** premium feature deny), navigate to paywall shell route (T10 may stub)
 - [ ] FR copy; no v1 clone; no 15-field wall before search
 
 ### Out of scope
@@ -281,14 +296,15 @@ Add a bottle in &lt;30s per `docs/UX-ADD-BOTTLE.md`: search → editable prefill
 | **Depends on** | T06, T07 |
 
 ### Goal
-Edit and delete collection entries; update fill level via swipe (or equivalent direct gesture) on the jauge.
+Edit and delete collection entries; update fill level via swipe (or equivalent direct gesture) on the jauge when premium.
 
 ### Acceptance criteria
-- [ ] Edit persists overrides + required `purchasePlace` + `fillLevel`
-- [ ] Delete with explicit confirmation (destructive)
-- [ ] Jauge swipe / drag updates level and saves (updates `fill_level_updates_count` via API)
+- [ ] Edit persists free overrides + required `purchasePlace` (price, note, review, boughtAt)
+- [ ] **Premium:** edit may persist `fillLevel` and photo override; jauge swipe / drag updates level and saves (updates `fill_level_updates_count` via API)
+- [ ] **Free:** jauge swipe / photo replace locked → paywall; must not send `fillLevel` / `photoUrlOverride` writes that the API will 403
+- [ ] Delete with explicit confirmation (destructive) — available on free
 - [ ] Respects `prefers-reduced-motion` for non-essential animation
-- [ ] Owner-only; errors in short FR messages
+- [ ] Owner-only; errors in short FR messages (incl. premium required)
 
 ### Out of scope
 - Social visibility deep settings (E6)
@@ -359,12 +375,13 @@ Product readings already called out in ops README (retain as comments in API doc
 | **Depends on** | T05, T07 |
 
 ### Goal
-Freemium block screen (monthly €3.99 / yearly €39.99) — shell OK without real IAP in S2.
+Freemium / premium-upsell screen (monthly €3.99 / yearly €39.99) — shell OK without real IAP in S2.
 
 ### Acceptance criteria
-- [ ] Route for paywall when 11th add is blocked
+- [ ] Route for paywall when 11th add is blocked **or** when jauge / user-photo premium gate fires
+- [ ] Copy variants (or one flexible screen) cover: cave pleine **and** premium features (photo perso, jauge)
 - [ ] Shows both plan prices from `@atasoif/shared` `PLANS`
-- [ ] FR copy (“Cave pleine — passe premium…”)
+- [ ] FR copy (“Cave pleine — passe premium…” / short feature upsell — no eng jargon)
 - [ ] CTA may be disabled / “bientôt” if billing not ready — documented
 
 ### Out of scope
@@ -432,5 +449,6 @@ Wine-specific fields via `attrs` / `attrsOverride` (appellation, grape, vintage�
 - Follow `.cursor/rules` (EN code/docs, FR UI). Use Context7 for Adonis / Lucid / Vine.
 - Prefer smallest PR per ticket; API before dependent UI.
 - Apply `emailVerified` on every new cellar route (E1 Bugbot carry-over).
+- Freemium: bottle cap **plus** server-side premium gates for **jauge** + **user photo**; never rely on UI hide alone.
 - Ops KPI names and funnel steps must stay aligned with `docs/conception/ops/` — if a mockup label conflicts with code naming, **rename code**, do not invent a second vocabulary.
 - Archive Nest tree is reference-only.

@@ -48,23 +48,25 @@ Everything below is ranked for that outcome. Social and growth come after memory
 
 **Tickets:** [`docs/tickets/E2-memory-cellar.md`](./tickets/E2-memory-cellar.md)
 
+**Freemium (aggressive conversion):** FREE = catalog/seed photo only + memory text fields; PREMIUM = user photo override + fill-level jauge. Bottle cap 10 still applies. Enforce gates **server-side**.
+
 | ID | Story | Priority | Ticket |
 |---|---|---|---|
 | E2.1 | List / filter personal collection by category | Must | T05 |
 | E2.2 | Bottle detail: price, « Acheté chez » (place), boughtAt date, note, review, photo, jauge | Must | T01, T06 |
 | E2.3 | Search shared catalog (local) | Must | T02, T07 |
-| E2.4 | Add from catalog hit → editable prefill + overrides + photo | Must | T03, T04, T07 |
+| E2.4 | Add from catalog hit → editable prefill + overrides (+ premium photo/jauge) | Must | T03, T04, T07 |
 | E2.5 | Add when miss → create catalog row + collection entry | Must | T03, T07 |
-| E2.6 | Edit / delete collection entry + jauge swipe | Must | T08 |
+| E2.6 | Edit / delete collection entry + jauge swipe (swipe = premium) | Must | T08 |
 | E2.7 | Freemium counter `x/10` visible in cellar | Must | T05 |
-| E2.8 | Server-side enforce free limit (+ `emailVerified` hard-gate on cellar routes) | Must | T03 |
-| E2.9 | Required purchase place « Acheté chez » in schema + UI | Must | T01, T07–T08 |
-| E2.10 | Fill-level jauge (0–100) required; swipe to update | Must | T01, T06, T08 |
-| E2.11 | Photo: catalog `photoUrl` + user `photoUrlOverride` + upload/storage | Must | T04 |
+| E2.8 | Server-side freemium: bottle limit **and** premium gates for `fillLevel` + `photoUrlOverride` (+ `emailVerified` hard-gate on cellar routes) | Must | T03, T04 |
+| E2.9 | Required purchase place « Acheté chez » in schema + UI (free) | Must | T01, T07–T08 |
+| E2.10 | Fill-level jauge (0–100): schema default for all; **set/update + swipe = premium** (server + UI) | Must | T01, T03, T06, T08 |
+| E2.11 | Photo: FREE catalog `photoUrl`; PREMIUM `photoUrlOverride` + upload/storage (server-side) | Must | T04, T03 |
 | E2.12 | Ops thin API aligned to existing ops mockup KPIs (no ops UI) | Must | T09 |
 | E2.13 | Migrate ~9–15 bottles from v1 | Should | T11 (S3) |
 | E2.14 | Wine category fields in `attrs` (appellation, grape, vintage…) | Should | T12 |
-| — | Paywall shell (E4.1 stub) | Should | T10 |
+| — | Paywall shell (E4.1 stub) — 11th bottle **or** photo/jauge upsell | Should | T10 |
 
 **UX law:** do not copy atasoif.fr v1. Optimize for memory fields first.  
 **Ops law:** KPI names/funnels from `docs/conception/ops/` are source of truth — do not invent a parallel set.

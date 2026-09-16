@@ -35,14 +35,16 @@ Déjà dans `apps/web/src/styles/_tokens.scss` (pack Nuit).
 - Une intention par écran
 - CTA primaire ambre, secondaire contour clair
 - Compteur freemium toujours visible en cave (`x/10`)
+- Jauge interactive + photo perso = **premium** (teaser / paywall en free)
 - Pas de cadratin (—) dans les libellés : préférer `·`, `:`, virgule
 - Copy client : français, tutoiement, ton direct
 
 ## Photos de bouteilles
 
-Décision produit : **les deux**.
-1. Composant Angular de **fallback rayé** (motif maquette, ratio 3:4 détail / carré listes) quand `photoUrl` est absente.
-2. Vraies images dès qu’elles existent : upload user + seed catalogue (Open Food Facts / E3) — le placeholder ne se shippe que comme fallback.
+Décision produit :
+1. **FREE:** photo catalogue / seed (`Bottle.photoUrl`) seulement ; composant Angular de **fallback rayé** (motif maquette, ratio 3:4 détail / carré listes) quand absente.
+2. **PREMIUM:** upload user → `UserBottle.photoUrlOverride` (+ seed catalogue Open Food Facts / E3).
+3. Le placeholder ne se shippe que comme fallback.
 
 ## Écrans
 
