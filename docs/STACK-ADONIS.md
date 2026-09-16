@@ -56,12 +56,19 @@ curl -s http://localhost:3000/health
 # POST /api/v1/auth/email/verify      { token }
 # POST /api/v1/auth/forgot-password   { email }
 # POST /api/v1/auth/reset-password    { token, password, passwordConfirmation }
-# GET  /api/v1/account/profile        (Authorization: Bearer <token>)
-# POST /api/v1/account/logout         (Authorization: Bearer <token>)
-# POST /api/v1/account/email/resend   (Authorization: Bearer <token>)
+# GET   /api/v1/account/profile       (Authorization: Bearer <token>)
+# PATCH /api/v1/account/profile       { pseudo, isPublic } (Bearer)
+# POST  /api/v1/account/logout        (Authorization: Bearer <token>)
+# POST  /api/v1/account/email/resend  (Authorization: Bearer <token>)
 ```
 
 Signup/login responses wrap `{ type: "bearer", token, user }` under `data`. Passwords are hashed with Adonis scrypt via the AuthFinder mixin — never stored plaintext. Invalid login credentials return **401** JSON (`E_INVALID_CREDENTIALS`).
+
+### Profile fields (E1-T06)
+
+- `PATCH /api/v1/account/profile` updates `pseudo` + `isPublic` for the authenticated user.
+- **Pseudo:** required on update, 2-32 chars, charset `[a-zA-Z0-9._-]`, unique (current user excluded). Optional at signup; DB column remains nullable.
+- **isPublic:** boolean; default `false` at signup. Reserved for future social discoverability (E6) — no public profile pages yet.
 
 ### Email verification + password reset (E1-T03)
 

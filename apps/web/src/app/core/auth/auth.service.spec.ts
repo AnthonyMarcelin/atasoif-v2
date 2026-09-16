@@ -81,4 +81,22 @@ describe('AuthService', () => {
       queryParams: { returnUrl: '/me' },
     });
   });
+
+  it('updates stored user after profile patch', () => {
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
+      .flush({ data: { type: 'bearer', token: 'tok-prof', user: sampleUser } });
+
+    const updated = { ...sampleUser, pseudo: 'nouveau', isPublic: true };
+    service.updateProfile({ pseudo: 'nouveau', isPublic: true }).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/account/profile`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ pseudo: 'nouveau', isPublic: true });
+    req.flush({ data: updated });
+
+    expect(service.user()?.pseudo).toBe('nouveau');
+    expect(service.user()?.isPublic).toBeTrue();
+  });
 });

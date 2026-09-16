@@ -13,28 +13,65 @@
       </div>
     } @else if (loading()) {
       <p class="auth-status" role="status">Chargement de ton profil…</p>
-    } @else {
-      <div class="auth-empty" role="status">
-        <div class="auth-empty__mark" aria-hidden="true">
-          <div class="auth-empty__mark-fill"><span></span></div>
-        </div>
-        @if (user(); as profile) {
-          <p class="auth-lead">
-            Connecté en tant que
-            <strong>{{ profile.pseudo || profile.email }}</strong>
-          </p>
-          <p class="auth-meta" style="justify-content: center">
-            <span>{{ profile.email }}</span>
-          </p>
-          @if (!profile.emailVerified) {
-            <p class="auth-lead">Confirme ton e-mail pour sécuriser ton compte.</p>
-          }
-        } @else {
-          <p class="auth-lead">Profil indisponible pour le moment. Réessaie un peu plus tard.</p>
+    } @else if (user(); as profile) {
+      <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <p class="auth-meta" style="justify-content: flex-start">
+          <span>{{ profile.email }}</span>
+        </p>
+
+        @if (!profile.emailVerified) {
+          <p class="auth-lead">Confirme ton e-mail pour sécuriser ton compte.</p>
         }
+
+        <div [ngClass]="fieldClass('pseudo')">
+          <label class="auth-field__label" for="profile-pseudo">Pseudo</label>
+          <input
+            id="profile-pseudo"
+            class="auth-field__control"
+            type="text"
+            formControlName="pseudo"
+            autocomplete="username"
+            autocapitalize="off"
+            spellcheck="false"
+            [attr.aria-invalid]="form.controls.pseudo.touched && form.controls.pseudo.invalid"
+            [attr.aria-describedby]="errorFor('pseudo') ? 'profile-pseudo-error' : null"
+            (focus)="setFocused('pseudo')"
+            (blur)="setFocused(null)"
+          />
+          @if (errorFor('pseudo'); as message) {
+            <p id="profile-pseudo-error" class="auth-field__error" role="alert">{{ message }}</p>
+          }
+        </div>
+
+        <div class="auth-switch">
+          <input
+            id="profile-is-public"
+            class="auth-switch__input"
+            type="checkbox"
+            role="switch"
+            formControlName="isPublic"
+            [attr.aria-checked]="form.controls.isPublic.value"
+          />
+          <label class="auth-switch__label" for="profile-is-public">
+            <span class="auth-switch__title">Profil public</span>
+            <span class="auth-switch__hint">Pour que d’autres puissent te trouver plus tard.</span>
+          </label>
+        </div>
+
+        @if (formError(); as message) {
+          <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+        }
+
+        @if (savedOk()) {
+          <p class="auth-status auth-status--ok" role="status">Profil à jour.</p>
+        }
+
         <div class="auth-actions">
+          <button class="auth-btn auth-btn--primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
           <button
-            class="auth-btn auth-btn--primary"
+            class="auth-btn auth-btn--ghost"
             type="button"
             (click)="logout()"
             [disabled]="loggingOut()"
@@ -42,6 +79,13 @@
             {{ loggingOut() ? 'Déconnexion…' : 'Se déconnecter' }}
           </button>
           <a class="auth-btn auth-btn--ghost" routerLink="/">Accueil</a>
+        </div>
+      </form>
+    } @else {
+      <div class="auth-empty" role="status">
+        <p class="auth-lead">Profil indisponible pour le moment. Réessaie un peu plus tard.</p>
+        <div class="auth-actions">
+          <a class="auth-btn auth-btn--primary" routerLink="/auth/login">Se reconnecter</a>
         </div>
       </div>
     }

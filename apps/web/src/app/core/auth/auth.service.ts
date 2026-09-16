@@ -20,6 +20,11 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface UpdateProfilePayload {
+  pseudo: string;
+  isPublic: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -77,6 +82,15 @@ export class AuthService {
         return of(null);
       }),
     );
+  }
+
+  updateProfile(payload: UpdateProfilePayload): Observable<AuthUser> {
+    return this.http
+      .patch<ApiDataEnvelope<AuthUser>>(`${this.apiBase}/api/v1/account/profile`, payload)
+      .pipe(
+        map((body) => body.data),
+        tap((user) => this.setUser(user)),
+      );
   }
 
   logout(): Observable<void> {
