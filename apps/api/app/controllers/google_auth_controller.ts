@@ -12,7 +12,7 @@ export default class GoogleAuthController {
    */
   async redirect({ ally }: HttpContext) {
     return ally.use('google').redirect((request) => {
-      request.scopes(['openid', 'profile', 'email'])
+      request.scopes(['openid', 'userinfo.email', 'userinfo.profile'])
       request.param('prompt', 'select_account')
     })
   }

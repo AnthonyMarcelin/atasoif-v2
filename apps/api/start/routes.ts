@@ -16,11 +16,6 @@ router.get('/', () => {
   return { hello: 'world', app: 'atasoif-api' }
 })
 
-/**
- * Ally Google callback must match `config/ally.ts` (`APP_URL/oauth/google/callback`).
- */
-router.get('/oauth/google/callback', [GoogleAuthController, 'callback'])
-
 router
   .group(() => {
     router
@@ -31,6 +26,7 @@ router
         router.post('forgot-password', [controllers.PasswordResets, 'store'])
         router.post('reset-password', [controllers.PasswordResets, 'update'])
         router.get('google/redirect', [GoogleAuthController, 'redirect'])
+        router.get('google/callback', [GoogleAuthController, 'callback'])
       })
       .prefix('auth')
       .as('auth')

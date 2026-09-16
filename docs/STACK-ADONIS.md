@@ -89,8 +89,9 @@ Set `CORS_ORIGIN=http://localhost:4200` so `apps/web` can call the API.
 ```bash
 # Google Cloud Console → OAuth client (Web)
 # Authorized redirect URI must match exactly:
-#   {APP_URL}/oauth/google/callback
-# e.g. http://localhost:3000/oauth/google/callback
+#   {APP_URL}/api/v1/auth/google/callback
+# e.g. http://localhost:3000/api/v1/auth/google/callback
+# (Same path shape as Spawnzone Adonis on Dokploy.)
 
 # apps/api/.env
 GOOGLE_CLIENT_ID=...
@@ -102,8 +103,8 @@ FRONTEND_URL=http://localhost:4200
 Flow:
 
 1. Angular « Continuer avec Google » → `GET /api/v1/auth/google/redirect`
-2. Ally redirects to Google (scopes: openid / profile / email only)
-3. Google → `GET /oauth/google/callback` on the API
+2. Ally redirects to Google (scopes: openid / userinfo.email / userinfo.profile only)
+3. Google → `GET /api/v1/auth/google/callback` on the API
 4. Find-or-create user by email (same address links to an existing password account)
 5. Issue Bearer access token → redirect to `{FRONTEND_URL}/auth/oauth/callback?token=…`
 6. SPA stores the token and calls `/api/v1/account/profile`
