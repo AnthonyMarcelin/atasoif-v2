@@ -80,16 +80,16 @@ Epics: [`EPICS.md`](./EPICS.md)
 
 ### Scope
 
-- T01 Schema: required `purchasePlace` (« Acheté chez ») + `fillLevel` jauge (0–100)
+- T01 Schema: required `purchasePlace` (« Acheté chez ») + `fillLevel` column (default 100; **write = premium** in T03)
 - T02 Catalog search API (local DB)
-- T03 Collection CRUD API + freemium enforce + **`emailVerified` hard-gate** on cellar routes
-- T04 Photo upload/storage (catalog photo + user override)
+- T03 Collection CRUD API + freemium (10-bottle cap **+** server premium gates for jauge / photo override) + **`emailVerified` hard-gate** on cellar routes
+- T04 Photo upload/storage — **premium** user override; free uses catalog/seed photo only
 - T05 Cave list / filter UI + freemium `x/10` counter
-- T06 Bottle detail UI (memory fields + jauge display)
-- T07 Add flow UI: search → hit prefill / miss create → confirm (&lt;30s)
-- T08 Edit / delete UI + jauge swipe
+- T06 Bottle detail UI (memory fields + jauge display / free locked teaser)
+- T07 Add flow UI: search → hit prefill / miss create → confirm (&lt;30s); photo replace + jauge = premium upsell
+- T08 Edit / delete UI + jauge swipe (**premium**)
 - T09 Ops **thin** KPI API aligned to `docs/conception/ops/` mockups (Habitudes + cellar funnel stages; stub billing/social)
-- T10 Paywall screen shell (Should — non-billing OK if Sprint 4 not ready)
+- T10 Paywall screen shell (Should — 11th bottle **or** photo/jauge upsell; non-billing OK if Sprint 4 not ready)
 
 ### Explicitly out
 
@@ -98,12 +98,14 @@ Epics: [`EPICS.md`](./EPICS.md)
 - IAP purchase (Sprint 4)
 - Friends / social
 - Inventing KPIs not present in ops mockups
+- Gating « Acheté chez », price, notes/review behind premium (out of scope for freemium photo/jauge decision)
 
 ### Exit criteria
 
-- Happy path: search → add → see bottle with **lieu / price / note / photo / niveau** in &lt;30s UX intent
-- « Acheté chez » and fill level required end-to-end (schema + UI)
+- Happy path free: search → add → see bottle with **lieu / price / note / catalog photo** in &lt;30s UX intent
+- « Acheté chez » required end-to-end (schema + UI); fill-level column defaulted; **interactive jauge + user photo = premium**
 - 11th bottle blocked without entitlement (server + UI)
+- Free plan blocked **server-side** on `fillLevel` write and `photoUrlOverride` / upload (403 premium); UI does not bypass
 - Unverified email cannot hit cellar APIs (403 `E_EMAIL_UNVERIFIED`)
 - Ops thin endpoints can feed Habitudes-style aggregates from real cellar data (live vs stub documented)
 - No dependency on atasoif.fr v1 layouts
