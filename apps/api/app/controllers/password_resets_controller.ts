@@ -18,7 +18,7 @@ export default class PasswordResetsController {
    */
   async store({ request }: HttpContext) {
     const { email } = await request.validateUsing(forgotPasswordValidator)
-    const user = await User.findBy('email', email)
+    const user = await User.findBy('email', email.trim().toLowerCase())
 
     if (user) {
       const tokens = new AuthEmailTokenService()

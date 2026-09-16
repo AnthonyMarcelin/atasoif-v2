@@ -9,7 +9,13 @@ import UserBottle from '#models/user_bottle'
 import Subscription from '#models/subscription'
 
 export default class User extends compose(UserSchema, withAuthFinder(hash)) {
-  static accessTokens = DbAccessTokensProvider.forModel(User)
+  /**
+   * Bearer tokens expire by default (XSS / localStorage blast radius).
+   * Override per-create with `{ expiresIn }` when a shorter TTL is required.
+   */
+  static accessTokens = DbAccessTokensProvider.forModel(User, {
+    expiresIn: '30 days',
+  })
   declare currentAccessToken?: AccessToken
 
   @column()

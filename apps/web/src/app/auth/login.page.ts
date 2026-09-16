@@ -14,10 +14,14 @@ const OAUTH_ERROR_COPY: Record<string, string> = {
   google_state: 'Session Google expirée. Réessaie.',
   google_error: 'Google a renvoyé une erreur. Réessaie.',
   google_email: 'Google n’a pas fourni d’e-mail utilisable.',
+  google_unverified:
+    'Cet e-mail a déjà un compte non confirmé. Valide le lien reçu par mail, puis réessaie Google.',
   facebook_denied: 'Connexion Facebook annulée.',
   facebook_state: 'Session Facebook expirée. Réessaie.',
   facebook_error: 'Facebook a renvoyé une erreur. Réessaie.',
   facebook_email: 'Facebook n’a pas fourni d’e-mail utilisable.',
+  facebook_unverified:
+    'Cet e-mail a déjà un compte non confirmé. Valide le lien reçu par mail, puis réessaie Facebook.',
 };
 
 @Component({

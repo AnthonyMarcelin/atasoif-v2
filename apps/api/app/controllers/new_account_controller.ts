@@ -13,7 +13,7 @@ export default class NewAccountController {
 
     const user = await User.create({
       fullName: fullName ?? null,
-      email,
+      email: email.trim().toLowerCase(),
       password,
       pseudo: pseudo ?? null,
       isPublic: false,
