@@ -75,28 +75,37 @@ Epics: [`EPICS.md`](./EPICS.md)
 ## Sprint 2 — Memory cellar MVP
 
 **Epics:** E2 (core), E4.1 stub paywall UI optional  
+**Tickets:** [`docs/tickets/E2-memory-cellar.md`](./tickets/E2-memory-cellar.md) — T01→T09 Must (T10 Should; T11–T12 later)  
 **Depends on:** Sprint 1
 
 ### Scope
 
-- Collection list + detail (memory fields prominent: `pricePaid`, `boughtAt`, note, review, photo)
-- Catalog search API + UI
-- Add flow: search → prefill → edit all + photo → save
-- Miss path: create bottle + user bottle
-- Edit / delete
-- Freemium: UI counter + **server** block at 11
-- Paywall screen shell (can be non-billing “coming soon” if Sprint 4 not ready)
+- T01 Schema: required `purchasePlace` (« Acheté chez ») + `fillLevel` jauge (0–100)
+- T02 Catalog search API (local DB)
+- T03 Collection CRUD API + freemium enforce + **`emailVerified` hard-gate** on cellar routes
+- T04 Photo upload/storage (catalog photo + user override)
+- T05 Cave list / filter UI + freemium `x/10` counter
+- T06 Bottle detail UI (memory fields + jauge display)
+- T07 Add flow UI: search → hit prefill / miss create → confirm (&lt;30s)
+- T08 Edit / delete UI + jauge swipe
+- T09 Ops **thin** KPI API aligned to `docs/conception/ops/` mockups (Habitudes + cellar funnel stages; stub billing/social)
+- T10 Paywall screen shell (Should — non-billing OK if Sprint 4 not ready)
 
 ### Explicitly out
 
-- OFF import (Sprint 3)
+- Full ops / admin UI (10 screens) — API feed only
+- Catalog remote lookup / OFF bulk import (Sprint 3)
 - IAP purchase (Sprint 4)
-- Friends
+- Friends / social
+- Inventing KPIs not present in ops mockups
 
 ### Exit criteria
 
-- Happy path: search → add → see bottle in collection with where/price/note in &lt;30s UX intent
-- 11th bottle blocked without entitlement
+- Happy path: search → add → see bottle with **lieu / price / note / photo / niveau** in &lt;30s UX intent
+- « Acheté chez » and fill level required end-to-end (schema + UI)
+- 11th bottle blocked without entitlement (server + UI)
+- Unverified email cannot hit cellar APIs (403 `E_EMAIL_UNVERIFIED`)
+- Ops thin endpoints can feed Habitudes-style aggregates from real cellar data (live vs stub documented)
 - No dependency on atasoif.fr v1 layouts
 
 ---

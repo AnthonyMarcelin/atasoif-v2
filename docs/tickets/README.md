@@ -6,6 +6,7 @@ Orchestrator breaks epics into tickets here. Sub-agents pick **one ticket per th
 |---|---|---|
 | E0 Platform foundation | Closed locally — E0.7 OVH/TLS later | S0 ✅ · [`E0-docker.md`](./E0-docker.md) |
 | E1 Identity & access | [`E1-identity.md`](./E1-identity.md) | S1 (+ T09 in S5) |
+| E2 Memory cellar | [`E2-memory-cellar.md`](./E2-memory-cellar.md) | S2 (T01–T09 Must · T10 Should · T11–T12 later) |
 
 ## Rules for workers
 
