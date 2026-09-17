@@ -8,6 +8,8 @@ Orchestrator breaks epics into tickets here. Sub-agents pick **one ticket per th
 | E1 Identity & access | [`E1-identity.md`](./E1-identity.md) | S1 (+ T09 in S5) |
 | E2 Memory cellar | [`E2-memory-cellar.md`](./E2-memory-cellar.md) | S2 (T01–T09 Must · T10 Should · T11–T12 later) |
 
+DB / catalog decisions (VPS DB, Lucid schema, EAN cache-first, OFF + UPCitemdb nurse): [`../DATABASE.md`](../DATABASE.md).
+
 ## Rules for workers
 
 1. Read the ticket + `.cursor/rules/90-project-context.mdc`

@@ -77,6 +77,8 @@ Everything below is ranked for that outcome. Social and growth come after memory
 
 **Goal:** Search finds real bottles so add stays fast.
 
+**Plan (locked):** [`DATABASE.md`](./DATABASE.md) — cache-first by EAN, OFF dump primary seed, UPCitemdb curated nurse, Bright Data Won’t.
+
 | ID | Story | Priority |
 |---|---|---|
 | E3.1 | One-shot Open Food Facts alcohol import | Must |

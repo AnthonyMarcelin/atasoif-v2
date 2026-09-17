@@ -25,7 +25,7 @@ atasoif-v2/
 └── docs/             # product, UX, epics, sprints
 ```
 
-Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DOCKER.md`](docs/DOCKER.md) · [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md) · [`docs/BUN.md`](docs/BUN.md)
+Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DATABASE.md`](docs/DATABASE.md) · [`docs/DOCKER.md`](docs/DOCKER.md) · [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md) · [`docs/BUN.md`](docs/BUN.md)
 
 Bun workspaces cover `apps/*` + `packages/*` (single root `bun.lock`).
 
