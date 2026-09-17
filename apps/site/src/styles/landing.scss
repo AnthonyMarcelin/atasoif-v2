@@ -92,6 +92,10 @@
     &:hover {
       color: var(--color-ink);
     }
+
+    @media (max-width: 640px) {
+      display: none;
+    }
   }
 }
 
