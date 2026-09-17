@@ -4,6 +4,7 @@
 - Maquettes + DS interactif : `docs/conception/design-system/AtaSoif-Nuit.dc.html`
 - Assets livrables (PNG, SVG, splash, routes) : `docs/conception/assets/` (+ `README.md`)
 - Tokens runtime : `apps/web/src/styles/_tokens.scss` (copie des tokens Nuit)
+- Landing marketing : `apps/site` (Astro) · maquette `docs/conception/landing/`
 
 Marque régénérable : `docs/conception/design-system/AtaSoif-Assets.dc.html` (lockups, icônes, splash).
 

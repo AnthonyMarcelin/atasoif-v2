@@ -1,12 +1,19 @@
-# Docker — API + Postgres
+# Docker — API + Postgres (+ site séparément)
 
-Containerize **API + database** only. Angular/Capacitor stay on the host for native store builds.
+Containerize **API + database** only in Compose. Angular/Capacitor stay on the host for native store builds.
+
+La landing marketing (`apps/site`, Astro static) a son **propre** Dockerfile nginx pour Dokploy :
+
+```bash
+docker build -f apps/site/Dockerfile -t atasoif-site .
+```
 
 ## Files
 
 | File | Role |
 |---|---|
 | `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime) |
+| `apps/site/Dockerfile` | Astro static → nginx (Dokploy) |
 | `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
