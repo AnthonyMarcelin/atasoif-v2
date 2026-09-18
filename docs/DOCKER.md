@@ -41,6 +41,30 @@ GitHub App is already installed on Dokploy **and** on `AnthonyMarcelin/atasoif-v
 
 Do **not** configure Build type Dockerfile / Nixpacks / monorepo context in Dokploy for this service. Rebuilds happen in GitHub Actions on `dev` (path filters) or via **workflow_dispatch** (override `PUBLIC_*` inputs).
 
+### Auto-deploy after GHCR push (Tailscale → Dokploy webhook)
+
+GitHub-hosted runners are **not** on the Tailscale mesh (VPS + Mac are). After a successful `atasoif-site` push, job **`notify-dokploy`** in [`.github/workflows/site-ghcr.yml`](../.github/workflows/site-ghcr.yml):
+
+1. Joins the tailnet via [`tailscale/github-action`](https://github.com/tailscale/github-action) `@v4`
+2. `POST`s the Dokploy deploy webhook URL stored in secrets (never commit the URL or token)
+
+`continue-on-error: false` — if Tailscale comes up and the webhook fails, the workflow **fails loudly**.
+
+#### Required GitHub Actions secrets
+
+Settings → Secrets and variables → Actions → **New repository secret**.
+
+| Secret | Required | Purpose |
+|---|---|---|
+| `DOKPLOY_SITE_DEPLOY_WEBHOOK` | **Yes** | Full Dokploy deploy webhook URL (Tailscale IP, e.g. `http://100.x.y.z:3000/api/deploy/...`). Copy from Dokploy service `site` — do **not** put it in the repo. |
+| `TS_OAUTH_CLIENT_ID` | One of the Tailscale auth options | Tailscale OAuth client ID (`auth_keys` scope, tags include `tag:ci`) |
+| `TS_OAUTH_SECRET` | With OAuth | Tailscale OAuth client secret |
+| `TS_AUTHKEY` | **Or** instead of OAuth | Reusable auth key tagged for CI (`tag:ci`), **ephemeral** (and pre-approved if the tailnet uses device approval) |
+
+**Prefer** OAuth (`TS_OAUTH_CLIENT_ID` + `TS_OAUTH_SECRET`) so CI nodes stay ephemeral without a long-lived key. If you use `TS_AUTHKEY` instead, leave the OAuth secrets unset.
+
+Tailscale ACL / tag owners must allow `tag:ci` (and that tag must reach Dokploy on the VPS over Tailscale).
+
 #### After the first GHCR push (Anthony)
 
 New container packages default to **private** and are **linked** to this repo when CI pushes with `GITHUB_TOKEN`.
@@ -59,7 +83,7 @@ Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`,
 |---|---|
 | `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime) |
 | `apps/site/Dockerfile` | Astro static → nginx (built in CI → GHCR) |
-| `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` |
+| `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` + Tailscale → Dokploy webhook |
 | `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
