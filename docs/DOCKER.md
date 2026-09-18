@@ -28,16 +28,28 @@ docker build -f apps/site/Dockerfile -t atasoif-site \
 
 ### Dokploy service `site`
 
+GitHub App is already installed on Dokploy **and** on `AnthonyMarcelin/atasoif-v2` (same integration as Spawnzone for git). The **`site`** service still uses Provider **Docker** and pulls **À ta soif’s own** GHCR package — not a Spawnzone image.
+
 | Field | Value |
 |---|---|
 | Name | `site` |
-| Provider | **Docker** |
+| Provider | **Docker** (pull image) |
 | Docker image | `ghcr.io/anthonymarcelin/atasoif-site:latest` |
 | Port | **80** |
-| Registry | GHCR — if the package is **private**, add registry auth (PAT with `read:packages`). Public package → no auth needed |
+| Registry | Prefer **Public** package `atasoif-site` → anonymous pull, no extra registry form. If **Private**, select the **existing Dokploy GHCR** registry (same `ghcr.io` creds already used for Spawnzone pulls) — do **not** invent a new PAT unless that registry is missing |
 | Auto-deploy | optional (watch image tag / Dokploy pull) |
 
 Do **not** configure Build type Dockerfile / Nixpacks / monorepo context in Dokploy for this service. Rebuilds happen in GitHub Actions on `dev` (path filters) or via **workflow_dispatch** (override `PUBLIC_*` inputs).
+
+#### After the first GHCR push (Anthony)
+
+New container packages default to **private** and are **linked** to this repo when CI pushes with `GITHUB_TOKEN`.
+
+1. **Settings → Actions → General → Workflow permissions** → **Read and write** (needed for the first / ongoing package publish).
+2. Open the new package **`atasoif-site`** → confirm it is linked to **`AnthonyMarcelin/atasoif-v2`**. If not: Package settings → connect repository.
+3. **Recommended visibility for this marketing image:** Package settings → **Change visibility → Public** (irreversible). Then Dokploy Docker pull works with the existing GitHub App setup and **without** new registry secrets.
+4. If you keep it **Private**: reuse Dokploy’s existing **GHCR** registry entry; ensure that credential can `read:packages` for `atasoif-site`. Optionally Package settings → **Manage Actions access** → `atasoif-v2` **Write** if a later workflow push is denied.
+5. In Dokploy project **À ta soif** → service `site` → image `ghcr.io/anthonymarcelin/atasoif-site:latest` → Deploy.
 
 Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`, `PUBLIC_CTA_MODE`, `PUBLIC_IOS_URL`, `PUBLIC_ANDROID_URL`. Defaults match waitlist launch (`https://atasoif.fr`, `waitlist`, `#ios`, `#android`).
 
