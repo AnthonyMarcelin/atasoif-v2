@@ -1,9 +1,8 @@
 # Landing · À ta soif
 
 Page marketing. Direction visuelle **Nuit**, identique à l'app et au back-office.
-Source de vérité : `AtaSoif-Landing.dc.html` à la racine du projet.
-
-Tokens de couleur, typo et espacement : `assets/_tokens.scss`. Rien de nouveau ici.
+Implémentation : `apps/site` (Astro, static). Maquette source dans ce dossier.
+Tokens de couleur, typo et espacement : `assets/_tokens.scss` (aussi copiés dans `apps/site/src/styles/_tokens.scss`).
 
 ## Ce qu'il y a dans ce dossier
 

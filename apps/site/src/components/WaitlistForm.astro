@@ -1,0 +1,129 @@
+---
+interface Props {
+  align?: 'start' | 'center';
+  note?: string;
+}
+
+const {
+  align = 'start',
+  note = 'SORTIE PRÉVUE CET AUTOMNE · IOS ET ANDROID · UN SEUL EMAIL, PAS DE NEWSLETTER',
+} = Astro.props;
+---
+
+<form class:list={['waitlist', align === 'center' && 'waitlist--center']} data-waitlist>
+  <div class="waitlist__row">
+    <label class="sr-only" for={`email-${align}`}>Email</label>
+    <input
+      id={`email-${align}`}
+      name="email"
+      type="email"
+      required
+      autocomplete="email"
+      placeholder="ton@email.fr"
+      data-waitlist-input
+    />
+    <button type="submit">Être prévenu</button>
+  </div>
+  <p class="waitlist__note" data-waitlist-note>{note}</p>
+</form>
+
+<style lang="scss">
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .waitlist {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 480px;
+    width: 100%;
+
+    &--center {
+      align-items: center;
+      max-width: 460px;
+    }
+  }
+
+  .waitlist__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  input {
+    flex: 1;
+    min-width: 180px;
+    height: 54px;
+    border: var(--stroke) solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    padding: 0 14px;
+    font-size: 16px;
+    border-radius: var(--radius);
+
+    &:focus {
+      outline: none;
+      border: var(--stroke-accent) solid var(--color-accent);
+    }
+  }
+
+  button {
+    height: 54px;
+    padding: 0 22px;
+    border: var(--stroke) solid var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: var(--radius);
+    transition: background var(--dur-tap) var(--ease);
+
+    &:hover {
+      background: var(--color-accent-hover);
+      border-color: var(--color-accent-hover);
+    }
+  }
+
+  .waitlist__note {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-ink-faint);
+    letter-spacing: 0.06em;
+  }
+
+  .waitlist--center .waitlist__note {
+    text-align: center;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-waitlist]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const note = form.querySelector<HTMLElement>('[data-waitlist-note]');
+      const input = form.querySelector<HTMLInputElement>('[data-waitlist-input]');
+      if (!input?.checkValidity()) {
+        input?.reportValidity();
+        return;
+      }
+      if (note) {
+        note.textContent = 'C’EST NOTÉ · ON TE PRÉVIENT À LA SORTIE';
+      }
+      form.reset();
+    });
+  });
+</script>

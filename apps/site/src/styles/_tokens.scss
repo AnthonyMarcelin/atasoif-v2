@@ -1,0 +1,98 @@
+/* À ta soif · direction Nuit · tokens
+   Généré depuis AtaSoif-Nuit.dc.html. Remplace apps/web/src/styles/_tokens.scss.
+   Règle de fer : rayon 0 partout, aucune ombre portée, l'ambre est le seul accent. */
+
+:root {
+  /* Fonds */
+  --color-bg: #0E0C0A;
+  --color-surface: #17140F;
+  --color-surface-2: #1F1B15;
+  --color-surface-dead: #131110;   /* bouteille terminée */
+  --color-border: #3E362C;
+  --color-border-faint: #2A241D;
+  --color-border-strong: #F2EADC;  /* trait de jauge, contours forts */
+
+  /* Encres */
+  --color-ink: #F2EADC;
+  --color-ink-2: #DDD2C1;
+  --color-ink-3: #C3B7A5;
+  --color-ink-muted: #9A8E7E;
+  --color-ink-faint: #6A5B4A;
+  --color-ink-disabled: #5A4E40;
+  --color-on-accent: #14110D;      /* texte sur aplat ambre ou ivoire */
+
+  /* Accent unique */
+  --color-accent: #E39A3C;
+  --color-accent-hover: #F0B563;
+  --color-accent-active: #B9762A;
+
+  /* États */
+  --color-success: #69A88F;
+  --color-success-bg: #14251F;
+  --color-success-border: #24463A;
+  --color-danger: #D9695F;
+  --color-danger-bg: #241614;
+  --color-danger-border: #5A2E2A;
+
+  /* Catégories */
+  --color-cat-whisky: #E39A3C;
+  --color-cat-rhum: #D98A6A;
+  --color-cat-biere: #D6BE55;
+  --color-cat-vin: #C4708F;
+  --color-cat-gin: #69A88F;
+  --color-cat-autre: #9A8E7E;
+
+  /* Typographie */
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;  /* 800 uniquement */
+  --font-body: 'Schibsted Grotesk', system-ui, sans-serif;       /* 400 / 500 / 600 */
+  --font-mono: 'Space Mono', ui-monospace, monospace;            /* 400 / 700 */
+
+  --display-track: -0.04em;   /* lettrage des titres, jusqu'à -0.045em au-delà de 40px */
+  --mono-track: 0.1em;        /* lettrage des tampons et labels mono */
+
+  --text-display-xl: 58px;
+  --text-display-l: 46px;
+  --text-display-m: 34px;
+  --text-display-s: 20px;     /* nom de bouteille en liste */
+  --text-body-l: 17px;
+  --text-body: 16px;
+  --text-body-s: 14px;
+  --text-mono-l: 22px;        /* prix, compteur */
+  --text-mono: 12px;
+  --text-mono-s: 10px;        /* labels de champ, tampons */
+
+  /* Espaces */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 20px;           /* gouttière d'écran */
+  --space-xl: 32px;
+
+  /* Traits */
+  --stroke: 1.5px;
+  --stroke-accent: 2.5px;     /* champ actif, offre choisie */
+  --stroke-active-tab: 3px;   /* trait d'onglet actif */
+  --radius: 0;
+  --shadow: none;
+
+  /* Cibles et hauteurs */
+  --tap-min: 48px;
+  --field-h: 50px;
+  --button-h: 52px;
+  --button-h-primary: 54px;
+  --chip-h: 32px;
+
+  /* Mouvement */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-tap: 150ms;
+  --dur-transition: 280ms;
+  --dur-fill: 480ms;          /* remplissage de jauge */
+
+  /* Rotations de tampon, à piocher au hasard par catégorie */
+  --stamp-rotate-a: -3deg;
+  --stamp-rotate-b: 2deg;
+  --stamp-rotate-c: -2deg;
+  --stamp-rotate-d: 3deg;
+  --stamp-rotate-e: -4deg;
+  --stamp-rotate-f: -6deg;    /* tampon OUVERTE sur la photo de détail */
+}

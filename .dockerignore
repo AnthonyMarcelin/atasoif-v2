@@ -5,8 +5,10 @@ dist
 coverage
 tmp
 uploads
-apps/web
+# Exclude Angular app from API/site images, but keep package.json so Bun
+# workspace lockfile resolution works for apps/site Dockerfile stubs.
 apps/web/**
+!apps/web/package.json
 **/*.md
 docs
 .cursor

@@ -1,0 +1,432 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BottleMark from '../components/BottleMark.astro';
+import StoreCtas from '../components/StoreCtas.astro';
+import WaitlistForm from '../components/WaitlistForm.astro';
+import caveScreen from '../assets/screens/cave.png';
+import searchScreen from '../assets/screens/search.png';
+import noteScreen from '../assets/screens/note.png';
+import detailScreen from '../assets/screens/detail.png';
+import friendScreen from '../assets/screens/friend.png';
+import '../styles/landing.scss';
+
+const ctaMode = (import.meta.env.PUBLIC_CTA_MODE || 'waitlist') as 'waitlist' | 'stores';
+const isWaitlist = ctaMode === 'waitlist';
+const iosUrl = import.meta.env.PUBLIC_IOS_URL || '#ios';
+const androidUrl = import.meta.env.PUBLIC_ANDROID_URL || '#android';
+const headerCta = isWaitlist ? 'Être prévenu' : 'Télécharger';
+const priceCta = isWaitlist ? 'Être prévenu' : 'Commencer gratuitement';
+const year = new Date().getFullYear();
+---
+
+<BaseLayout>
+  <div class="page">
+    <header class="header">
+      <div class="shell">
+        <a class="brand" href="#debut">
+          <BottleMark size="md" />
+          <span>À ta soif</span>
+        </a>
+        <nav class="nav" aria-label="Navigation principale">
+          <a href="#comment">COMMENT ÇA MARCHE</a>
+          <a href="#prix">PRIX</a>
+          <a class="nav__cta" href="#debut">{headerCta}</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section id="debut" class="section hero">
+        <div class="shell">
+          <div class="hero__copy">
+            <span class="eyebrow">CAVE NUMÉRIQUE · WHISKY, RHUM, VIN, BIÈRE</span>
+            <h1 class="display hero__title">Tu te souviens<br />de cette<br />bouteille ?</h1>
+            <p class="lede hero__lede">
+              Le prix, l'endroit, la date, ce que tu en as pensé. Six mois plus tard, tu sauras encore.
+              Pas une base de données : un carnet que tu remplis en trente secondes.
+            </p>
+
+            {
+              isWaitlist ? (
+                <WaitlistForm />
+              ) : (
+                <StoreCtas iosUrl={iosUrl} androidUrl={androidUrl} />
+              )
+            }
+
+            <div class="stats" role="list">
+              <div class="stat stat--accent" role="listitem">
+                <strong>30 s</strong>
+                <span>POUR RANGER UNE BOUTEILLE</span>
+              </div>
+              <div class="stat" role="listitem">
+                <strong>11 462</strong>
+                <span>FICHES AU CATALOGUE</span>
+              </div>
+              <div class="stat" role="listitem">
+                <strong>0 €</strong>
+                <span>JUSQU'À 10 BOUTEILLES</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero__device">
+            <figure>
+              <Image
+                src={caveScreen}
+                alt="Écran Ma cave de l'application À ta soif"
+                widths={[290, 580]}
+                sizes="290px"
+              />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--surface lose" aria-labelledby="lose-title">
+        <div class="shell">
+          <h2 id="lose-title" class="display">Ce que tu perds sans carnet</h2>
+          <div class="lose__grid">
+            <article class="lose__item">
+              <span class="num">01</span>
+              <h3>Le prix</h3>
+              <p>
+                Tu rachètes la même bouteille et tu ne sais plus si tu l'avais payée 40 ou 70 €. Ni si
+                elle valait le coup.
+              </p>
+            </article>
+            <article class="lose__item">
+              <span class="num">02</span>
+              <h3>L'endroit</h3>
+              <p>
+                Ce caviste qui l'avait, ce voyage, ce cadeau. L'histoire de la bouteille disparaît avant
+                la bouteille.
+              </p>
+            </article>
+            <article class="lose__item">
+              <span class="num">03</span>
+              <h3>Ton avis</h3>
+              <p>
+                Tu te rappelles avoir aimé, mais plus pourquoi. Et devant le rayon, tu repartis au
+                hasard.
+              </p>
+            </article>
+            <article class="lose__item">
+              <span class="num">04</span>
+              <h3>Ce qu'il reste</h3>
+              <p>
+                Combien de fonds de bouteille oubliés derrière les autres ? La jauge te le dit d'un
+                coup d'œil.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="comment" class="section how" aria-labelledby="how-title">
+        <div class="shell">
+          <div class="intro">
+            <span class="eyebrow">COMMENT ÇA MARCHE</span>
+            <h2 id="how-title" class="display">Trois écrans, trente secondes</h2>
+          </div>
+          <div class="how__grid">
+            <article class="how__step">
+              <div class="head">
+                <span class="num">01</span>
+                <h3>Tu la cherches</h3>
+              </div>
+              <p>
+                Trois lettres suffisent. Le catalogue connaît déjà l'origine, le degré, le volume. Rien
+                à saisir à la main.
+              </p>
+              <figure>
+                <Image
+                  src={searchScreen}
+                  alt="Recherche d'une bouteille dans le catalogue"
+                  widths={[360, 720]}
+                  sizes="(max-width: 700px) 100vw, 360px"
+                />
+              </figure>
+            </article>
+            <article class="how__step">
+              <div class="head">
+                <span class="num">02</span>
+                <h3>Tu notes l'essentiel</h3>
+              </div>
+              <p>
+                Le prix payé, où, quand, ton mot. C'est le seul écran où tu écris, et il ne demande que
+                ce dont tu te souviendras.
+              </p>
+              <figure>
+                <Image
+                  src={noteScreen}
+                  alt="Saisie du souvenir : prix, lieu, date, note"
+                  widths={[360, 720]}
+                  sizes="(max-width: 700px) 100vw, 360px"
+                />
+              </figure>
+            </article>
+            <article class="how__step">
+              <div class="head">
+                <span class="num">03</span>
+                <h3>Tu la retrouves</h3>
+              </div>
+              <p>
+                Des mois après, tout est là. Le ticket, ton mot, et la jauge qui dit ce qu'il reste au
+                fond.
+              </p>
+              <figure>
+                <Image
+                  src={detailScreen}
+                  alt="Fiche d'une bouteille avec son ticket et son niveau"
+                  widths={[360, 720]}
+                  sizes="(max-width: 700px) 100vw, 360px"
+                />
+              </figure>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--surface gauge" aria-labelledby="gauge-title">
+        <div class="shell">
+          <div class="copy">
+            <span class="eyebrow">LA JAUGE</span>
+            <h2 id="gauge-title" class="display">Une cave, ça se vide</h2>
+            <p class="lede">
+              Les autres applications listent ce que tu possèdes. Celle-ci suit ce qu'il te reste. Un
+              glissement du doigt après une soirée, et la jauge descend. Quand elle touche le fond, la
+              bouteille passe dans tes souvenirs au lieu de disparaître.
+            </p>
+            <ul class="bullets">
+              <li>Scellée, entamée, finie : trois états, pas dix champs.</li>
+              <li>Les bouteilles terminées restent consultables, avec ta note.</li>
+              <li>Filtre « ouvertes seulement » pour savoir quoi finir ce soir.</li>
+            </ul>
+          </div>
+          <div class="gauge__viz" aria-hidden="true">
+            <div class="bottle">
+              <div class="bottle__shape bottle__shape--lg">
+                <span class="neck"></span>
+                <span class="body"><span class="fill fill--pour"></span></span>
+              </div>
+              <span class="bottle__label">62%</span>
+            </div>
+            <div class="bottle bottle--dim">
+              <div class="bottle__shape bottle__shape--sm">
+                <span class="neck"></span>
+                <span class="body"><span class="fill fill--full"></span></span>
+              </div>
+              <span class="bottle__label bottle__label--muted">SCELLÉE</span>
+            </div>
+            <div class="bottle bottle--faint">
+              <div class="bottle__shape bottle__shape--sm">
+                <span class="neck"></span>
+                <span class="body"></span>
+              </div>
+              <span class="bottle__label bottle__label--faint">VIDE</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section friends" aria-labelledby="friends-title">
+        <div class="shell">
+          <div class="copy">
+            <span class="eyebrow">ENTRE AMIS</span>
+            <h2 id="friends-title" class="display">Sa cave, pas son portefeuille</h2>
+            <p class="lede">
+              Tu ouvres la cave d'un ami, tu vois ce qu'il boit et ce qu'il en pense. Tu ne vois pas
+              combien il l'a payée, ni où. Ce qu'il a dépensé reste à lui, ses mots restent à lui.
+            </p>
+            <ul class="privacy">
+              <li>
+                <span>Ses bouteilles et ses notes</span>
+                <span class="tag tag--ok">VISIBLE</span>
+              </li>
+              <li>
+                <span>Les prix qu'il a payés</span>
+                <span class="tag tag--muted">MASQUÉ PAR DÉFAUT</span>
+              </li>
+              <li>
+                <span>Ses textes personnels</span>
+                <span class="tag tag--accent">JAMAIS PARTAGÉ</span>
+              </li>
+            </ul>
+            <p class="privacy-note">
+              AUCUN FIL D'ACTUALITÉ, AUCUN COMPTEUR DE MENTIONS J'AIME. TU INVITES QUI TU VEUX, PAR
+              LIEN.
+            </p>
+          </div>
+          <div class="device">
+            <figure>
+              <Image
+                src={friendScreen}
+                alt="La cave d'un ami, en lecture seule"
+                widths={[290, 580]}
+                sizes="290px"
+              />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="prix" class="section section--surface pricing" aria-labelledby="prix-title">
+        <div class="shell">
+          <div class="intro">
+            <span class="eyebrow">PRIX</span>
+            <h2 id="prix-title" class="display">Dix bouteilles offertes, pour toujours</h2>
+            <p class="lede">
+              Pas un essai de sept jours. Tes dix premières bouteilles restent à toi, avec leurs
+              souvenirs, même si tu ne paies jamais.
+            </p>
+          </div>
+
+          <div class="plans">
+            <article class="plan">
+              <div class="price">
+                <span class="tier">GRATUIT</span>
+                <strong>0 €</strong>
+                <span class="hint">SANS CARTE BANCAIRE</span>
+              </div>
+              <ul>
+                <li>Jusqu'à 10 bouteilles</li>
+                <li>Ticket complet : prix, lieu, date, note</li>
+                <li>Suivi du niveau</li>
+                <li>Amis et caves partagées</li>
+              </ul>
+            </article>
+
+            <article class="plan plan--featured">
+              <span class="badge">LE PLUS PRIS</span>
+              <div class="price">
+                <span class="tier tier--accent">ILLIMITÉ · À L'ANNÉE</span>
+                <div class="row">
+                  <strong>39,99 €</strong>
+                  <span class="unit">/ AN</span>
+                </div>
+                <span class="hint hint--ok">3,33 € PAR MOIS · DEUX MOIS OFFERTS</span>
+              </div>
+              <ul>
+                <li>Bouteilles illimitées</li>
+                <li>Photos de tes bouteilles</li>
+                <li>Historique de niveau et de dégustation</li>
+                <li>Export de ta cave, quand tu veux</li>
+              </ul>
+              <a class="cta" href="#debut">{priceCta}</a>
+            </article>
+
+            <article class="plan">
+              <div class="price">
+                <span class="tier">ILLIMITÉ · AU MOIS</span>
+                <div class="row">
+                  <strong>3,99 €</strong>
+                  <span class="unit">/ MOIS</span>
+                </div>
+                <span class="hint">SANS ENGAGEMENT</span>
+              </div>
+              <ul>
+                <li>Tout ce qu'il y a dans l'annuel</li>
+                <li>Résiliable à tout moment</li>
+                <li>Le prix d'un demi en terrasse</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section faq" aria-labelledby="faq-title">
+        <div class="shell">
+          <div class="intro">
+            <span class="eyebrow">QUESTIONS</span>
+            <h2 id="faq-title" class="display">Ce qu'on nous demande</h2>
+          </div>
+          <div class="faq__list">
+            <div class="faq__item">
+              <h3>Est-ce que ça marche pour le vin et la bière ?</h3>
+              <p>
+                Oui. Whisky, rhum, gin, vin, bière, liqueurs. Chaque catégorie a son tampon et ses
+                champs, sans t'imposer le vocabulaire des autres.
+              </p>
+            </div>
+            <div class="faq__item">
+              <h3>Et si ma bouteille n'est pas au catalogue ?</h3>
+              <p>
+                Tu l'écris toi-même en trois champs, et elle enrichit le catalogue pour les suivants
+                une fois vérifiée.
+              </p>
+            </div>
+            <div class="faq__item">
+              <h3>Mes notes sont-elles privées ?</h3>
+              <p>
+                Tes textes ne sont jamais partagés, ce n'est même pas un réglage. Les prix payés sont
+                masqués par défaut. Tu peux exporter ou supprimer ta cave à tout moment.
+              </p>
+            </div>
+            <div class="faq__item">
+              <h3>Que deviennent mes bouteilles si j'arrête de payer ?</h3>
+              <p>
+                Elles restent. Tu retrouves la limite de dix pour les ajouts, mais rien n'est
+                supprimé et tout reste consultable.
+              </p>
+            </div>
+            <div class="faq__item">
+              <h3>Ça marche sans réseau ?</h3>
+              <p>
+                Oui. Tu ajoutes dans une cave sans réseau, la synchronisation se fait toute seule au
+                retour.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--surface cta-band" aria-labelledby="final-title">
+        <div class="shell">
+          <BottleMark size="lg" />
+          <h2 id="final-title" class="display">La prochaine, tu t'en souviendras</h2>
+          {
+            isWaitlist ? (
+              <WaitlistForm
+                align="center"
+                note="UN SEUL EMAIL À LA SORTIE · RIEN D'AUTRE"
+              />
+            ) : (
+              <StoreCtas iosUrl={iosUrl} androidUrl={androidUrl} align="center" />
+            )
+          }
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell">
+        <div class="footer__brand">
+          <div class="row">
+            <BottleMark size="sm" muted />
+            <span class="name">À ta soif</span>
+          </div>
+          <p class="legal">
+            L'ABUS D'ALCOOL EST DANGEREUX POUR LA SANTÉ.<br />
+            À CONSOMMER AVEC MODÉRATION · RÉSERVÉ AUX 18 ANS ET PLUS.
+          </p>
+        </div>
+        <div class="footer__cols">
+          <div class="footer__col">
+            <span class="label">PRODUIT</span>
+            <a href="#comment">Comment ça marche</a>
+            <a href="#prix">Prix</a>
+          </div>
+          <div class="footer__col">
+            <span class="label">LÉGAL</span>
+            <a href="#cgu">CGU</a>
+            <a href="#privacy">Confidentialité</a>
+            <a href="mailto:bonjour@atasoif.fr">Contact</a>
+          </div>
+        </div>
+        <span class="footer__copy">FORGE DIGITALE · {year}</span>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>

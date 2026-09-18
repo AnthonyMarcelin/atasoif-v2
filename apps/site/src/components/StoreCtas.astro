@@ -1,0 +1,89 @@
+---
+interface Props {
+  iosUrl: string;
+  androidUrl: string;
+  align?: 'start' | 'center';
+  note?: string;
+}
+
+const {
+  iosUrl,
+  androidUrl,
+  align = 'start',
+  note = '10 BOUTEILLES OFFERTES · SANS CARTE BANCAIRE',
+} = Astro.props;
+---
+
+<div class:list={['stores', align === 'center' && 'stores--center']}>
+  <div class="stores__row">
+    <a class="btn btn--primary" href={iosUrl}>Télécharger sur iOS</a>
+    <a class="btn btn--ghost" href={androidUrl}>Télécharger sur Android</a>
+  </div>
+  <span class="stores__note">{note}</span>
+</div>
+
+<style lang="scss">
+  .stores {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &--center {
+      align-items: center;
+      text-align: center;
+
+      .stores__row {
+        justify-content: center;
+      }
+    }
+  }
+
+  .stores__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .stores__note {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-ink-faint);
+    letter-spacing: 0.06em;
+  }
+
+  .btn {
+    height: 56px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    border: var(--stroke) solid transparent;
+    border-radius: var(--radius);
+    transition: background var(--dur-tap) var(--ease), border-color var(--dur-tap) var(--ease);
+
+    &--primary {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: var(--color-on-accent);
+
+      &:hover {
+        background: var(--color-accent-hover);
+        border-color: var(--color-accent-hover);
+      }
+    }
+
+    &--ghost {
+      background: transparent;
+      border-color: var(--color-ink);
+      color: var(--color-ink);
+
+      &:hover {
+        background: var(--color-surface);
+      }
+    }
+  }
+</style>

@@ -1,12 +1,25 @@
-# Docker — API + Postgres
+# Docker — API + Postgres (+ site séparément)
 
-Containerize **API + database** only. Angular/Capacitor stay on the host for native store builds.
+Containerize **API + database** only in Compose. Angular/Capacitor stay on the host for native store builds.
+
+La landing marketing (`apps/site`, Astro static) a son **propre** Dockerfile nginx pour Dokploy (service **site alone** — pas d’API / Postgres dans ce service) :
+
+```bash
+# Build context = monorepo root (required for bun.lock + workspace stubs)
+docker build -f apps/site/Dockerfile -t atasoif-site \
+  --build-arg PUBLIC_SITE_URL=https://atasoif.fr \
+  --build-arg PUBLIC_CTA_MODE=waitlist \
+  .
+```
+
+Dokploy : Application type **Dockerfile**, context `/`, file `apps/site/Dockerfile`, port **80**, build args `PUBLIC_*` (Astro bake-time — pas d’ENV runtime pour le HTML).
 
 ## Files
 
 | File | Role |
 |---|---|
 | `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime) |
+| `apps/site/Dockerfile` | Astro static → nginx (Dokploy) |
 | `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
