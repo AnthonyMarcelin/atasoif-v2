@@ -2,11 +2,17 @@
 
 Containerize **API + database** only in Compose. Angular/Capacitor stay on the host for native store builds.
 
-La landing marketing (`apps/site`, Astro static) a son **propre** Dockerfile nginx pour Dokploy :
+La landing marketing (`apps/site`, Astro static) a son **propre** Dockerfile nginx pour Dokploy (service **site alone** — pas d’API / Postgres dans ce service) :
 
 ```bash
-docker build -f apps/site/Dockerfile -t atasoif-site .
+# Build context = monorepo root (required for bun.lock + workspace stubs)
+docker build -f apps/site/Dockerfile -t atasoif-site \
+  --build-arg PUBLIC_SITE_URL=https://atasoif.fr \
+  --build-arg PUBLIC_CTA_MODE=waitlist \
+  .
 ```
+
+Dokploy : Application type **Dockerfile**, context `/`, file `apps/site/Dockerfile`, port **80**, build args `PUBLIC_*` (Astro bake-time — pas d’ENV runtime pour le HTML).
 
 ## Files
 
