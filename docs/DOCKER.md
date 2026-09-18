@@ -2,7 +2,19 @@
 
 Containerize **API + database** only in Compose. Angular/Capacitor stay on the host for native store builds.
 
-La landing marketing (`apps/site`, Astro static) a son **propre** Dockerfile nginx pour Dokploy (service **site alone** — pas d’API / Postgres dans ce service) :
+## Marketing site (`apps/site`) → GHCR → Dokploy
+
+La landing Astro static a son **propre** image nginx. CI builds and pushes it; **Dokploy does not build from git**.
+
+| Item | Value |
+|---|---|
+| Dockerfile | `apps/site/Dockerfile` (context = monorepo **root** `.`) |
+| GHCR image | **`ghcr.io/anthonymarcelin/atasoif-site`** |
+| Tags | `latest` on pushes to `dev` · also short/long `sha-*` |
+| Workflow | [`.github/workflows/site-ghcr.yml`](../.github/workflows/site-ghcr.yml) |
+| Dokploy provider | **Docker** (pull prebuilt image) — **not** Nixpacks, **not** Dockerfile-from-git |
+
+### Local build (debug)
 
 ```bash
 # Build context = monorepo root (required for bun.lock + workspace stubs)
@@ -12,14 +24,42 @@ docker build -f apps/site/Dockerfile -t atasoif-site \
   .
 ```
 
-Dokploy : Application type **Dockerfile**, context `/`, file `apps/site/Dockerfile`, port **80**, build args `PUBLIC_*` (Astro bake-time — pas d’ENV runtime pour le HTML).
+`PUBLIC_*` are **bake-time** build args (Astro static). Runtime ENV in Dokploy will **not** rewrite built HTML/JS.
+
+### Dokploy service `site`
+
+GitHub App is already installed on Dokploy **and** on `AnthonyMarcelin/atasoif-v2` (same integration as Spawnzone for git). The **`site`** service still uses Provider **Docker** and pulls **À ta soif’s own** GHCR package — not a Spawnzone image.
+
+| Field | Value |
+|---|---|
+| Name | `site` |
+| Provider | **Docker** (pull image) |
+| Docker image | `ghcr.io/anthonymarcelin/atasoif-site:latest` |
+| Port | **80** |
+| Registry | Prefer **Public** package `atasoif-site` → anonymous pull, no extra registry form. If **Private**, select the **existing Dokploy GHCR** registry (same `ghcr.io` creds already used for Spawnzone pulls) — do **not** invent a new PAT unless that registry is missing |
+| Auto-deploy | optional (watch image tag / Dokploy pull) |
+
+Do **not** configure Build type Dockerfile / Nixpacks / monorepo context in Dokploy for this service. Rebuilds happen in GitHub Actions on `dev` (path filters) or via **workflow_dispatch** (override `PUBLIC_*` inputs).
+
+#### After the first GHCR push (Anthony)
+
+New container packages default to **private** and are **linked** to this repo when CI pushes with `GITHUB_TOKEN`.
+
+1. **Settings → Actions → General → Workflow permissions** → **Read and write** (needed for the first / ongoing package publish).
+2. Open the new package **`atasoif-site`** → confirm it is linked to **`AnthonyMarcelin/atasoif-v2`**. If not: Package settings → connect repository.
+3. **Recommended visibility for this marketing image:** Package settings → **Change visibility → Public** (irreversible). Then Dokploy Docker pull works with the existing GitHub App setup and **without** new registry secrets.
+4. If you keep it **Private**: reuse Dokploy’s existing **GHCR** registry entry; ensure that credential can `read:packages` for `atasoif-site`. Optionally Package settings → **Manage Actions access** → `atasoif-v2` **Write** if a later workflow push is denied.
+5. In Dokploy project **À ta soif** → service `site` → image `ghcr.io/anthonymarcelin/atasoif-site:latest` → Deploy.
+
+Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`, `PUBLIC_CTA_MODE`, `PUBLIC_IOS_URL`, `PUBLIC_ANDROID_URL`. Defaults match waitlist launch (`https://atasoif.fr`, `waitlist`, `#ios`, `#android`).
 
 ## Files
 
 | File | Role |
 |---|---|
 | `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime) |
-| `apps/site/Dockerfile` | Astro static → nginx (Dokploy) |
+| `apps/site/Dockerfile` | Astro static → nginx (built in CI → GHCR) |
+| `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` |
 | `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
@@ -66,6 +106,7 @@ The Compose project is explicitly named **`atasoif`** (`name: atasoif` in `docke
 | **Dev** | Mailpit | **1025 → 1025** (SMTP), **8025 → 8025** (UI) | Catch verify/reset emails locally |
 | **Prod** | Postgres | *(not published)* | Reachable only on the Compose network as hostname `postgres` |
 | **Prod** | API | `${API_PORT:-3000} → 3000` | Put TLS reverse proxy in front later (E0.7) |
+| **Dokploy** | Site | host → **80** | Prebuilt GHCR image `atasoif-site` |
 
 ## `DB_*` cheat sheet
 
