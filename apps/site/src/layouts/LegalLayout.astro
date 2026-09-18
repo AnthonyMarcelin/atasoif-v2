@@ -1,0 +1,48 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import BottleMark from '../components/BottleMark.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import '../styles/landing.scss';
+import '../styles/legal.scss';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const pageTitle = `${title} · À ta soif`;
+const year = new Date().getFullYear();
+---
+
+<BaseLayout title={pageTitle} description={description}>
+  <div class="page">
+    <header class="header">
+      <div class="shell">
+        <a class="brand" href="/">
+          <BottleMark size="md" />
+          <span>À ta soif</span>
+        </a>
+        <nav class="nav" aria-label="Navigation principale">
+          <a href="/#comment">COMMENT ÇA MARCHE</a>
+          <a href="/#prix">PRIX</a>
+          <a class="nav__cta" href="/#debut">Être prévenu</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="legal-page">
+      <div class="shell legal-page__inner">
+        <p class="legal-page__eyebrow">
+          <a href="/">← Accueil</a>
+        </p>
+        <h1 class="display legal-page__title">{title}</h1>
+        <div class="legal-page__body">
+          <slot />
+        </div>
+      </div>
+    </main>
+
+    <SiteFooter year={year} />
+  </div>
+</BaseLayout>

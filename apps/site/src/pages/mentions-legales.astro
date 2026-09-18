@@ -1,0 +1,62 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+
+const contactEmail = 'contact@atasoif.fr';
+const updated = '18 septembre 2026';
+---
+
+<LegalLayout
+  title="Mentions légales"
+  description="Mentions légales du site atasoif.fr (À ta soif)."
+>
+  <p class="meta">Dernière mise à jour : {updated}</p>
+
+  <h2>Éditeur du site</h2>
+  <p>
+    Le site <strong>atasoif.fr</strong> est édité par <strong>Forge Digitale</strong>
+    (Anthony Marcelin), ci-après « l'Éditeur », dans le cadre du projet
+    <strong>À ta soif</strong>.
+  </p>
+  <p>
+    Forme juridique, adresse postale et numéro SIREN/SIRET :
+    <em>à compléter par l'Éditeur</em>.
+  </p>
+  <p>
+    Contact : <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+  </p>
+
+  <h2>Directeur de la publication</h2>
+  <p>Anthony Marcelin.</p>
+
+  <h2>Hébergement</h2>
+  <p>
+    Le site est hébergé sur un serveur VPS (infrastructure OVH), déployé via Dokploy.
+    Coordonnées détaillées de l'hébergeur : <em>à compléter par l'Éditeur</em>.
+  </p>
+
+  <h2>Objet du site</h2>
+  <p>
+    atasoif.fr présente le service <strong>À ta soif</strong>, une application mobile
+    de cave numérique multi-alcools (carnet de bouteilles). En phase de pré-lancement,
+    le site propose notamment une liste d'attente (collecte d'adresse e-mail).
+  </p>
+
+  <h2>Propriété intellectuelle</h2>
+  <p>
+    L'ensemble des éléments du site (textes, graphismes, logos, icônes, maquettes,
+    structure) est protégé par le droit de la propriété intellectuelle. Toute
+    reproduction non autorisée est interdite.
+  </p>
+
+  <h2>Alcool</h2>
+  <p>
+    L'abus d'alcool est dangereux pour la santé. À consommer avec modération.
+    Contenu réservé aux personnes majeures (18 ans et plus).
+  </p>
+
+  <h2>Données personnelles</h2>
+  <p>
+    Pour le traitement des données collectées via le site, voir la
+    <a href="/confidentialite">politique de confidentialité</a>.
+  </p>
+</LegalLayout>

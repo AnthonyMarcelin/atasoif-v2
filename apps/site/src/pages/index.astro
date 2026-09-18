@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BottleMark from '../components/BottleMark.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 import StoreCtas from '../components/StoreCtas.astro';
 import WaitlistForm from '../components/WaitlistForm.astro';
 import caveScreen from '../assets/screens/cave.png';
@@ -400,33 +401,6 @@ const year = new Date().getFullYear();
       </section>
     </main>
 
-    <footer class="footer">
-      <div class="shell">
-        <div class="footer__brand">
-          <div class="row">
-            <BottleMark size="sm" muted />
-            <span class="name">À ta soif</span>
-          </div>
-          <p class="legal">
-            L'ABUS D'ALCOOL EST DANGEREUX POUR LA SANTÉ.<br />
-            À CONSOMMER AVEC MODÉRATION · RÉSERVÉ AUX 18 ANS ET PLUS.
-          </p>
-        </div>
-        <div class="footer__cols">
-          <div class="footer__col">
-            <span class="label">PRODUIT</span>
-            <a href="#comment">Comment ça marche</a>
-            <a href="#prix">Prix</a>
-          </div>
-          <div class="footer__col">
-            <span class="label">LÉGAL</span>
-            <a href="#cgu">CGU</a>
-            <a href="#privacy">Confidentialité</a>
-            <a href="mailto:bonjour@atasoif.fr">Contact</a>
-          </div>
-        </div>
-        <span class="footer__copy">FORGE DIGITALE · {year}</span>
-      </div>
-    </footer>
+    <SiteFooter year={year} />
   </div>
 </BaseLayout>
