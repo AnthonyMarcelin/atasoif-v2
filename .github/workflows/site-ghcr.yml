@@ -1,0 +1,118 @@
+# Build apps/site (Astro static → nginx) and push to GHCR for Dokploy Docker provider.
+# Image: ghcr.io/anthonymarcelin/atasoif-site
+name: Site GHCR
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "apps/site/**"
+      - "package.json"
+      - "bun.lock"
+      - ".dockerignore"
+      - ".github/workflows/site-ghcr.yml"
+  workflow_dispatch:
+    inputs:
+      public_site_url:
+        description: "PUBLIC_SITE_URL (canonical + OG)"
+        required: false
+        default: "https://atasoif.fr"
+        type: string
+      public_cta_mode:
+        description: "PUBLIC_CTA_MODE (waitlist | stores)"
+        required: false
+        default: "waitlist"
+        type: string
+      public_ios_url:
+        description: "PUBLIC_IOS_URL"
+        required: false
+        default: "#ios"
+        type: string
+      public_android_url:
+        description: "PUBLIC_ANDROID_URL"
+        required: false
+        default: "#android"
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: anthonymarcelin/atasoif-site
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # GHA layer cache (cache-from/to type=gha)
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve PUBLIC_* build args
+        id: args
+        env:
+          INPUT_SITE_URL: ${{ inputs.public_site_url }}
+          INPUT_CTA_MODE: ${{ inputs.public_cta_mode }}
+          INPUT_IOS_URL: ${{ inputs.public_ios_url }}
+          INPUT_ANDROID_URL: ${{ inputs.public_android_url }}
+          VAR_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+          VAR_CTA_MODE: ${{ vars.PUBLIC_CTA_MODE }}
+          VAR_IOS_URL: ${{ vars.PUBLIC_IOS_URL }}
+          VAR_ANDROID_URL: ${{ vars.PUBLIC_ANDROID_URL }}
+        run: |
+          set -euo pipefail
+          # Priority: workflow_dispatch input → repo Actions variable → waitlist default
+          resolve() {
+            local input="$1" var="$2" default="$3"
+            if [ -n "${input:-}" ]; then
+              printf '%s' "$input"
+            elif [ -n "${var:-}" ]; then
+              printf '%s' "$var"
+            else
+              printf '%s' "$default"
+            fi
+          }
+          {
+            echo "public_site_url=$(resolve "${INPUT_SITE_URL:-}" "${VAR_SITE_URL:-}" "https://atasoif.fr")"
+            echo "public_cta_mode=$(resolve "${INPUT_CTA_MODE:-}" "${VAR_CTA_MODE:-}" "waitlist")"
+            echo "public_ios_url=$(resolve "${INPUT_IOS_URL:-}" "${VAR_IOS_URL:-}" "#ios")"
+            echo "public_android_url=$(resolve "${INPUT_ANDROID_URL:-}" "${VAR_ANDROID_URL:-}" "#android")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=sha,prefix=,format=short
+            type=sha,prefix=sha-,format=long
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/site/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            PUBLIC_SITE_URL=${{ steps.args.outputs.public_site_url }}
+            PUBLIC_CTA_MODE=${{ steps.args.outputs.public_cta_mode }}
+            PUBLIC_IOS_URL=${{ steps.args.outputs.public_ios_url }}
+            PUBLIC_ANDROID_URL=${{ steps.args.outputs.public_android_url }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
