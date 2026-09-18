@@ -1,0 +1,47 @@
+---
+import BottleMark from './BottleMark.astro';
+
+interface Props {
+  year?: number;
+}
+
+const year = Astro.props.year ?? new Date().getFullYear();
+const contactEmail = 'contact@atasoif.fr';
+---
+
+<footer class="footer">
+  <div class="shell">
+    <div class="footer__brand">
+      <div class="row">
+        <BottleMark size="sm" muted />
+        <span class="name">À ta soif</span>
+      </div>
+      <p class="legal">
+        L'ABUS D'ALCOOL EST DANGEREUX POUR LA SANTÉ.<br />
+        À CONSOMMER AVEC MODÉRATION · RÉSERVÉ AUX 18 ANS ET PLUS.
+      </p>
+    </div>
+    <div class="footer__cols">
+      <div class="footer__col">
+        <span class="label">PRODUIT</span>
+        <a href="/#comment">Comment ça marche</a>
+        <a href="/#prix">Prix</a>
+      </div>
+      <div class="footer__col">
+        <span class="label">LÉGAL</span>
+        <a href="/mentions-legales">Mentions légales</a>
+        <a href="/cgu">CGU</a>
+        <a href="/confidentialite">Confidentialité</a>
+        <a href={`mailto:${contactEmail}`}>Contact</a>
+      </div>
+    </div>
+    <a
+      class="footer__copy"
+      href="https://forgedigitalesolutions.com"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      Forge Digitale Solutions · {year}
+    </a>
+  </div>
+</footer>

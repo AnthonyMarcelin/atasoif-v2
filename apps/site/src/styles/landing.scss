@@ -919,4 +919,9 @@
   font-size: 10px;
   letter-spacing: 0.06em;
   color: var(--color-ink-disabled);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-ink-3);
+  }
 }
