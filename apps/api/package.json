@@ -17,7 +17,8 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "migration:run": "node ace migration:run",
-    "db:seed": "node ace db:seed"
+    "db:seed": "node ace db:seed",
+    "catalog:nurse": "node ace catalog:nurse"
   },
   "engines": {
     "node": ">=24"

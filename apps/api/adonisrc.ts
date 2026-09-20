@@ -106,7 +106,12 @@ export default defineConfig({
   | the production build.
   |
   */
-  metaFiles: [],
+  metaFiles: [
+    {
+      pattern: 'resources/catalog/**',
+      reloadServer: false,
+    },
+  ],
 
   hooks: {
     init: [

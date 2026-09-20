@@ -86,7 +86,7 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 |---|---|---|
 | **1 — Primary seed** | **Open Food Facts dump** (filtered alcohol) | Bulk upsert into `bottles` + `bottle_sources` (`source=openfoodfacts`, `externalId` = barcode/code). Idempotent re-run. **Sprint 3 / E3.1–E3.2** |
 | **2 — Live miss** | OFF product-by-barcode API | Only on cache miss with EAN; 1 call then upsert. Respect OFF rate limits; identify with a proper `User-Agent` |
-| **3 — Pre-launch nurse** | **UPCitemdb** (~**100 req/day** free Explorer) | Curated EAN list only — nurse gaps OFF misses before launch. Not a bulk scraper; not the primary seed |
+| **3 — Pre-launch nurse** | **UPCitemdb** trial (~**100 req/day**, **no API key**) | Curated EAN list only — nurse gaps OFF misses before launch. Ace: `catalog:nurse` · how-to: [`CATALOG-NURSE.md`](./CATALOG-NURSE.md). Not a bulk scraper; not the primary seed. Paid key optional later for higher quota |
 | **Won’t** | **Bright Data** / aggressive third-party scrape | Explicit **Won’t** (E3.5) unless product revisits later |
 
 `BottleSource` unique `(source, external_id)` + optional `raw_hash` keep upserts idempotent across dump + live paths.
@@ -98,7 +98,7 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 | Local search API (empty catalog OK) | Sprint 2 | E2-T02 · E2.3 |
 | OFF dump seed + `BottleSource` upsert | Sprint 3 | E3.1–E3.2 · SPRINTS S3 |
 | Diff / soft-delete cron skeleton | Sprint 3 Should | E3.3 |
-| UPCitemdb curated nurse | Pre-launch ops (alongside / after first OFF seed) | This doc · not Bright Data |
+| UPCitemdb curated nurse | Pre-launch ops (alongside / after first OFF seed) | [`CATALOG-NURSE.md`](./CATALOG-NURSE.md) · Ace `catalog:nurse` · not Bright Data |
 | v1 personal bottles (~9–15) | Sprint 3 Should | E2-T11 |
 
 ---

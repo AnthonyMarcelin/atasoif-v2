@@ -1,0 +1,23 @@
+# Curated EAN list for the UPCitemdb / OFF catalog nurse (nourrice).
+# Format: one barcode per line (8–14 digits). Blank lines and # comments ignored.
+#
+# Markers (required on section headers):
+#   # REAL — public retail barcodes cited in project tests / common documentation
+#   # PLACEHOLDER — synthetic codes for scaffold / dry-run; do not expect provider hits
+#
+# Replace PLACEHOLDER rows with real EANs before a production nurse run.
+# See docs/CATALOG-NURSE.md
+
+# REAL
+5000267024202  # Johnnie Walker Black Label (project unit tests / public retail EAN)
+5010494011782  # Scotch whisky SKU used in API functional catalog tests
+
+# PLACEHOLDER
+9990000000001  # placeholder whisky — replace with a real EAN
+9990000000002  # placeholder rum — replace with a real EAN
+9990000000003  # placeholder gin — replace with a real EAN
+9990000000004  # placeholder cognac — replace with a real EAN
+9990000000005  # placeholder vodka — replace with a real EAN
+9990000000006  # placeholder liqueur — replace with a real EAN
+9990000000007  # placeholder beer — replace with a real EAN
+9990000000008  # placeholder wine — replace with a real EAN
