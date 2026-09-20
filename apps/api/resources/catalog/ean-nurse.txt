@@ -1,23 +1,161 @@
 # Curated EAN list for the UPCitemdb / OFF catalog nurse (nourrice).
-# Format: one barcode per line (8–14 digits). Blank lines and # comments ignored.
+# Format: one barcode per line (8-14 digits). Blank lines and # comments ignored.
 #
 # Markers (required on section headers):
-#   # REAL — public retail barcodes cited in project tests / common documentation
+#   # REAL — public retail barcodes verified against Open Food Facts product API
+#           (and/or project functional tests). Prefer FR-market SKUs when available.
 #   # PLACEHOLDER — synthetic codes for scaffold / dry-run; do not expect provider hits
 #
-# Replace PLACEHOLDER rows with real EANs before a production nurse run.
-# See docs/CATALOG-NURSE.md
+# Sources: Open Food Facts (ODbL). Nurse fills spirits gaps OFF dump may miss.
+# See docs/CATALOG-SEED.md and docs/CATALOG-NURSE.md
 
 # REAL
-5000267024202  # Johnnie Walker Black Label (project unit tests / public retail EAN)
-5010494011782  # Scotch whisky SKU used in API functional catalog tests
+# --- Whisky / bourbon / scotch ---
+5010106114414  # Ballantine's [FR]
+5010106111956  # Ballantine's Finest [FR]
+5010106113127  # Ballantine's Finest [FR]
+5000299606308  # Ballantine's Finest [FR]
+5000267125046  # Johnnie Walker - Black label [FR]
+0080432400432  # Chivas Regal 12 [FR]
+5000299622162  # Chivas Regal Aged 15  Years [FR]
+5010327000169  # Glenfiddich - Pure Malt Scotch Whisky 43% 12 / 1 Lt [FR]
+5010327324333  # Glenfiddich Barrel Reserve 14 [FR]
+5010327000176  # Glenfiddich Single Malt Scotch Whisky [FR]
+5010327025155  # Glenfiddich Triple Oak 12 [FR]
+5011007025960  # Jameson Caskmates [FR]
+5011007003227  # Jameson Whiskey [FR]
+5000267024202  # Johnnie Walker Black Label (tests / OFF) [FR]
+5000267112077  # Johnnie Walker Double Black 40% [FR]
+5000281003627  # Lagavulin 16 Year Old [FR]
+5000281005409  # Isle of Islay - Lagavulin 16 ans [FR]
+5000281050546  # Lagavulin 8 ans [FR]
+0085246139424  # Maker's Mark Bourbon Whisky [FR]
+5010494011782  # Scotch whisky SKU used in API functional catalog tests [FR]
+5011007003586  # Wh.jameson 40% Mini [FR]
+5000299225004  # CHIVAS REGAL - Whisky [FR]
+
+# --- Rhum / rum ---
+8501110080439  # Havana Club - Añejo 7 Años [FR]
+5000281040523  # Captain Morgan - C. morgan Rhum Epice 35D [FR]
+5000281035338  # Captain Morgan [FR]
+5000281037936  # Captain Morgan Ma Chope offerte [FR]
+5000281055909  # Captain morgan [FR]
+5010677014205  # Bacardi - Carta blanca [FR]
+8501110080231  # Havana Club 3 ans [FR]
+3163937201678  # Malibu Coco [FR]
+8501110089982  # Havana Club - Rhum [FR]
+8501110086196  # Havana Club - Rhum Cubain [FR]
+5000281031033  # Captain Morgan - Rhum ambré [FR]
+51101848  # Havana Club - Rhum de cuba original - Edition limitée 3 ans [FR]
+5010677012850  # Bacardi
+5010677012638  # Bacardi - Barcadi Carta Blanca
+
+# --- Gin ---
+7640175742522  # Bombay Bramble - Distilled Gin with a blackberry & raspberry infusion [FR]
+5010677714006  # Bacardi-Martini - Gin Bombay Sapphire / Bombay [FR]
+5000291023462  # Tanqueray - Gin Flor de Sevilla [FR]
+5000329004111  # Beefeater - Gin London 40° [FR]
+5010677710497  # Bombay - London Dry Gin [FR]
+42247081  # Monkey 47 Schwarzwald Sloe Gin 0,5 LTR [FR]
+5000299605950  # Beefeater - Pink Strawberry [FR]
+5000281015248  # Tanqueray London Dry Gin [FR]
+5000329002193  # Beefeater
+5000329003022  # Beefeater
+5010677716000  # Bombay Sapphire London Dry Gin
+42113277  # Monkey 47 - Gin
+5000291021628  # Tanqueray - Gin Rangpur
+5000299605042  # Beefeater - London Dry Gin
+5000329002278  # Beefeater - London Dry Gin
+5000329002001  # Beefeater - London Dry Gin
+
+# --- Vodka ---
+0087116069817  # Belvedere Vodka 40% [FR]
+5901041003362  # Belvedere Vodka 40&#37; Alc. 1 Ltr. [FR]
+0080480280017  # Grey Goose Vodka [FR]
+5901041003003  # Belvedere - Organic vodka [FR]
+5010677850100  # GREY GOOSE - Vodka [FR]
+5010677850407  # Grey Goose - Vodka [FR]
+5010677859233  # Grey Goose - Vodka [FR]
+5410316442930  # Smirnoff - Vodka [FR]
+5901867816498  # Belvedere - Vodka [FR]
+5901867807021  # Belvedere - Vodka [FR]
+5410316083607  # Vodka Smirnoff [FR]
+5410316671118  # Smirnoff - Vodka triple distilled [FR]
+
+# --- Cognac / brandy ---
+3024480008797  # Cognac Remy Martin Vsop Mature Cask (6) 40% [FR]
+3049197210875  # Courvoisier - Cognac V.S.O.P. [FR]
+3049197110076  # Courvoisier - Cognac VS [FR]
+3024482270109  # Rémy Martin - Cognac Vsop - Fine Champagne 40° [FR]
+0080686961048  # Courvoisier VS Cognac [FR]
+3049197210776  # Courvoisier VSOP Cognac [FR]
+3245990250203  # Hennessy V.S, 40%vol [FR]
+3024480001781  # Remy Martin - 1738 Accord Royal
+3245990250302  # Hennessy - Cognac
+3219820005899  # MARTELL - Cognac VSOP
+3049197110588  # Courvoisier cognac
+3245990255307  # Hennessy VS COGNAC
+
+# --- Liqueurs / pastis / aperitifs ---
+3379974200011  # ricard - Absente 55% - Absinthe [FR]
+8002230000012  # Campari - Aperol [FR]
+8000040001106  # Campari [FR]
+8000040000802  # DCM S.p.A. - Campari Bitter [FR]
+5410316947053  # Smirnoff - Ice original [FR]
+3047100097209  # Pastis 51 - Pastis [FR]
+3047100000193  # Pastis 51 - Pastis [FR]
+3047100097155  # Pastis 51 [FR]
+3047100236776  # Pernod Ricard - Pastis 51 [FR]
+3047100000247  # Pastis 51,Pernod Ricard [FR]
+3047100000315  # PASTIS 51 - Pastis de Marseille [FR]
+3047100000230  # Pernod Ricard,Pastis 51 [FR]
+3047100227835  # Pernod - Suze Agrumes - Apéritif a Base De Vin - 1L - 15 % [FR]
+4006554301040  # Pernod Ricard - Ramazzotti Amaro 0,7 LTR
+
+# --- Beer (curated FR retail; volume via OFF dump) ---
+3119780267361  # 6X25CL PELFORTH BLONDE PK 5.8% [FR]
+3119780267477  # 6X25CL PELFORTH BRUNE PK 6.5%V [FR]
+5410228223764  # BLE 6X25CL HOEGAARDEN 4,9% BLC [FR]
+5411681402635  # BLE 75CL BIERE 8,5%V DUVEL [FR]
+3119780268696  # BTE 50CL BIERE 5% HEINEKEN [FR]
+3119780042517  # BTE 50CL PELFORTH BRUNE 6.5%V [FR]
+3080210004491  # Biere 1664, [FR]
+3119780267378  # Pelforth - Bieres blondes [FR]
+5410228141785  # Hoegaarden - Bière blanche [FR]
+5410228223740  # Hoegaarden - Bière blanche belge, 4.9% vol. [FR]
+57423777  # Chimay Bleue [FR]
+3119783007483  # Desperados Original aguardiente [FR]
+5411681014531  # Duvel Moortgat - Duvel [FR]
+3119780259625  # Heineken [FR]
+8712000900045  # Heineken Bier - Heineken Beer [FR]
+3080216017785  # KRONENBOURG,Bud, Kronenbourg 7°2 Blonde [FR]
+3080216051536  # Kronenbourg Bière blonde 4.2%vol [FR]
+3080210003319  # Kronenbourg,1664 [FR]
+
+# --- Wine / champagne / prosecco (curated; volume via OFF dump) ---
+3256228410306  # U - BIO Prosecco DOC Col Maestro 75cl [FR]
+3179071001005  # Cellier des Dauphins Prestige Rosé 2015 [FR]
+3256221239348  # Côtes du Rhone Villages AOP rouge Croix des Alliances [FR]
+3760084270665  # Côtes du Rhône rouge [FR]
+3185370001233  # Moet & Chandon - Moët & Chandon Brut Impérial [FR]
+4056489406037  # Prosecco [FR]
+8000428026653  # Perlino - Prosecco Extra Dry [FR]
+3179071000978  # Cellier de dauphine - Vin rouge [FR]
+3700611502517  # produit de france - côtes du Rhône [FR]
+8000368202605  # prosecco Riccadonna [FR]
+3185370763957  # Moet & Chandon - Brut Imperial
+3536650501002  # E. Guigal - Côtes du Rhône
+8410036806422  # Freixenet Prosecco
+3185370000021  # Moët & Chandon Impérial Champagne Brut
+
+# --- Other spirits (tequila, etc.) ---
+7501035010093  # Tequila Jose Cuervo [FR]
+0811538010948  # Jose Cuervo - Blue Agave Gold Tequila
+0811538010856  # Jose Cuervo - Tequila
+7501035042131  # José Cuervo - Tequila Especial
+7501035011434  # jose cuervo tequila especial
 
 # PLACEHOLDER
-9990000000001  # placeholder whisky — replace with a real EAN
-9990000000002  # placeholder rum — replace with a real EAN
-9990000000003  # placeholder gin — replace with a real EAN
-9990000000004  # placeholder cognac — replace with a real EAN
-9990000000005  # placeholder vodka — replace with a real EAN
-9990000000006  # placeholder liqueur — replace with a real EAN
-9990000000007  # placeholder beer — replace with a real EAN
-9990000000008  # placeholder wine — replace with a real EAN
+9990000000001  # placeholder whisky - replace before production nurse
+9990000000002  # placeholder rum - replace before production nurse
+9990000000003  # placeholder non-listed spirit - replace before production nurse

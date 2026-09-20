@@ -1,8 +1,10 @@
 # Catalog nurse (nourrice)
 
-Pre-launch ops tool: walk a **curated EAN list**, fill catalog gaps before (or alongside) the OFF dump seed.
+Pre-launch ops tool: walk a **curated EAN list**, fill **spirits / gap** SKUs before (or alongside) the OFF dump seed.
 
 **Lookup order** (same as live barcode API): local DB → Open Food Facts → UPCitemdb → upsert `Bottle` + `BottleSource`.
+
+**Complementary to OFF dump:** use [`CATALOG-SEED.md`](./CATALOG-SEED.md) for volume beer/wine via `catalog:off-dump`. Nurse is not a bulk scraper.
 
 See also: [`DATABASE.md`](./DATABASE.md) §3 · Ace command `catalog:nurse`.
 
@@ -38,9 +40,10 @@ Documented in root `.env.example` and `apps/api/.env.example`.
 
 Default file: `apps/api/resources/catalog/ean-nurse.txt`
 
-- `# REAL` section: public retail barcodes (project tests / known SKUs)
+- `# REAL` section: public retail barcodes verified against Open Food Facts (prefer FR-market SKUs)
 - `# PLACEHOLDER` section: synthetic codes for dry-run scaffolding; replace before a real nurse pass
 - One barcode per line (8–14 digits); `#` comments allowed
+- Expand REAL rows when you discover FR spirits EANs OFF dump still misses; keep PLACEHOLDER tiny
 
 ---
 
@@ -82,7 +85,7 @@ Same Ace command inside the API container / host Node runtime, with production `
 node ace catalog:nurse --daily-limit=100
 ```
 
-Prefer cron or a manual ops session; do not scrape. Prefer OFF dump for volume (`DATABASE.md`); nurse only fills curated gaps.
+Prefer cron or a manual ops session; do not scrape. Prefer OFF dump for volume ([`CATALOG-SEED.md`](./CATALOG-SEED.md)); nurse only fills curated gaps.
 
 ---
 

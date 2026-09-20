@@ -9,6 +9,7 @@ Orchestrator breaks epics into tickets here. Sub-agents pick **one ticket per th
 | E2 Memory cellar | [`E2-memory-cellar.md`](./E2-memory-cellar.md) | S2 (T01–T09 Must · T10 Should · T11–T12 later) |
 
 DB / catalog decisions (VPS DB, Lucid schema, EAN cache-first, OFF + UPCitemdb nurse): [`../DATABASE.md`](../DATABASE.md).  
+Pre-launch seed (OFF dump + nurse): [`../CATALOG-SEED.md`](../CATALOG-SEED.md).  
 Nurse how-to (trial, no key): [`../CATALOG-NURSE.md`](../CATALOG-NURSE.md).
 
 ## Rules for workers
