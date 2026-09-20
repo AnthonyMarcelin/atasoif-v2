@@ -65,4 +65,12 @@ export default await Env.create(new URL('../', import.meta.url), {
   UPCITEMDB_KEY_TYPE: Env.schema.string.optional(),
   /** Ace catalog:nurse daily remote budget (default 100 when unset). */
   CATALOG_NURSE_DAILY_LIMIT: Env.schema.number.optional(),
+
+  /**
+   * Catalog image mirror (OFF front photos → local disk, no CDN hotlink).
+   * Used by `catalog:off-dump --mirror-images`. Optional until ops sets a path.
+   */
+  CATALOG_IMAGE_STORAGE_PATH: Env.schema.string.optional(),
+  /** Optional public URL prefix for mirrored files (e.g. https://api…/media/catalog). */
+  CATALOG_IMAGE_PUBLIC_BASE_URL: Env.schema.string.optional(),
 })

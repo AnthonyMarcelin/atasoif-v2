@@ -1,6 +1,7 @@
 import { BOTTLE_SOURCES } from '@atasoif/shared'
 import { mapCategorySlug } from '#services/catalog/map_category'
 import { parseAbv, parseVolumeMl } from '#services/catalog/parse_quantity'
+import { cleanRetailName } from '#services/catalog/clean_retail_name'
 import type { OffDumpProductLike } from '#services/catalog/off_alcohol_filter'
 import type { CatalogProductDraft } from '#services/catalog/catalog_types'
 
@@ -19,13 +20,13 @@ export function mapOffProductToDraft(
   product: OffDumpProductLike,
   raw: unknown = product
 ): CatalogProductDraft | null {
-  const name =
+  const rawName =
     product.product_name_fr?.trim() ||
     product.product_name?.trim() ||
     product.generic_name?.trim() ||
     null
 
-  if (!name) {
+  if (!rawName) {
     return null
   }
 
@@ -38,11 +39,14 @@ export function mapOffProductToDraft(
   }
 
   const brand = product.brands?.split(',')[0]?.trim() || null
+  const name = cleanRetailName(rawName, brand)
   const origin =
     product.origins?.split(',')[0]?.trim() ||
     product.countries?.split(',')[0]?.trim() ||
     product.countries_tags?.[0]?.replace(/^en:/, '') ||
     null
+
+  const remotePhoto = product.image_front_url || product.image_url || null
 
   return {
     name,
@@ -51,7 +55,7 @@ export function mapOffProductToDraft(
     abv,
     volumeMl: parseVolumeMl(product.quantity),
     barcode: code,
-    photoUrl: product.image_front_url || product.image_url || null,
+    photoUrl: remotePhoto,
     categorySlug: mapCategorySlug([
       ...(product.categories_tags ?? []),
       product.categories,
@@ -62,6 +66,8 @@ export function mapOffProductToDraft(
       provider: BOTTLE_SOURCES.openfoodfacts,
       categoriesTags: product.categories_tags ?? [],
       quantityRaw: product.quantity ?? null,
+      nameRaw: rawName,
+      offImageUrl: remotePhoto,
     },
     source: BOTTLE_SOURCES.openfoodfacts,
     externalId: code,

@@ -3,11 +3,15 @@ import { createInterface } from 'node:readline'
 import { createGunzip } from 'node:zlib'
 import { normalizeBarcode } from '#services/catalog/catalog_lookup_service'
 import CatalogLookupService from '#services/catalog/catalog_lookup_service'
+import { CatalogDedupeBuffer } from '#services/catalog/catalog_dedupe'
+import CatalogImageMirror from '#services/catalog/catalog_image_mirror'
 import {
   isAlcoholicOffProduct,
+  type OffDumpFilterProfile,
   type OffDumpProductLike,
 } from '#services/catalog/off_alcohol_filter'
 import { mapOffProductToDraft } from '#services/catalog/off_product_mapper'
+import type { CatalogProductDraft } from '#services/catalog/catalog_types'
 
 export type OffDumpImportOptions = {
   filePath: string
@@ -15,6 +19,13 @@ export type OffDumpImportOptions = {
   limit?: number
   skipLines?: number
   batchLogEvery?: number
+  /** curated = whiskies/rums/gins/vodkas/beers (+ parents); full = broader alcohol */
+  profile?: OffDumpFilterProfile
+  /** Collapse 70cl / 1L / packs on normalized brand+name (default true). */
+  dedupe?: boolean
+  /** Download front images to local storage (requires imageMirror). */
+  mirrorImages?: boolean
+  imageMirror?: CatalogImageMirror | null
   onProgress?: (summary: OffDumpImportSummary) => void
   lookup?: CatalogLookupService
 }
@@ -26,19 +37,31 @@ export type OffDumpImportSummary = {
   missingIdentity: number
   invalidBarcode: number
   drafted: number
+  dedupedAway: number
+  mirrored: number
+  mirrorErrors: number
   upserted: number
   dryRun: boolean
+  profile: OffDumpFilterProfile
+  dedupe: boolean
   stoppedForLimit: boolean
 }
 
 /**
  * Stream an OFF JSONL dump (plain or .gz), keep alcoholic beverages, upsert bottles.
  * Designed for VPS one-shot runs — not CI (full dump is multi-GB).
+ * Prefer DuckDB-filtered JSONL from Parquet/CSV when possible (see docs/CATALOG-SEED.md).
  */
 export default class CatalogOffDumpService {
   async importFile(options: OffDumpImportOptions): Promise<OffDumpImportSummary> {
     const lookup = options.lookup ?? new CatalogLookupService()
     const batchLogEvery = options.batchLogEvery ?? 5_000
+    const profile = options.profile ?? 'curated'
+    const dedupe = options.dedupe ?? true
+    const mirrorImages = options.mirrorImages ?? false
+    const buffer = dedupe ? new CatalogDedupeBuffer() : null
+    const immediateDrafts: CatalogProductDraft[] = []
+
     const summary: OffDumpImportSummary = {
       linesRead: 0,
       jsonErrors: 0,
@@ -46,8 +69,13 @@ export default class CatalogOffDumpService {
       missingIdentity: 0,
       invalidBarcode: 0,
       drafted: 0,
+      dedupedAway: 0,
+      mirrored: 0,
+      mirrorErrors: 0,
       upserted: 0,
       dryRun: options.dryRun,
+      profile,
+      dedupe,
       stoppedForLimit: false,
     }
 
@@ -73,7 +101,7 @@ export default class CatalogOffDumpService {
         continue
       }
 
-      if (!isAlcoholicOffProduct(product)) {
+      if (!isAlcoholicOffProduct(product, profile)) {
         summary.nonAlcohol += 1
         continue
       }
@@ -91,14 +119,20 @@ export default class CatalogOffDumpService {
         continue
       }
 
-      // Keep barcode normalized for upsert / uniqueness.
       draft.barcode = normalized
       draft.externalId = normalized
-      summary.drafted += 1
 
-      if (!options.dryRun) {
-        await lookup.persistDraft(draft)
-        summary.upserted += 1
+      if (buffer) {
+        const result = buffer.offer(draft)
+        if (!result.kept) {
+          summary.dedupedAway += 1
+        } else if (result.replaced) {
+          summary.dedupedAway += 1
+        }
+        summary.drafted = buffer.size
+      } else {
+        immediateDrafts.push(draft)
+        summary.drafted = immediateDrafts.length
       }
 
       if (options.onProgress && summary.linesRead % batchLogEvery === 0) {
@@ -108,6 +142,35 @@ export default class CatalogOffDumpService {
       if (options.limit !== undefined && summary.drafted >= options.limit) {
         summary.stoppedForLimit = true
         break
+      }
+    }
+
+    const drafts = buffer ? buffer.values() : immediateDrafts
+    summary.drafted = drafts.length
+
+    for (const draft of drafts) {
+      if (mirrorImages && options.imageMirror && draft.photoUrl) {
+        try {
+          const mirrored = await options.imageMirror.mirrorFrontImage(draft.photoUrl, draft.barcode)
+          if (mirrored) {
+            draft.attrs = {
+              ...draft.attrs,
+              offImageUrl: draft.attrs.offImageUrl ?? draft.photoUrl,
+              mirroredLocalPath: mirrored.localPath,
+            }
+            draft.photoUrl = mirrored.photoUrl
+            summary.mirrored += 1
+          } else {
+            summary.mirrorErrors += 1
+          }
+        } catch {
+          summary.mirrorErrors += 1
+        }
+      }
+
+      if (!options.dryRun) {
+        await lookup.persistDraft(draft)
+        summary.upserted += 1
       }
     }
 

@@ -113,7 +113,7 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 
 Display order in UI: override (if any) → catalog `photoUrl` → striped placeholder (`docs/DESIGN.md`).
 
-Storage MVP: local disk on VPS (R2 later). Catalog images may keep remote OFF URLs initially; personal uploads stay on app storage.
+Storage MVP: local disk on VPS (R2 later). Catalog seed can mirror OFF front images to `CATALOG_IMAGE_STORAGE_PATH` via `catalog:off-dump --mirror-images` (see [`CATALOG-SEED.md`](./CATALOG-SEED.md)); otherwise `Bottle.photoUrl` may still hold a remote OFF URL until ops enables the mirror. Personal uploads stay on app storage (E2-T04). Photos from OFF are CC-BY-SA; product data is ODbL — show the FR credit string from `CATALOG-SEED.md` in app about/credits.
 
 ---
 
