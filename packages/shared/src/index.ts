@@ -22,6 +22,18 @@ export const ALCOHOL_CATEGORIES = [
 export type AlcoholCategory = (typeof ALCOHOL_CATEGORIES)[number];
 
 /**
+ * Provenance keys for `bottle_sources.source`.
+ * OFF = primary seed / live miss; UPCitemdb = EAN nurse fallback; user = manual miss.
+ */
+export const BOTTLE_SOURCES = {
+  openfoodfacts: 'openfoodfacts',
+  upcitemdb: 'upcitemdb',
+  user: 'user',
+} as const;
+
+export type BottleSourceName = (typeof BOTTLE_SOURCES)[keyof typeof BOTTLE_SOURCES];
+
+/**
  * Fill-level jauge (`user_bottles.fill_level`), percent 0–100.
  * Schema default for all plans; mutating is premium (E2-T03).
  * Ops « terminées » = FILL_LEVEL_FINISHED.

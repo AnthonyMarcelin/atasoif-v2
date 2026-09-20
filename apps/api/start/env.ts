@@ -49,4 +49,16 @@ export default await Env.create(new URL('../', import.meta.url), {
   SMTP_PORT: Env.schema.number(),
   SMTP_USERNAME: Env.schema.string.optional(),
   SMTP_PASSWORD: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Catalog enrichment — Open Food Facts (primary) + UPCitemdb nurse
+  |----------------------------------------------------------
+  */
+  OFF_API_BASE_URL: Env.schema.string({ format: 'url', tld: false }),
+  OFF_USER_AGENT: Env.schema.string(),
+  UPCITEMDB_ENABLED: Env.schema.boolean(),
+  UPCITEMDB_API_BASE_URL: Env.schema.string({ format: 'url', tld: false }),
+  UPCITEMDB_USER_KEY: Env.schema.string.optional(),
+  UPCITEMDB_KEY_TYPE: Env.schema.string.optional(),
 })

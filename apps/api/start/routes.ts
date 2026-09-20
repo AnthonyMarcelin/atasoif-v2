@@ -10,6 +10,7 @@ import { controllers } from '#generated/controllers'
 const HealthController = () => import('#controllers/health_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const FacebookAuthController = () => import('#controllers/facebook_auth_controller')
+const CatalogBottlesController = () => import('#controllers/catalog_bottles_controller')
 
 router.get('/health', [HealthController, 'handle'])
 
@@ -52,5 +53,14 @@ router
       .prefix('account')
       .as('profile')
       .use(middleware.auth())
+
+    router
+      .group(() => {
+        router.get('bottles', [CatalogBottlesController, 'index'])
+        router.get('bottles/barcode/:barcode', [CatalogBottlesController, 'showByBarcode'])
+      })
+      .prefix('catalog')
+      .as('catalog')
+      .use([middleware.auth(), middleware.emailVerified()])
   })
   .prefix('/api/v1')

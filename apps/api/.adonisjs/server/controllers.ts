@@ -5,6 +5,7 @@
 
 export const controllers = {
   AccessTokens: () => import('#controllers/access_tokens_controller'),
+  CatalogBottles: () => import('#controllers/catalog_bottles_controller'),
   EmailVerifications: () => import('#controllers/email_verifications_controller'),
   FacebookAuth: () => import('#controllers/facebook_auth_controller'),
   GoogleAuth: () => import('#controllers/google_auth_controller'),
