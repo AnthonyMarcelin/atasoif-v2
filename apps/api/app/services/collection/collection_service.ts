@@ -346,7 +346,7 @@ export default class CollectionService {
     if (count >= FREE_BOTTLE_LIMIT) {
       throw new CollectionError(
         'E_BOTTLE_LIMIT',
-        'Cave pleine — passe premium pour continuer',
+        'Cave pleine · passe premium pour continuer',
         403,
         {
           count,
