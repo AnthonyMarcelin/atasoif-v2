@@ -57,7 +57,7 @@ export class CellarPaywallPage implements OnInit {
       case 'premium':
         return 'Photo perso et jauge restent réservées aux abonnés.';
       default:
-        return `Cave pleine — passe premium pour continuer au-delà de ${this.limit} bouteilles.`;
+        return `Cave pleine · passe premium pour continuer au-delà de ${this.limit} bouteilles.`;
     }
   }
 }
