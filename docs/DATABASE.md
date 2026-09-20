@@ -84,9 +84,9 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 
 | Priority | Source | Role |
 |---|---|---|
-| **1 — Primary seed** | **Open Food Facts dump** (filtered alcohol) | Bulk upsert into `bottles` + `bottle_sources` (`source=openfoodfacts`, `externalId` = barcode/code). Idempotent re-run. **Sprint 3 / E3.1–E3.2** |
+| **1 — Primary seed** | **Open Food Facts dump** (filtered alcohol) | Bulk upsert into `bottles` + `bottle_sources` (`source=openfoodfacts`, `externalId` = barcode/code). Idempotent Ace `catalog:off-dump` on VPS. How-to: [`CATALOG-SEED.md`](./CATALOG-SEED.md). **Sprint 3 / E3.1–E3.2** |
 | **2 — Live miss** | OFF product-by-barcode API | Only on cache miss with EAN; 1 call then upsert. Respect OFF rate limits; identify with a proper `User-Agent` |
-| **3 — Pre-launch nurse** | **UPCitemdb** (~**100 req/day** free Explorer) | Curated EAN list only — nurse gaps OFF misses before launch. Not a bulk scraper; not the primary seed |
+| **3 — Pre-launch nurse** | **UPCitemdb** trial (~**100 req/day**, **no API key**) | Curated EAN list only — nurse gaps OFF misses before launch. Ace: `catalog:nurse` · how-to: [`CATALOG-NURSE.md`](./CATALOG-NURSE.md). Not a bulk scraper; not the primary seed. Paid key optional later for higher quota |
 | **Won’t** | **Bright Data** / aggressive third-party scrape | Explicit **Won’t** (E3.5) unless product revisits later |
 
 `BottleSource` unique `(source, external_id)` + optional `raw_hash` keep upserts idempotent across dump + live paths.
@@ -96,9 +96,9 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 | Work | When | Refs |
 |---|---|---|
 | Local search API (empty catalog OK) | Sprint 2 | E2-T02 · E2.3 |
-| OFF dump seed + `BottleSource` upsert | Sprint 3 | E3.1–E3.2 · SPRINTS S3 |
+| OFF dump seed + `BottleSource` upsert | Sprint 3 / pre-launch | E3.1–E3.2 · [`CATALOG-SEED.md`](./CATALOG-SEED.md) · Ace `catalog:off-dump` |
 | Diff / soft-delete cron skeleton | Sprint 3 Should | E3.3 |
-| UPCitemdb curated nurse | Pre-launch ops (alongside / after first OFF seed) | This doc · not Bright Data |
+| UPCitemdb curated nurse | Pre-launch ops (alongside / after first OFF seed) | [`CATALOG-NURSE.md`](./CATALOG-NURSE.md) · Ace `catalog:nurse` · not Bright Data |
 | v1 personal bottles (~9–15) | Sprint 3 Should | E2-T11 |
 
 ---
@@ -113,14 +113,14 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 
 Display order in UI: override (if any) → catalog `photoUrl` → striped placeholder (`docs/DESIGN.md`).
 
-Storage MVP: local disk on VPS (R2 later). Catalog images may keep remote OFF URLs initially; personal uploads stay on app storage.
+Storage MVP: local disk on VPS (R2 later). Catalog seed can mirror OFF front images to `CATALOG_IMAGE_STORAGE_PATH` via `catalog:off-dump --mirror-images` (see [`CATALOG-SEED.md`](./CATALOG-SEED.md)); otherwise `Bottle.photoUrl` may still hold a remote OFF URL until ops enables the mirror. Personal uploads stay on app storage (E2-T04). Photos from OFF are CC-BY-SA; product data is ODbL — show the FR credit string from `CATALOG-SEED.md` in app about/credits.
 
 ---
 
 ## 5. What this doc does **not** do
 
 - Create the VPS database or app role (tomorrow / ops)
-- Run OFF dump import or UPCitemdb nurse scripts
+- Run OFF dump import (`catalog:off-dump`) or UPCitemdb nurse (`catalog:nurse`) — see [`CATALOG-SEED.md`](./CATALOG-SEED.md)
 - Implement E2-T01 migration (done — `fill_level` / `fill_level_updates_count`; place = existing `bought_at`)
 - Change freemium product rules already locked in E2 tickets / PR #14 docs
 

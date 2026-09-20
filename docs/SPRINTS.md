@@ -120,7 +120,7 @@ Epics: [`EPICS.md`](./EPICS.md)
 
 ### Scope
 
-- OFF dump filter → upsert bottles + `BottleSource`
+- OFF dump filter → upsert bottles + `BottleSource` ([`CATALOG-SEED.md`](./CATALOG-SEED.md) · Ace `catalog:off-dump`)
 - One-shot script + documented runbook
 - Cron/diff skeleton (schedule + soft-delete)
 - Migrate personal ~15 bottles from v1 DB

@@ -64,6 +64,7 @@ services:
       UPCITEMDB_API_BASE_URL: ${UPCITEMDB_API_BASE_URL:-https://api.upcitemdb.com/prod/trial}
       UPCITEMDB_USER_KEY: ${UPCITEMDB_USER_KEY:-}
       UPCITEMDB_KEY_TYPE: ${UPCITEMDB_KEY_TYPE:-3scale}
+      CATALOG_NURSE_DAILY_LIMIT: ${CATALOG_NURSE_DAILY_LIMIT:-100}
     ports:
       - "${API_PORT:-3000}:3000"
 

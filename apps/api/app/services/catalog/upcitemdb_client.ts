@@ -26,7 +26,11 @@ type UpcLookupResponse = {
 
 /**
  * UPCitemdb nurse client — EAN fallback when OFF misses.
- * Free Explorer (`/prod/trial`) needs no key; paid `/prod/v1` uses user_key.
+ *
+ * Default: free trial `https://api.upcitemdb.com/prod/trial` + `GET /lookup`
+ * (Explorer trial lookup). **No API key required** — leave `UPCITEMDB_USER_KEY` empty.
+ * Optional paid `/prod/v1` later: set `UPCITEMDB_USER_KEY` (+ `KEY_TYPE`) for higher quota.
+ * Do not block catalog/nurse on a missing key.
  */
 export default class UpcItemDbClient {
   constructor(private readonly fetchImpl: FetchLike = fetch) {}
@@ -41,6 +45,7 @@ export default class UpcItemDbClient {
     }
 
     const baseUrl = env.get('UPCITEMDB_API_BASE_URL')
+    // Trial: …/prod/trial/lookup — paid: …/prod/v1/lookup
     const url = new URL('/lookup', baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`)
     url.searchParams.set('upc', barcode)
 
@@ -49,6 +54,7 @@ export default class UpcItemDbClient {
       'Content-Type': 'application/json',
     }
 
+    // Trial works without headers.user_key; only attach for paid plans.
     const userKey = env.get('UPCITEMDB_USER_KEY')
     if (userKey) {
       headers.user_key = userKey

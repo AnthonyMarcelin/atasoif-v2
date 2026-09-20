@@ -23,9 +23,11 @@
     "test:api": "bun --filter @atasoif/api test",
     "db:migrate": "bun --filter @atasoif/api migration:run",
     "db:seed": "bun --filter @atasoif/api db:seed",
+    "catalog:nurse": "bun --filter @atasoif/api catalog:nurse",
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
     "docker:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build",
-    "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down"
+    "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
+    "catalog:off-dump": "bun --filter @atasoif/api catalog:off-dump"
   },
   "trustedDependencies": [
     "@parcel/watcher",
