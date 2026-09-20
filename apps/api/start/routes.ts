@@ -11,6 +11,7 @@ const HealthController = () => import('#controllers/health_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const FacebookAuthController = () => import('#controllers/facebook_auth_controller')
 const CatalogBottlesController = () => import('#controllers/catalog_bottles_controller')
+const CatalogCategoriesController = () => import('#controllers/catalog_categories_controller')
 const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
 
 router.get('/health', [HealthController, 'handle'])
@@ -57,6 +58,7 @@ router
 
     router
       .group(() => {
+        router.get('categories', [CatalogCategoriesController, 'index'])
         router.get('bottles', [CatalogBottlesController, 'index'])
         router.get('bottles/barcode/:barcode', [CatalogBottlesController, 'showByBarcode'])
       })

@@ -1,0 +1,30 @@
+<app-cellar-shell title="Premium" [freemium]="freemium()">
+  <section class="cellar-paywall" aria-labelledby="paywall-title">
+    <h2 id="paywall-title" class="cellar-paywall__title">{{ headline }}</h2>
+    <p class="cellar-paywall__lead">{{ lead }}</p>
+
+    <ul class="cellar-paywall__plans">
+      <li class="cellar-paywall__plan">
+        <span class="cellar-paywall__plan-name">Mensuel</span>
+        <span class="cellar-paywall__plan-price">{{ monthly.priceEur }} € / mois</span>
+      </li>
+      <li class="cellar-paywall__plan is-featured">
+        <span class="cellar-paywall__plan-name">Annuel</span>
+        <span class="cellar-paywall__plan-price">{{ yearly.priceEur }} € / an</span>
+        <span class="cellar-paywall__plan-hint">Deux mois offerts</span>
+      </li>
+    </ul>
+
+    <p class="auth-status" role="status">
+      Le paiement se fera dans l’app (App Store ou Google Play), jamais sur le site. En
+      attendant, retire une bouteille pour continuer.
+    </p>
+
+    <div class="auth-actions">
+      <button class="auth-btn auth-btn--primary" type="button" disabled>
+        Paiement dans l’app · bientôt
+      </button>
+      <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à ma cave</a>
+    </div>
+  </section>
+</app-cellar-shell>

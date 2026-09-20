@@ -73,7 +73,7 @@ export class AuthService {
   }
 
   /** Where to land after signup/login: cave only when email is confirmed. */
-  postAuthPath(fallback = '/me'): string {
+  postAuthPath(fallback = '/cave'): string {
     return this.isEmailVerified() ? fallback : '/auth/verify-email';
   }
 

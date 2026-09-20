@@ -35,6 +35,9 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "@atasoif/shared"
             ]
           },
           "configurations": {
