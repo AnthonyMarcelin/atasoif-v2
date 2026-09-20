@@ -53,7 +53,7 @@ Everything below is ranked for that outcome. Social and growth come after memory
 | ID | Story | Priority | Ticket |
 |---|---|---|---|
 | E2.1 | List / filter personal collection by category | Must | T05 |
-| E2.2 | Bottle detail: price, « Acheté chez » (place), boughtAt date, note, review, photo, jauge | Must | T01, T06 |
+| E2.2 | Bottle detail: price, « Acheté chez » (`boughtAt` place), note, review, photo, jauge | Must | T01, T06 |
 | E2.3 | Search shared catalog (local) | Must | T02, T07 |
 | E2.4 | Add from catalog hit → editable prefill + overrides (+ premium photo/jauge) | Must | T03, T04, T07 |
 | E2.5 | Add when miss → create catalog row + collection entry | Must | T03, T07 |

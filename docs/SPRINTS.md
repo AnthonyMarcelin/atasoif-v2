@@ -80,7 +80,7 @@ Epics: [`EPICS.md`](./EPICS.md)
 
 ### Scope
 
-- T01 Schema: required `purchasePlace` (« Acheté chez ») + `fillLevel` column (default 100; **write = premium** in T03)
+- T01 Schema: `boughtAt` = « Acheté chez » (existing column) + `fillLevel` column (default 100; **write = premium** in T03)
 - T02 Catalog search API (local DB)
 - T03 Collection CRUD API + freemium (10-bottle cap **+** server premium gates for jauge / photo override) + **`emailVerified` hard-gate** on cellar routes
 - T04 Photo upload/storage — **premium** user override; free uses catalog/seed photo only

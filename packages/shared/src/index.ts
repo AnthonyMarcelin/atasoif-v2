@@ -20,3 +20,13 @@ export const ALCOHOL_CATEGORIES = [
 ] as const;
 
 export type AlcoholCategory = (typeof ALCOHOL_CATEGORIES)[number];
+
+/**
+ * Fill-level jauge (`user_bottles.fill_level`), percent 0–100.
+ * Schema default for all plans; mutating is premium (E2-T03).
+ * Ops « terminées » = FILL_LEVEL_FINISHED.
+ */
+export const FILL_LEVEL_MIN = 0;
+export const FILL_LEVEL_MAX = 100;
+export const FILL_LEVEL_DEFAULT = 100;
+export const FILL_LEVEL_FINISHED = 0;

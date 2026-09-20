@@ -41,11 +41,13 @@ Related: [`EPICS.md`](./EPICS.md) (E2 · **E3**) · [`SPRINTS.md`](./SPRINTS.md)
 
 | Column (target) | Purpose | Freemium |
 |---|---|---|
-| `user_bottles.purchase_place` | Required « Acheté chez » / lieu (free text) | **Free** (required) |
+| `user_bottles.bought_at` (existing) | « Acheté chez » / lieu (free text) — **not** a purchase date | **Free** (required on write path in T03) |
 | `user_bottles.fill_level` | Jauge 0–100, default `100` | Column for all plans; **write/update = premium** (E2-T03) |
-| `user_bottles.fill_level_updates_count` (optional thin counter) | Ops Habitudes “mises à jour de niveau” | N/A |
+| `user_bottles.fill_level_updates_count` | Ops Habitudes “mises à jour de niveau” | N/A |
 
-Do **not** overload `bought_at` as place — it stays optional purchase **date**.
+**Product clarification (do not invent a second place column):** `bought_at` already stores purchase place. Do **not** add `purchase_place`. A separate purchase-date field is not in schema yet.
+
+Ops: finished bottle = `fill_level === 0`. Numeric `note` (decimal 3,1) scale (/5 vs /10 vs /20) is **not** locked — leave flexible.
 
 Ticket source of truth: [`tickets/E2-memory-cellar.md` § E2-T01](./tickets/E2-memory-cellar.md#e2-t01--schema-purchase-place--fill-level).
 
@@ -54,7 +56,7 @@ Ticket source of truth: [`tickets/E2-memory-cellar.md` § E2-T01](./tickets/E2-m
 | Capability | Plan | Enforcement |
 |---|---|---|
 | Catalog / seed photo (`Bottle.photoUrl`) | Free | Always available when present |
-| Memory text: place, price, note, review, `boughtAt` | Free | Not gated behind premium |
+| Memory text: place (`boughtAt`), price, note, review | Free | Not gated behind premium |
 | Bottle count in collection | Free ≤ 10 (`FREE_BOTTLE_LIMIT`) | Cap on create (E2-T03) |
 | User photo override (`UserBottle.photoUrlOverride` + upload) | **Premium** | 403 without entitlement (E2-T03 / T04) |
 | Fill-level jauge set/update (`fillLevel`) | **Premium** | 403 without entitlement; free rows keep default `100` (E2-T03) |
@@ -117,7 +119,7 @@ Storage MVP: local disk on VPS (R2 later). Catalog images may keep remote OFF UR
 
 - Create the VPS database or app role (tomorrow / ops)
 - Run OFF dump import or UPCitemdb nurse scripts
-- Implement E2-T01 migration (separate ticket/PR)
+- Implement E2-T01 migration (done — `fill_level` / `fill_level_updates_count`; place = existing `bought_at`)
 - Change freemium product rules already locked in E2 tickets / PR #14 docs
 
 ---
@@ -125,7 +127,7 @@ Storage MVP: local disk on VPS (R2 later). Catalog images may keep remote OFF UR
 ## Quick checklist for implementers
 
 1. Point `DB_*` at the dedicated VPS DB once ops creates it — never share credentials with other apps.
-2. Apply Lucid migrations only; keep E2-T01 before cellar CRUD that depends on `purchase_place` / `fill_level`.
+2. Apply Lucid migrations only; keep E2-T01 before cellar CRUD that depends on `bought_at` (place) / `fill_level`.
 3. Catalog reads are local-first; barcode miss = at most one external call + upsert.
 4. Reject free-plan writes to `fillLevel` / `photoUrlOverride` on the API even if the client is wrong.
 5. Prefer OFF dump for volume; use UPCitemdb only as a bounded pre-launch nurse from a curated EAN list.

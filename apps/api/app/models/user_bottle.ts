@@ -44,8 +44,24 @@ export default class UserBottle extends BaseModel {
   @column()
   declare pricePaid: number | null
 
+  /**
+   * « Acheté chez » / purchase place (free text). Not a purchase date.
+   * Required on create/update write path (E2-T03); nullable in DB for legacy rows.
+   */
   @column()
   declare boughtAt: string | null
+
+  /**
+   * Bottle fill level (jauge), 0–100. Default 100 for all plans.
+   * Mutating this field is premium (server gate in E2-T03).
+   * Ops: finished = fillLevel === 0.
+   */
+  @column()
+  declare fillLevel: number
+
+  /** Thin counter for ops Habitudes « mises à jour de niveau » (incremented in T03+). */
+  @column()
+  declare fillLevelUpdatesCount: number
 
   @column()
   declare isPublic: boolean

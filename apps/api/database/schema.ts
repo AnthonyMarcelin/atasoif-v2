@@ -174,7 +174,7 @@ export class SubscriptionSchema extends BaseModel {
 }
 
 export class UserBottleSchema extends BaseModel {
-  static $columns = ['abvOverride', 'attrsOverride', 'bottleId', 'boughtAt', 'brandOverride', 'createdAt', 'id', 'isPublic', 'nameOverride', 'note', 'originOverride', 'photoUrlOverride', 'pricePaid', 'review', 'updatedAt', 'userId', 'volumeMlOverride'] as const
+  static $columns = ['abvOverride', 'attrsOverride', 'bottleId', 'boughtAt', 'brandOverride', 'createdAt', 'fillLevel', 'fillLevelUpdatesCount', 'id', 'isPublic', 'nameOverride', 'note', 'originOverride', 'photoUrlOverride', 'pricePaid', 'review', 'updatedAt', 'userId', 'volumeMlOverride'] as const
   $columns = UserBottleSchema.$columns
   @column()
   declare abvOverride: string | null
@@ -188,6 +188,10 @@ export class UserBottleSchema extends BaseModel {
   declare brandOverride: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column()
+  declare fillLevel: number
+  @column()
+  declare fillLevelUpdatesCount: number
   @column({ isPrimary: true })
   declare id: number
   @column()

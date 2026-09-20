@@ -63,31 +63,34 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 | **Blocks** | T02–T08, T09 |
 
 ### Goal
-Make memory schema match Nuit + UX-ADD-BOTTLE: required purchase place (« Acheté chez »), fill-level column for the jauge (premium write path in T03), without inventing fields ops/mockups do not need.
+Make memory schema match Nuit + UX-ADD-BOTTLE: « Acheté chez » on existing `bought_at`, fill-level column for the jauge (premium write path in T03), without inventing fields ops/mockups do not need.
+
+### Product clarification (lieu)
+Existing `user_bottles.bought_at` (string) **is** purchase place / « Acheté chez » — do **not** add a parallel `purchase_place` column. A separate purchase-date field is deferred. Numeric `note` (decimal 3,1) scale is not locked.
 
 ### Acceptance criteria
-- [ ] Lucid migration adds **`purchase_place`** (`string`, not null on write path) for « Acheté chez » / lieu
-- [ ] Document existing **`bought_at`**: optional purchase **date** (string/date as already migrated) — do **not** overload it as place
-- [ ] Lucid migration adds **`fill_level`** (`integer` 0–100, not null, default `100`) for jauge storage
-- [ ] Optional thin counter **`fill_level_updates_count`** (default `0`) so ops Habitudes « mises à jour de niveau » can be fed later without a full event store in E2
-- [ ] Models + schema types updated; Vine rules ready for T03 (`purchasePlace` required; `fillLevel` 0–100 when accepted)
-- [ ] Document freemium split for T03/T04: free rows keep `fill_level` default; **mutating** `fill_level` / setting `photoUrlOverride` is premium (server-side)
-- [ ] Finished bottle for ops = `fill_level === 0` (document in ticket PR / short schema note)
-- [ ] API tests or migration test prove columns exist
+- [x] Document **`bought_at`**: « Acheté chez » / lieu (free text); required on write path in T03 — **no** new place column
+- [x] Lucid migration adds **`fill_level`** (`integer` 0–100, not null, default `100`) for jauge storage
+- [x] Thin counter **`fill_level_updates_count`** (default `0`) so ops Habitudes « mises à jour de niveau » can be fed later without a full event store in E2
+- [x] Models + schema types updated; Vine rules ready for T03 (`boughtAt` required as place; `fillLevel` 0–100 when accepted)
+- [x] Document freemium split for T03/T04: free rows keep `fill_level` default; **mutating** `fill_level` / setting `photoUrlOverride` is premium (server-side)
+- [x] Finished bottle for ops = `fill_level === 0` (documented in `docs/DATABASE.md` + model comments)
+- [x] API tests or migration test prove columns exist
 
 ### Out of scope
 - Angular UI
 - Forced enum for purchase place (Nuit is free text; ops « lieux » chart aggregates free text — do not invent a closed category list)
 - Level history timeline UI
 - Entitlement enforcement (T03 / T04)
+- New `purchase_place` column (rejected — use `bought_at`)
 
 ### Tech notes
-- Prefer smallest migration; backfill existing rows if any (`purchase_place` placeholder only if seed rows exist — otherwise empty table is fine)
+- Prefer smallest migration; empty `user_bottles` needs no place backfill
 - Do not mutate global `Bottle` for personal memory fields
 - Schema holds `fill_level` for all plans; **premium gate is on write/update**, not on column presence
 
 ### Suggested commit
-`feat: add purchase place and fill level to user bottles`
+`feat: add fill level to user bottles`
 
 ---
 
@@ -138,7 +141,7 @@ Personal cellar CRUD with memory fields, freemium enforcement (bottle cap **and*
 - [ ] Routes under `/api/v1/...` for list / show / create / update / delete `UserBottle` (owner-only)
 - [ ] List supports filter by category (and stable sort)
 - [ ] Create supports catalog **hit** (existing `bottleId`) and **miss** (create `Bottle` with user source + `UserBottle` in one flow or documented two-step)
-- [ ] Required on create/update: **`purchasePlace`**; memory fields free for all plans: `pricePaid`, `boughtAt` (date optional), `note`, `review`
+- [ ] Required on create/update: **`boughtAt`** (« Acheté chez » / place); memory fields free for all plans: `pricePaid`, `note`, `review`
 - [ ] Overrides never mutate global `Bottle` by default
 - [ ] Freemium bottle cap: if no active entitlement and count ≥ `FREE_BOTTLE_LIMIT` (10), create returns **403** with clear JSON (reuse shared constant)
 - [ ] **Premium gate — jauge (server-side):** without entitlement, create/update that sets or changes **`fillLevel`** (anything other than leaving the server default `100` untouched) returns **403** with a stable error code (e.g. `E_PREMIUM_REQUIRED` / feature `fillLevel`); free creates persist default `fill_level = 100` and must not accept client-driven level changes
@@ -156,8 +159,8 @@ Personal cellar CRUD with memory fields, freemium enforcement (bottle cap **and*
 ### Tech notes
 - Import `FREE_BOTTLE_LIMIT` from `@atasoif/shared` when practical
 - Context7 for Adonis auth middleware composition
-- Do **not** gate « Acheté chez », price, note, or review behind premium
-
+- Do **not** gate « Acheté chez » (`boughtAt`), price, note, or review behind premium
+- Place field is **`boughtAt`** → `bought_at` (no `purchasePlace` / `purchase_place` column)
 ### Suggested commit
 `feat: add cellar collection API with freemium gate`
 
@@ -299,7 +302,7 @@ Add a bottle in &lt;30s per `docs/UX-ADD-BOTTLE.md`: search → editable prefill
 Edit and delete collection entries; update fill level via swipe (or equivalent direct gesture) on the jauge when premium.
 
 ### Acceptance criteria
-- [ ] Edit persists free overrides + required `purchasePlace` (price, note, review, boughtAt)
+- [ ] Edit persists free overrides + required `boughtAt` place (price, note, review)
 - [ ] **Premium:** edit may persist `fillLevel` and photo override; jauge swipe / drag updates level and saves (updates `fill_level_updates_count` via API)
 - [ ] **Free:** jauge swipe / photo replace locked → paywall; must not send `fillLevel` / `photoUrlOverride` writes that the API will 403
 - [ ] Delete with explicit confirmation (destructive) — available on free
@@ -347,7 +350,7 @@ Product readings already called out in ops README (retain as comments in API doc
 
 ### Acceptance criteria
 - [ ] One or few **read-only** admin/internal endpoints (e.g. `/api/v1/ops/kpis/...`) returning JSON shaped for the **Habitudes** + **Conversion funnel cellar stages** + **Vue d’ensemble bottle counters** above
-- [ ] Purchase-place aggregation uses real `purchase_place` values (top-N), not a fabricated enum
+- [ ] Purchase-place aggregation uses real `bought_at` values (top-N), not a fabricated enum
 - [ ] “Terminées” uses `fill_level === 0`; level updates use `fill_level_updates_count` (or equivalent)
 - [ ] Response documents `live` vs `stub` fields explicitly so future UI does not treat stubs as real
 - [ ] Protected (env admin token / role TBD) — not public; no secrets in payloads
@@ -408,7 +411,7 @@ Import owner’s ~9–15 bottles from legacy Railway Postgres / dump into Lucid 
 ### Acceptance criteria
 - [ ] Documented one-shot script or ace command
 - [ ] Idempotent where practical
-- [ ] Maps memory fields; sets `purchase_place` / `fill_level` sensibly when missing
+- [ ] Maps memory fields; sets `bought_at` / `fill_level` sensibly when missing
 
 ### Out of scope
 - Full user base migration tooling
