@@ -1,0 +1,197 @@
+<app-cellar-shell
+  title="Ajouter"
+  lead="Cherche d’abord · moins de 30 secondes."
+  [freemium]="freemium()"
+>
+  @if (step() === 'search') {
+    <div class="cellar-add">
+      <div class="auth-field" [class.is-focused]="focusedField() === 'q'">
+        <label class="auth-field__label" for="cellar-search">Recherche</label>
+        <input
+          id="cellar-search"
+          class="auth-field__control"
+          type="search"
+          enterkeyhint="search"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="Nom, marque ou code-barres"
+          [value]="searchControl.value"
+          (input)="onQueryInput($any($event.target).value)"
+          (focus)="setFocused('q')"
+          (blur)="setFocused(null)"
+        />
+      </div>
+
+      @if (searchError(); as message) {
+        <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+      }
+
+      @if (searching()) {
+        <p class="auth-status" role="status">Recherche…</p>
+      } @else if (barcodeMiss()) {
+        <p class="auth-status" role="status">Aucune bouteille pour ce code-barres.</p>
+      }
+
+      @if (results().length > 0) {
+        <ul class="cellar-search-list" aria-label="Résultats catalogue">
+          @for (bottle of results(); track bottle.id) {
+            <li>
+              <button type="button" class="cellar-search-hit" (click)="pickHit(bottle)">
+                <app-bottle-photo
+                  [src]="bottle.photoUrl"
+                  [alt]="bottle.name"
+                  variant="list"
+                />
+                <span class="cellar-search-hit__body">
+                  <span class="cellar-search-hit__name">{{ bottle.name }}</span>
+                  @if (bottle.brand) {
+                    <span class="cellar-search-hit__brand">{{ bottle.brand }}</span>
+                  }
+                  @if (bottle.category) {
+                    <span class="cellar-search-hit__cat">{{ bottle.category.name }}</span>
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (searchControl.value.trim().length >= 2 && !searching()) {
+        <button type="button" class="auth-btn auth-btn--secondary" (click)="startMiss()">
+          Pas trouvé ? Ajoute-la
+        </button>
+      }
+
+      <a class="auth-btn auth-btn--ghost" routerLink="/cave">Retour à la cave</a>
+    </div>
+  } @else {
+    <form class="auth-form cellar-add" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <button type="button" class="cellar-back" (click)="backToSearch()">← Recherche</button>
+
+      @if (selected(); as bottle) {
+        <div class="cellar-prefill">
+          <app-bottle-photo
+            [src]="bottle.photoUrl"
+            [alt]="bottle.name"
+            variant="detail"
+          />
+          <p class="cellar-prefill__hint">Photo catalogue · perso = premium</p>
+        </div>
+      }
+
+      <div [ngClass]="fieldClass('name')">
+        <label class="auth-field__label" for="add-name">Nom</label>
+        <input
+          id="add-name"
+          class="auth-field__control"
+          type="text"
+          formControlName="name"
+          (focus)="setFocused('name')"
+          (blur)="setFocused(null)"
+        />
+      </div>
+
+      <div [ngClass]="fieldClass('brand')">
+        <label class="auth-field__label" for="add-brand">Marque</label>
+        <input
+          id="add-brand"
+          class="auth-field__control"
+          type="text"
+          formControlName="brand"
+          (focus)="setFocused('brand')"
+          (blur)="setFocused(null)"
+        />
+      </div>
+
+      @if (isMiss()) {
+        <div [ngClass]="fieldClass('categoryId')">
+          <label class="auth-field__label" for="add-category">Catégorie</label>
+          <select
+            id="add-category"
+            class="auth-field__control"
+            formControlName="categoryId"
+            (focus)="setFocused('categoryId')"
+            (blur)="setFocused(null)"
+          >
+            @for (cat of categories(); track cat.id) {
+              <option [ngValue]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <p class="cellar-section-label">Le souvenir</p>
+
+      <div [ngClass]="fieldClass('boughtAt')">
+        <label class="auth-field__label" for="add-bought-at">Acheté chez</label>
+        <input
+          id="add-bought-at"
+          class="auth-field__control"
+          type="text"
+          formControlName="boughtAt"
+          autocomplete="off"
+          placeholder="Nicolas, Cave du coin…"
+          [attr.aria-required]="true"
+          (focus)="setFocused('boughtAt')"
+          (blur)="setFocused(null)"
+        />
+      </div>
+
+      <div [ngClass]="fieldClass('pricePaid')">
+        <label class="auth-field__label" for="add-price">Prix payé (€)</label>
+        <input
+          id="add-price"
+          class="auth-field__control"
+          type="text"
+          inputmode="decimal"
+          formControlName="pricePaid"
+          placeholder="89,90"
+          (focus)="setFocused('pricePaid')"
+          (blur)="setFocused(null)"
+        />
+      </div>
+
+      <div [ngClass]="fieldClass('note')">
+        <label class="auth-field__label" for="add-note">Note</label>
+        <input
+          id="add-note"
+          class="auth-field__control"
+          type="text"
+          inputmode="decimal"
+          formControlName="note"
+          placeholder="4,5"
+          (focus)="setFocused('note')"
+          (blur)="setFocused(null)"
+        />
+      </div>
+
+      <div [ngClass]="fieldClass('review')">
+        <label class="auth-field__label" for="add-review">Avis</label>
+        <textarea
+          id="add-review"
+          class="auth-field__control auth-field__control--area"
+          formControlName="review"
+          rows="3"
+          placeholder="Tourbé, souvenir d’Islay…"
+          (focus)="setFocused('review')"
+          (blur)="setFocused(null)"
+        ></textarea>
+      </div>
+
+      @if (formError(); as message) {
+        <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+      }
+
+      <div class="auth-actions">
+        <button class="auth-btn auth-btn--primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Ajout…' : 'Confirmer' }}
+        </button>
+        <button class="auth-btn auth-btn--ghost" type="button" (click)="backToSearch()">
+          Annuler
+        </button>
+      </div>
+    </form>
+  }
+</app-cellar-shell>

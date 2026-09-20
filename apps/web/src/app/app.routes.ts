@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
 
-import { authGuard } from './core/auth/auth.guard';
-
 export const routes: Routes = [
   {
     path: '',
@@ -16,10 +14,13 @@ export const routes: Routes = [
     loadChildren: () => import('./auth/auth.routes').then((m) => m.ACCOUNT_ROUTES),
   },
   {
-    // Future cellar collection surface — protected early so Bearer wiring is visible.
+    path: 'cave',
+    loadChildren: () => import('./cellar/cellar.routes').then((m) => m.CELLAR_ROUTES),
+  },
+  {
     path: 'cellar',
-    canActivate: [authGuard],
-    loadChildren: () => import('./auth/auth.routes').then((m) => m.ACCOUNT_ROUTES),
+    redirectTo: 'cave',
+    pathMatch: 'full',
   },
   { path: '**', redirectTo: '' },
 ];

@@ -121,6 +121,7 @@ describe('AuthService', () => {
     req.flush({ data: { ...sampleUser, emailVerified: true } });
 
     expect(service.isEmailVerified()).toBeTrue();
+    expect(service.postAuthPath()).toBe('/cave');
     expect(service.postAuthPath('/me')).toBe('/me');
   });
 

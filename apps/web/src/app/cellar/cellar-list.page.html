@@ -1,0 +1,64 @@
+<app-cellar-shell
+  title="Ma cave"
+  lead="Tes souvenirs, pas une vitrine."
+  [freemium]="freemium()"
+>
+  <div class="cellar-filters" role="tablist" aria-label="Filtrer par catégorie">
+    @for (filter of filters; track filter.slug ?? 'all') {
+      <button
+        type="button"
+        class="cellar-chip"
+        role="tab"
+        [class.is-active]="category() === filter.slug"
+        [attr.aria-selected]="category() === filter.slug"
+        (click)="setCategory(filter.slug)"
+      >
+        {{ filter.label }}
+      </button>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <p class="auth-status" role="status">Ouverture de ta cave…</p>
+  } @else if (bottles().length === 0) {
+    <div class="cellar-empty" role="status">
+      <p class="cellar-empty__title">Cave vide</p>
+      <p class="cellar-empty__lead">
+        Ajoute ta première bouteille · où tu l’as eue, combien, et si c’était bon.
+      </p>
+      <a class="auth-btn auth-btn--primary" routerLink="/cave/ajouter">Ajouter une bouteille</a>
+    </div>
+  } @else {
+    <ul class="cellar-list" aria-label="Bouteilles en cave">
+      @for (entry of bottles(); track entry.id) {
+        <li class="cellar-list__item">
+          <a class="cellar-card" [routerLink]="['/cave', entry.id]">
+            <app-bottle-photo
+              class="cellar-card__photo"
+              [src]="photoOf(entry)"
+              [alt]="nameOf(entry)"
+              variant="list"
+            />
+            <div class="cellar-card__body">
+              @if (categoryOf(entry); as cat) {
+                <span class="cellar-card__stamp">{{ cat.name }}</span>
+              }
+              <span class="cellar-card__name">{{ nameOf(entry) }}</span>
+              @if (brandOf(entry); as brand) {
+                <span class="cellar-card__brand">{{ brand }}</span>
+              }
+              <span class="cellar-card__place">
+                {{ entry.boughtAt || 'Lieu inconnu' }}
+                @if (entry.pricePaid !== null && entry.pricePaid !== undefined) {
+                  <span>· {{ entry.pricePaid }} €</span>
+                }
+              </span>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</app-cellar-shell>

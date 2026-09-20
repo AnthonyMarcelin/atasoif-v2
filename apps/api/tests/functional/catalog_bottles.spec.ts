@@ -173,4 +173,20 @@ test.group('Catalog bottles API', (group) => {
       .header('Accept', 'application/json')
     invalid.assertStatus(422)
   })
+
+  test('lists seeded categories for add-flow miss', async ({ client, assert }) => {
+    const token = await signupAndVerify(client)
+    await Category.updateOrCreate({ slug: 'whisky' }, { name: 'Whisky' })
+    await Category.updateOrCreate({ slug: 'rhum' }, { name: 'Rhum' })
+
+    const response = await client
+      .get('/api/v1/catalog/categories')
+      .bearerToken(token)
+      .header('Accept', 'application/json')
+
+    response.assertStatus(200)
+    const body = response.body() as { data: Array<{ id: number; slug: string; name: string }> }
+    assert.isAtLeast(body.data.length, 2)
+    assert.isTrue(body.data.some((row) => row.slug === 'whisky'))
+  })
 })
