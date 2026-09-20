@@ -11,6 +11,7 @@ const HealthController = () => import('#controllers/health_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const FacebookAuthController = () => import('#controllers/facebook_auth_controller')
 const CatalogBottlesController = () => import('#controllers/catalog_bottles_controller')
+const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
 
 router.get('/health', [HealthController, 'handle'])
 
@@ -61,6 +62,18 @@ router
       })
       .prefix('catalog')
       .as('catalog')
+      .use([middleware.auth(), middleware.emailVerified()])
+
+    router
+      .group(() => {
+        router.get('bottles', [CollectionBottlesController, 'index'])
+        router.post('bottles', [CollectionBottlesController, 'store'])
+        router.get('bottles/:id', [CollectionBottlesController, 'show'])
+        router.patch('bottles/:id', [CollectionBottlesController, 'update'])
+        router.delete('bottles/:id', [CollectionBottlesController, 'destroy'])
+      })
+      .prefix('collection')
+      .as('collection')
       .use([middleware.auth(), middleware.emailVerified()])
   })
   .prefix('/api/v1')
