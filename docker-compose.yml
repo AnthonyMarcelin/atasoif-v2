@@ -58,6 +58,12 @@ services:
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-}
       APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
       APPLE_CLIENT_SECRET: ${APPLE_CLIENT_SECRET:-}
+      OFF_API_BASE_URL: ${OFF_API_BASE_URL:-https://world.openfoodfacts.org}
+      OFF_USER_AGENT: ${OFF_USER_AGENT:-Atasoif/0.1 (hello@atasoif.local)}
+      UPCITEMDB_ENABLED: ${UPCITEMDB_ENABLED:-true}
+      UPCITEMDB_API_BASE_URL: ${UPCITEMDB_API_BASE_URL:-https://api.upcitemdb.com/prod/trial}
+      UPCITEMDB_USER_KEY: ${UPCITEMDB_USER_KEY:-}
+      UPCITEMDB_KEY_TYPE: ${UPCITEMDB_KEY_TYPE:-3scale}
     ports:
       - "${API_PORT:-3000}:3000"
 

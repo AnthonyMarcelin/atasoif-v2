@@ -74,9 +74,11 @@ UI may hide or tease premium controls; **authorization is always server-side**.
 | Case | External API calls | Behavior |
 |---|---|---|
 | Local hit by EAN / barcode | **0** | Return existing `Bottle`; never call OFF / UPCitemdb |
-| Local miss + barcode known | **1** | One provider call → upsert `Bottle` + `BottleSource` → serve from DB thereafter |
+| Local miss + barcode known | **1–2** | OFF product API → on miss UPCitemdb nurse → upsert `Bottle` + `BottleSource` → serve from DB thereafter |
 | User add **by name** (manual miss, no barcode) | **0** | Create catalog row from user input (E2 miss path); no remote lookup |
-| Typeahead / name search in app | **0** | Query **local** DB only (E2-T02). Do not remote-search OFF for autocomplete |
+| Typeahead / name search in app | **0** | Query **local** DB only (`GET /api/v1/catalog/bottles?q=`). Do not remote-search OFF for autocomplete |
+
+Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email verified). Response includes `lookupOrigin`: `cache` \| `openfoodfacts` \| `upcitemdb`.
 
 ### Sources (priority)
 
