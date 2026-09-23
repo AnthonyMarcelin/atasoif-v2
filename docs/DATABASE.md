@@ -57,7 +57,7 @@ Ticket source of truth: [`tickets/E2-memory-cellar.md` § E2-T01](./tickets/E2-m
 |---|---|---|
 | Catalog / seed photo (`Bottle.photoUrl`) | Free | Always available when present |
 | Memory text: place (`boughtAt`), price, note, review | Free | Not gated behind premium |
-| Bottle count in collection | Free ≤ 10 (`FREE_BOTTLE_LIMIT`) | Cap on create (E2-T03) |
+| Bottle creates (lifetime) | Free ≤ 10 (`FREE_BOTTLE_LIMIT`) | `users.bottles_created_count` increments on successful create and is never decremented on delete. Active subscription bypasses the cap (E2-T03) |
 | User photo override (`UserBottle.photoUrlOverride` + upload) | **Premium** | 403 without entitlement (E2-T03 / T04) |
 | Fill-level jauge set/update (`fillLevel`) | **Premium** | 403 without entitlement; free rows keep default `100` (E2-T03) |
 
@@ -107,13 +107,23 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 
 | Layer | Field | Who sets it | Plan |
 |---|---|---|---|
-| Shared catalog | `Bottle.photoUrl` | OFF dump / live upsert / seed | Free for all users |
+| Shared catalog | `Bottle.photoUrl` | OFF dump / live upsert / seed, or a packshot attached on a catalog miss | Free for all users |
+| Catalog photo review | `Bottle.photoStatus` | `pending` when a user contributes the photo on a miss. `approved` is reserved. Null for seed / OFF / no photo | Not a premium gate. No admin UI yet (moderation is a follow-up) |
 | Personal override | `UserBottle.photoUrlOverride` | User upload (E2-T04) | **Premium**, server-enforced |
 | Fill level | `UserBottle.fillLevel` | User gesture / edit | Schema default for all; **mutate = premium** |
 
 Display order in UI: override (if any) → catalog `photoUrl` → striped placeholder (`docs/DESIGN.md`).
 
-Storage MVP: local disk on VPS (R2 later). Catalog seed can mirror OFF front images to `CATALOG_IMAGE_STORAGE_PATH` via `catalog:off-dump --mirror-images` (see [`CATALOG-SEED.md`](./CATALOG-SEED.md)); otherwise `Bottle.photoUrl` may still hold a remote OFF URL until ops enables the mirror. Personal uploads stay on app storage (E2-T04). Photos from OFF are CC-BY-SA; product data is ODbL — show the FR credit string from `CATALOG-SEED.md` in app about/credits.
+Storage MVP: local disk on VPS (R2 later). Catalog seed can mirror OFF front images to `CATALOG_IMAGE_STORAGE_PATH` via `catalog:off-dump --mirror-images` (see [`CATALOG-SEED.md`](./CATALOG-SEED.md)); otherwise `Bottle.photoUrl` may still hold a remote OFF URL until ops enables the mirror. Personal uploads and user-contributed packshots use `CELLAR_PHOTO_DIR` (default max `CELLAR_PHOTO_MAX_BYTES` = 5 MiB, jpeg/png/webp).
+
+Serving (no public directory listing):
+
+- Shelf override: `POST /api/v1/collection/bottles/:id/photo` (auth + verified email + owner + active subscription). `photoUrlOverride` becomes `/api/v1/collection/bottles/:id/photo`. `GET` on that path streams the file only for the owner. Clients that render an `<img>` must fetch the bytes with the bearer token (a blob URL). Files stay outside the web root.
+- Catalog packshot on a miss: multipart field `catalogPhoto` on `POST /api/v1/collection/bottles` (free). Stored as `Bottle.photoUrl` = `/api/v1/media/catalog/:name` with `photoStatus = pending`. `GET` requires auth + verified email, not ownership. A remote `bottle.photoUrl` on the JSON miss path stays free and is also marked `pending`.
+
+Moderation of `pending` photos is a follow-up. This change does not add an admin UI.
+
+Photos from OFF are CC-BY-SA; product data is ODbL — show the FR credit string from `CATALOG-SEED.md` in app about/credits.
 
 ---
 

@@ -73,4 +73,12 @@ export default await Env.create(new URL('../', import.meta.url), {
   CATALOG_IMAGE_STORAGE_PATH: Env.schema.string.optional(),
   /** Optional public URL prefix for mirrored files (e.g. https://api…/media/catalog). */
   CATALOG_IMAGE_PUBLIC_BASE_URL: Env.schema.string.optional(),
+
+  /**
+   * Cellar uploads (shelf override + contributed catalog packshot).
+   * Absolute path outside the release dir in production. Unset in tests uses a temp dir.
+   */
+  CELLAR_PHOTO_DIR: Env.schema.string.optional(),
+  /** Max upload size in bytes. Default 5242880 (5 MiB) when unset. */
+  CELLAR_PHOTO_MAX_BYTES: Env.schema.number.optional(),
 })

@@ -36,10 +36,7 @@ test.group('Collection bottles API (E2-T03)', (group) => {
   }
 
   async function seedCatalogBottle(suffix = '0') {
-    const category = await Category.updateOrCreate(
-      { slug: 'whisky' },
-      { name: 'Whisky' }
-    )
+    const category = await Category.updateOrCreate({ slug: 'whisky' }, { name: 'Whisky' })
     const tag = String(suffix).replace(/\D/g, '').padStart(4, '0').slice(-4)
     return Bottle.create({
       name: `Lagavulin 16 ${suffix}`,
@@ -95,16 +92,13 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     const { token } = await signupAndVerify(client)
     const bottle = await seedCatalogBottle()
 
-    const response = await client
-      .post('/api/v1/collection/bottles')
-      .bearerToken(token)
-      .json({
-        bottleId: bottle.id,
-        boughtAt: 'Nicolas Part-Dieu',
-        pricePaid: 89.9,
-        note: 4.5,
-        review: 'Souvenir tourbé',
-      })
+    const response = await client.post('/api/v1/collection/bottles').bearerToken(token).json({
+      bottleId: bottle.id,
+      boughtAt: 'Nicolas Part-Dieu',
+      pricePaid: 89.9,
+      note: 4.5,
+      review: 'Souvenir tourbé',
+    })
 
     response.assertStatus(201)
     const body = response.body() as {
@@ -116,7 +110,9 @@ test.group('Collection bottles API (E2-T03)', (group) => {
         note: number
         bottle: { photoUrl: string | null }
       }
-      meta: { freemium: { count: number; limit: number; remaining: number | null; entitlement: boolean } }
+      meta: {
+        freemium: { count: number; limit: number; remaining: number | null; entitlement: boolean }
+      }
     }
     assert.equal(body.data.boughtAt, 'Nicolas Part-Dieu')
     assert.equal(body.data.fillLevel, FILL_LEVEL_DEFAULT)
@@ -130,55 +126,103 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     assert.isFalse(body.meta.freemium.entitlement)
   })
 
-  test('free user blocked on 11th bottle with French message', async ({ client, assert }) => {
+  test('11th create is blocked and delete does not free the slot', async ({ client, assert }) => {
     const { token, user } = await signupAndVerify(client)
     const category = await Category.updateOrCreate({ slug: 'whisky' }, { name: 'Whisky' })
-
-    for (let i = 0; i < FREE_BOTTLE_LIMIT; i++) {
-      const bottle = await Bottle.create({
-        name: `Bottle ${i}`,
-        brand: 'Brand',
-        categoryId: category.id,
-        attrs: {},
-      })
-      await UserBottle.create({
-        userId: user.id,
-        bottleId: bottle.id,
-        boughtAt: 'Carrefour',
-      })
+    const bottles = []
+    for (let i = 0; i < FREE_BOTTLE_LIMIT + 1; i++) {
+      bottles.push(
+        await Bottle.create({
+          name: `Bottle ${i}`,
+          brand: 'Brand',
+          categoryId: category.id,
+          attrs: {},
+        })
+      )
     }
 
-    const extra = await Bottle.create({
-      name: 'Bottle overflow',
-      brand: 'Brand',
-      categoryId: category.id,
-      attrs: {},
+    const createdIds: number[] = []
+    for (let i = 0; i < FREE_BOTTLE_LIMIT; i++) {
+      const created = await client
+        .post('/api/v1/collection/bottles')
+        .bearerToken(token)
+        .json({ bottleId: bottles[i].id, boughtAt: 'Cave' })
+      created.assertStatus(201)
+      const createdBody = created.body() as {
+        data: { id: number }
+        meta: { freemium: { count: number; remaining: number | null } }
+      }
+      assert.equal(createdBody.meta.freemium.count, i + 1)
+      assert.equal(createdBody.meta.freemium.remaining, FREE_BOTTLE_LIMIT - (i + 1))
+      createdIds.push(createdBody.data.id)
+    }
+
+    const blocked = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({ bottleId: bottles[FREE_BOTTLE_LIMIT].id, boughtAt: 'Cave' })
+    blocked.assertStatus(403)
+    const blockedBody = blocked.body() as { code: string; message: string; limit: number }
+    assert.equal(blockedBody.code, 'E_BOTTLE_LIMIT')
+    assert.equal(blockedBody.message, 'Cave pleine · passe premium pour continuer')
+    assert.equal(blockedBody.limit, FREE_BOTTLE_LIMIT)
+
+    const deleted = await client
+      .delete(`/api/v1/collection/bottles/${createdIds[0]}`)
+      .bearerToken(token)
+    deleted.assertStatus(200)
+    const deletedBody = deleted.body() as {
+      meta: { freemium: { count: number; remaining: number | null } }
+    }
+    assert.equal(deletedBody.meta.freemium.count, FREE_BOTTLE_LIMIT)
+    assert.equal(deletedBody.meta.freemium.remaining, 0)
+
+    const stillBlocked = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({ bottleId: bottles[FREE_BOTTLE_LIMIT].id, boughtAt: 'Cave' })
+    stillBlocked.assertStatus(403)
+    assert.equal((stillBlocked.body() as { code: string }).code, 'E_BOTTLE_LIMIT')
+
+    const fresh = await User.findOrFail(user.id)
+    assert.equal(fresh.bottlesCreatedCount, FREE_BOTTLE_LIMIT)
+    const rows = await UserBottle.query().where('userId', user.id)
+    assert.lengthOf(rows, FREE_BOTTLE_LIMIT - 1)
+  })
+
+  test('active subscription bypasses the lifetime cap', async ({ client, assert }) => {
+    const { token, user } = await signupAndVerify(client, {
+      email: 'uncapped@example.com',
+      pseudo: 'uncapped_user',
     })
+    await grantPremium(user.id)
+    user.bottlesCreatedCount = FREE_BOTTLE_LIMIT
+    await user.save()
+    const bottle = await seedCatalogBottle('-cap')
 
     const response = await client
       .post('/api/v1/collection/bottles')
       .bearerToken(token)
-      .json({ bottleId: extra.id, boughtAt: 'Cave' })
+      .json({ bottleId: bottle.id, boughtAt: 'Cave' })
 
-    response.assertStatus(403)
-    const body = response.body() as { code: string; message: string; limit: number }
-    assert.equal(body.code, 'E_BOTTLE_LIMIT')
-    assert.match(body.message, /Cave pleine/i)
-    assert.equal(body.limit, FREE_BOTTLE_LIMIT)
+    response.assertStatus(201)
+    const body = response.body() as {
+      meta: { freemium: { count: number; remaining: number | null; entitlement: boolean } }
+    }
+    assert.equal(body.meta.freemium.count, FREE_BOTTLE_LIMIT + 1)
+    assert.isNull(body.meta.freemium.remaining)
+    assert.isTrue(body.meta.freemium.entitlement)
   })
 
   test('free user blocked when setting fillLevel', async ({ client, assert }) => {
     const { token } = await signupAndVerify(client)
     const bottle = await seedCatalogBottle('-fl')
 
-    const response = await client
-      .post('/api/v1/collection/bottles')
-      .bearerToken(token)
-      .json({
-        bottleId: bottle.id,
-        boughtAt: 'Nicolas',
-        fillLevel: 80,
-      })
+    const response = await client.post('/api/v1/collection/bottles').bearerToken(token).json({
+      bottleId: bottle.id,
+      boughtAt: 'Nicolas',
+      fillLevel: 80,
+    })
 
     response.assertStatus(403)
     const body = response.body() as { code: string; feature: string }
@@ -190,14 +234,11 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     const { token } = await signupAndVerify(client)
     const bottle = await seedCatalogBottle('-ph')
 
-    const response = await client
-      .post('/api/v1/collection/bottles')
-      .bearerToken(token)
-      .json({
-        bottleId: bottle.id,
-        boughtAt: 'Nicolas',
-        photoUrlOverride: 'https://example.com/me.jpg',
-      })
+    const response = await client.post('/api/v1/collection/bottles').bearerToken(token).json({
+      bottleId: bottle.id,
+      boughtAt: 'Nicolas',
+      photoUrlOverride: 'https://example.com/me.jpg',
+    })
 
     response.assertStatus(403)
     const body = response.body() as { code: string; feature: string }
@@ -213,19 +254,21 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     await grantPremium(user.id)
     const bottle = await seedCatalogBottle('-prem')
 
-    const create = await client
-      .post('/api/v1/collection/bottles')
-      .bearerToken(token)
-      .json({
-        bottleId: bottle.id,
-        boughtAt: 'Nicolas',
-        fillLevel: 60,
-        photoUrlOverride: 'https://example.com/mine.jpg',
-      })
+    const create = await client.post('/api/v1/collection/bottles').bearerToken(token).json({
+      bottleId: bottle.id,
+      boughtAt: 'Nicolas',
+      fillLevel: 60,
+      photoUrlOverride: 'https://example.com/mine.jpg',
+    })
 
     create.assertStatus(201)
     const created = create.body() as {
-      data: { id: number; fillLevel: number; photoUrlOverride: string | null; fillLevelUpdatesCount: number }
+      data: {
+        id: number
+        fillLevel: number
+        photoUrlOverride: string | null
+        fillLevelUpdatesCount: number
+      }
       meta: { freemium: { entitlement: boolean; remaining: number | null } }
     }
     assert.equal(created.data.fillLevel, 60)
@@ -277,6 +320,7 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     }
     assert.equal(body.data.bottle.name, 'Clément VSOP')
     assert.equal(body.data.bottle.brand, 'Clément')
+    assert.isNull((body.data.bottle as { photoStatus?: string | null }).photoStatus)
 
     const source = await Bottle.query()
       .where('id', body.data.bottleId)
@@ -287,7 +331,7 @@ test.group('Collection bottles API (E2-T03)', (group) => {
   })
 
   test('list filters by category slug and returns freemium meta', async ({ client, assert }) => {
-    const { token, user } = await signupAndVerify(client, {
+    const { token } = await signupAndVerify(client, {
       email: 'list@example.com',
       pseudo: 'list_user',
     })
@@ -307,8 +351,16 @@ test.group('Collection bottles API (E2-T03)', (group) => {
       attrs: {},
     })
 
-    await UserBottle.create({ userId: user.id, bottleId: wBottle.id, boughtAt: 'A' })
-    await UserBottle.create({ userId: user.id, bottleId: rBottle.id, boughtAt: 'B' })
+    const whiskyAdd = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({ bottleId: wBottle.id, boughtAt: 'A' })
+    whiskyAdd.assertStatus(201)
+    const rhumAdd = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({ bottleId: rBottle.id, boughtAt: 'B' })
+    rhumAdd.assertStatus(201)
 
     const response = await client
       .get('/api/v1/collection/bottles')
@@ -341,9 +393,7 @@ test.group('Collection bottles API (E2-T03)', (group) => {
       boughtAt: 'Chez A',
     })
 
-    const response = await client
-      .get(`/api/v1/collection/bottles/${row.id}`)
-      .bearerToken(b.token)
+    const response = await client.get(`/api/v1/collection/bottles/${row.id}`).bearerToken(b.token)
 
     response.assertStatus(404)
     assert.equal((response.body() as { code: string }).code, 'E_USER_BOTTLE_NOT_FOUND')
@@ -375,14 +425,10 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     assert.equal(updatedBody.data.review, 'mieux')
     assert.equal(updatedBody.data.pricePaid, 55)
 
-    const deleted = await client
-      .delete(`/api/v1/collection/bottles/${id}`)
-      .bearerToken(token)
+    const deleted = await client.delete(`/api/v1/collection/bottles/${id}`).bearerToken(token)
     deleted.assertStatus(200)
 
-    const gone = await client
-      .get(`/api/v1/collection/bottles/${id}`)
-      .bearerToken(token)
+    const gone = await client.get(`/api/v1/collection/bottles/${id}`).bearerToken(token)
     gone.assertStatus(404)
   })
 

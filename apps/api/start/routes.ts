@@ -13,8 +13,13 @@ const FacebookAuthController = () => import('#controllers/facebook_auth_controll
 const CatalogBottlesController = () => import('#controllers/catalog_bottles_controller')
 const CatalogCategoriesController = () => import('#controllers/catalog_categories_controller')
 const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
+const CollectionPhotosController = () => import('#controllers/collection_photos_controller')
 
 router.get('/health', [HealthController, 'handle'])
+
+router
+  .get('/api/v1/media/catalog/:name', [CollectionPhotosController, 'showCatalog'])
+  .use([middleware.auth(), middleware.emailVerified()])
 
 router.get('/', () => {
   return { hello: 'world', app: 'atasoif-api' }
@@ -70,6 +75,8 @@ router
       .group(() => {
         router.get('bottles', [CollectionBottlesController, 'index'])
         router.post('bottles', [CollectionBottlesController, 'store'])
+        router.post('bottles/:id/photo', [CollectionPhotosController, 'store'])
+        router.get('bottles/:id/photo', [CollectionPhotosController, 'show'])
         router.get('bottles/:id', [CollectionBottlesController, 'show'])
         router.patch('bottles/:id', [CollectionBottlesController, 'update'])
         router.delete('bottles/:id', [CollectionBottlesController, 'destroy'])

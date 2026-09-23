@@ -12,10 +12,14 @@ export default class BottleTransformer extends BaseTransformer<Bottle> {
       name: this.resource.name,
       brand: this.resource.brand,
       origin: this.resource.origin,
-      abv: this.resource.abv === null || this.resource.abv === undefined ? null : Number(this.resource.abv),
+      abv:
+        this.resource.abv === null || this.resource.abv === undefined
+          ? null
+          : Number(this.resource.abv),
       volumeMl: this.resource.volumeMl,
       barcode: this.resource.barcode,
       photoUrl: this.resource.photoUrl,
+      photoStatus: this.resource.photoStatus ?? null,
       attrs: this.resource.attrs ?? {},
       categoryId: this.resource.categoryId,
       category: category

@@ -8,6 +8,7 @@ export const controllers = {
   CatalogBottles: () => import('#controllers/catalog_bottles_controller'),
   CatalogCategories: () => import('#controllers/catalog_categories_controller'),
   CollectionBottles: () => import('#controllers/collection_bottles_controller'),
+  CollectionPhotos: () => import('#controllers/collection_photos_controller'),
   EmailVerifications: () => import('#controllers/email_verifications_controller'),
   FacebookAuth: () => import('#controllers/facebook_auth_controller'),
   GoogleAuth: () => import('#controllers/google_auth_controller'),
