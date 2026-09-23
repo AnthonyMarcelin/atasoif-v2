@@ -252,9 +252,9 @@ export default class V1MigrationService {
   }
 
   private async ensureLegacySubscription(userId: number): Promise<void> {
-    await Subscription.updateOrCreate(
-      { userId },
-      {
+    const existing = await Subscription.findBy('user_id', userId)
+    if (!existing) {
+      await Subscription.create({
         userId,
         plan: LEGACY_SUBSCRIPTION_PLAN,
         status: LEGACY_SUBSCRIPTION_STATUS,
@@ -262,8 +262,21 @@ export default class V1MigrationService {
         providerCustomerId: null,
         providerSubscriptionId: null,
         currentPeriodEnd: null,
-      }
-    )
+      })
+      return
+    }
+
+    // Never clobber a real IAP / future billing row on idempotent re-run.
+    if (existing.provider !== LEGACY_SUBSCRIPTION_PROVIDER) {
+      return
+    }
+
+    existing.plan = LEGACY_SUBSCRIPTION_PLAN
+    existing.status = LEGACY_SUBSCRIPTION_STATUS
+    existing.providerCustomerId = null
+    existing.providerSubscriptionId = null
+    existing.currentPeriodEnd = null
+    await existing.save()
   }
 
   private async findExistingUserBottle(
@@ -312,11 +325,7 @@ export default class V1MigrationService {
         rawHash: null,
         lastSyncedAt: DateTime.utc(),
       })
-      // Prefer personal photo on catalog when missing.
-      if (!matched.photoUrl && bottle.photo) {
-        matched.photoUrl = bottle.photo
-        await matched.save()
-      }
+      // Personal v1 photos stay on UserBottle.photoUrlOverride — never publish to shared catalog.
       return { bottleId: matched.id, created: false }
     }
 
@@ -328,8 +337,8 @@ export default class V1MigrationService {
       abv: null,
       volumeMl: null,
       barcode: null,
-      photoUrl: bottle.photo?.trim() || null,
-      photoStatus: bottle.photo ? 'pending' : null,
+      photoUrl: null,
+      photoStatus: null,
       attrs,
       categoryId,
     })

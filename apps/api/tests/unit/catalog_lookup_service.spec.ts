@@ -131,6 +131,29 @@ test.group('CatalogLookupService', (group) => {
     assert.equal(source.bottleId, result!.bottle.id)
   })
 
+  test('drops unsafe remote photo URLs when persisting a draft', async ({ assert }) => {
+    await ensureWhiskyCategory()
+
+    const service = new CatalogLookupService(
+      {
+        lookupByBarcode: async () =>
+          draft({
+            barcode: '5012345678900',
+            externalId: '5012345678900',
+            photoUrl: 'javascript:alert(1)',
+          }),
+      } as unknown as OpenFoodFactsClient,
+      {
+        isEnabled: () => true,
+        lookupByBarcode: async () => null,
+      } as unknown as UpcItemDbClient
+    )
+
+    const result = await service.lookupByBarcode('5012345678900')
+    assert.isNotNull(result)
+    assert.isNull(result!.bottle.photoUrl)
+  })
+
   test('returns null when both providers miss', async ({ assert }) => {
     const service = new CatalogLookupService(
       { lookupByBarcode: async () => null } as unknown as OpenFoodFactsClient,

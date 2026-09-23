@@ -32,9 +32,9 @@ DATABASE_PUBLIC_URL='postgresql://…' node ace migrate:v1 --from=/var/lib/ataso
 |------|------|
 | Users | All v1 rows except duplicate `lplin@orange.fr` **id 16** (keep **15**) |
 | Passwords | Copy `$argon2id$` PHC as-is (raw insert, no re-hash) |
-| Premium | `subscriptions` ACTIVE · `provider=legacy_v1` · `plan=yearly` · `current_period_end=null` |
+| Premium | `subscriptions` ACTIVE · `provider=legacy_v1` · `plan=yearly` · `current_period_end=null` (create-only when missing; never overwrite a non-`legacy_v1` row) |
 | Catalog | Match `lower(name)` + category, else create + `bottle_sources` (`source=legacy_v1`, `external_id=table:id`) |
-| Memory | `bought_at` ← supplier name/address · `note` as-is · `fill_level=100` · photo → `photo_url_override` |
+| Memory | `bought_at` ← supplier (or « Non renseigné ») · `note`/`price` clamped · `fill_level=100` · photo → **`photo_url_override` only** (http(s); never shared catalog) |
 | Idempotence | User by email · cellar by `legacy_v1` bottle source + user_bottle link |
 
 Canonical owner identity: `tongo33@gmail.com`.

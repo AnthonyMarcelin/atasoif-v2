@@ -3,7 +3,16 @@
  * No I/O — safe for unit tests with anonymized fixtures.
  */
 
+import { isHttpPhotoUrl } from '#services/photo_url'
+
 export const V1_SKIP_USER_IDS = new Set([16])
+
+/** Matches `user_bottles.note` decimal(3,1) and Vine bounds on the live API. */
+export const V1_NOTE_MAX = 99.9
+/** Matches `user_bottles.price_paid` decimal(10,2) and Vine bounds. */
+export const V1_PRICE_MAX = 99_999_999.99
+/** Fallback when v1 had no supplier — API create requires a non-empty place. */
+export const V1_BOUGHT_AT_FALLBACK = 'Non renseigné'
 
 /** Duplicate `lplin@orange.fr`: keep id 15, skip 16. */
 export const V1_CANONICAL_OWNER_EMAIL = 'tongo33@gmail.com'
@@ -133,7 +142,13 @@ export function parseNote(note: number | string | null | undefined): number | nu
     return null
   }
   const n = typeof note === 'number' ? note : Number(note)
-  return Number.isFinite(n) ? n : null
+  if (!Number.isFinite(n)) {
+    return null
+  }
+  if (n < 0 || n > V1_NOTE_MAX) {
+    return null
+  }
+  return Math.round(n * 10) / 10
 }
 
 export function parsePrice(price: number | string | null | undefined): number | null {
@@ -141,7 +156,22 @@ export function parsePrice(price: number | string | null | undefined): number | 
     return null
   }
   const n = typeof price === 'number' ? price : Number(price)
-  return Number.isFinite(n) ? n : null
+  if (!Number.isFinite(n) || n < 0 || n > V1_PRICE_MAX) {
+    return null
+  }
+  return Math.round(n * 100) / 100
+}
+
+/**
+ * Personal v1 shelf photos stay on the override only (http(s)).
+ * Unsafe schemes / relative API paths are dropped — same bar as collection writes.
+ */
+export function sanitizeV1PhotoUrl(photo: string | null | undefined): string | null {
+  const trimmed = photo?.trim() || ''
+  if (!trimmed) {
+    return null
+  }
+  return isHttpPhotoUrl(trimmed) ? trimmed : null
 }
 
 export function legacyBottleExternalId(categorySlug: V1CategorySlug, v1Id: number): string {
@@ -164,8 +194,8 @@ export function mapBottleMemoryFields(bottle: V1BottleRow, categorySlug: V1Categ
     review,
     note: parseNote(bottle.note),
     pricePaid: parsePrice(bottle.price),
-    boughtAt: formatBoughtAt(bottle.supplier_name, bottle.supplier_address),
-    photoUrlOverride: bottle.photo?.trim() || null,
+    boughtAt: formatBoughtAt(bottle.supplier_name, bottle.supplier_address) ?? V1_BOUGHT_AT_FALLBACK,
+    photoUrlOverride: sanitizeV1PhotoUrl(bottle.photo),
     fillLevel: 100,
     fillLevelUpdatesCount: 0,
     attrsOverride: buildUserBottleAttrsOverride(bottle, categorySlug),
