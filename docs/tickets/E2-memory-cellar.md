@@ -350,13 +350,13 @@ Expose **thin read APIs** that can feed the KPIs already defined in Claude Desig
 Product readings already called out in ops README (retain as comments in API docs, not new metrics): retention cliff &lt;4 bottles; annual vs monthly churn (billing later); social lift (E6).
 
 ### Acceptance criteria
-- [ ] One or few **read-only** admin/internal endpoints (e.g. `/api/v1/ops/kpis/...`) returning JSON shaped for the **Habitudes** + **Conversion funnel cellar stages** + **Vue d’ensemble bottle counters** above
-- [ ] Purchase-place aggregation uses real `bought_at` values (top-N), not a fabricated enum
-- [ ] “Terminées” uses `fill_level === 0`; level updates use `fill_level_updates_count` (or equivalent)
-- [ ] Response documents `live` vs `stub` fields explicitly so future UI does not treat stubs as real
-- [ ] Protected (env admin token / role TBD) — not public; no secrets in payloads
-- [ ] **No** Angular/admin HTML implementation in this ticket
-- [ ] Short note in `docs/conception/ops/README.md` pointing to the API contract (link only)
+- [x] One or few **read-only** admin/internal endpoints (e.g. `/api/v1/ops/kpis/...`) returning JSON shaped for the **Habitudes** + **Conversion funnel cellar stages** + **Vue d’ensemble bottle counters** above
+- [x] Purchase-place aggregation uses real `bought_at` values (top-N), not a fabricated enum
+- [x] “Terminées” uses `fill_level === 0`; level updates use `fill_level_updates_count` (or equivalent)
+- [x] Response documents `live` vs `stub` fields explicitly so future UI does not treat stubs as real
+- [x] Protected (env admin token / role TBD) — not public; no secrets in payloads
+- [x] **No** Angular/admin HTML implementation in this ticket
+- [x] Short note in `docs/conception/ops/README.md` pointing to the API contract (link only)
 
 ### Out of scope
 - Full ops UI (all 10 screens)

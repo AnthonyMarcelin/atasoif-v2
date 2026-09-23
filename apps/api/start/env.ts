@@ -81,4 +81,10 @@ export default await Env.create(new URL('../', import.meta.url), {
   CELLAR_PHOTO_DIR: Env.schema.string.optional(),
   /** Max upload size in bytes. Default 5242880 (5 MiB) when unset. */
   CELLAR_PHOTO_MAX_BYTES: Env.schema.number.optional(),
+
+  /**
+   * Shared secret for GET /api/v1/ops/kpis (header X-Ops-Token).
+   * Empty or unset keeps the route closed. Not a user access token.
+   */
+  OPS_ADMIN_TOKEN: Env.schema.secret.optional(),
 })

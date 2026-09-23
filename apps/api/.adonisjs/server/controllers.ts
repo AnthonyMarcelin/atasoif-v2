@@ -14,6 +14,7 @@ export const controllers = {
   GoogleAuth: () => import('#controllers/google_auth_controller'),
   Health: () => import('#controllers/health_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
+  OpsKpis: () => import('#controllers/ops_kpis_controller'),
   PasswordResets: () => import('#controllers/password_resets_controller'),
   Profile: () => import('#controllers/profile_controller'),
 }
