@@ -139,6 +139,56 @@ test.group('migrate:v1 service', (group) => {
 
     const count = await UserBottle.query().where('user_id', owner.id).count('* as total')
     assert.equal(Number(count[0].$extras.total), 2)
+
+    const catalog = await BottleSource.query()
+      .where('source', V1_BOTTLE_SOURCE)
+      .preload('bottle')
+    for (const row of catalog) {
+      assert.isNull(row.bottle.photoUrl)
+    }
+  })
+
+  test('does not overwrite a non-legacy subscription on re-run', async ({ assert }) => {
+    await seedCategories()
+    const passwordHash = await fakeArgonHash('motdepasse1')
+    const user = await User.create({
+      email: 'iap@example.test',
+      password: 'motdepasse1',
+      fullName: 'IAP User',
+      emailVerified: true,
+      bottlesCreatedCount: 0,
+    })
+    await Subscription.create({
+      userId: user.id,
+      plan: 'monthly',
+      status: 'ACTIVE',
+      provider: 'revenuecat',
+      providerCustomerId: 'rc_1',
+      providerSubscriptionId: 'sub_1',
+      currentPeriodEnd: null,
+    })
+
+    await new V1MigrationService().run({
+      source: {
+        users: [
+          {
+            id: 99,
+            email: 'iap@example.test',
+            pseudo: 'Iap',
+            firstname: 'IAP',
+            lastname: 'User',
+            is_verified: true,
+            password: passwordHash,
+          },
+        ],
+        bottles: [],
+      },
+    })
+
+    const sub = await Subscription.findByOrFail('user_id', user.id)
+    assert.equal(sub.provider, 'revenuecat')
+    assert.equal(sub.plan, 'monthly')
+    assert.equal(sub.providerCustomerId, 'rc_1')
   })
 
   test('dry-run does not write rows', async ({ assert }) => {

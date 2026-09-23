@@ -1,14 +1,18 @@
 import { test } from '@japa/runner'
 import {
+  V1_BOUGHT_AT_FALLBACK,
   V1_SKIP_USER_IDS,
   buildCatalogAttrs,
   formatBoughtAt,
   legacyBottleExternalId,
+  mapBottleMemoryFields,
   mapFullName,
   mapUserFields,
   mergeReviewAndDescription,
   normalizeEmail,
   parseNote,
+  parsePrice,
+  sanitizeV1PhotoUrl,
   shouldSkipV1User,
 } from '#services/v1_migration/v1_field_mapper'
 
@@ -57,10 +61,42 @@ test.group('v1 field mapper', () => {
     })
   })
 
-  test('keeps notes as-is (/10)', ({ assert }) => {
+  test('clamps notes and prices to column bounds', ({ assert }) => {
     assert.equal(parseNote(1.6), 1.6)
     assert.equal(parseNote('10.0'), 10)
     assert.isNull(parseNote(null))
+    assert.isNull(parseNote(100))
+    assert.isNull(parsePrice(-1))
+    assert.isNull(parsePrice(100_000_000))
+    assert.equal(parsePrice(42.5), 42.5)
+  })
+
+  test('sanitizes personal photo URLs and maps memory fields', ({ assert }) => {
+    assert.equal(sanitizeV1PhotoUrl('https://cdn.example/a.jpg'), 'https://cdn.example/a.jpg')
+    assert.isNull(sanitizeV1PhotoUrl('javascript:alert(1)'))
+    assert.isNull(sanitizeV1PhotoUrl('/api/v1/account/profile'))
+
+    const memory = mapBottleMemoryFields(
+      {
+        id: 1,
+        name: 'Malt',
+        description: null,
+        review: null,
+        note: 7.5,
+        price: 20,
+        photo: 'javascript:alert(1)',
+        origin_country: null,
+        supplier_name: null,
+        supplier_address: null,
+        type_name: null,
+        label_name: null,
+        label_color: null,
+        user_id: 8,
+      },
+      'whisky'
+    )
+    assert.equal(memory.boughtAt, V1_BOUGHT_AT_FALLBACK)
+    assert.isNull(memory.photoUrlOverride)
   })
 
   test('builds catalog attrs and legacy external ids', ({ assert }) => {

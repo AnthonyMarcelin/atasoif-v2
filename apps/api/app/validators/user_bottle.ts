@@ -101,7 +101,18 @@ const catalogMissBottle = {
   barcode: vine.string().trim().use(barcodeDigits()).optional(),
   photoUrl: vine.string().trim().maxLength(2048).optional(),
   categoryId: vine.number().withoutDecimals().positive(),
-  attrs: vine.record(vine.any()).optional(),
+  /**
+   * Shared catalog attrs on a miss. Only wine keys are accepted (E2-T12).
+   * Arbitrary JSON used to land on every authenticated user's catalog read.
+   */
+  attrs: vine
+    .object({
+      appellation: wineAttrText(WINE_ATTR_LIMITS.appellation),
+      grape: wineAttrText(WINE_ATTR_LIMITS.grape),
+      vintage: wineAttrText(WINE_ATTR_LIMITS.vintage),
+    })
+    .use(rejectUnknownWineKeys())
+    .optional(),
 }
 
 /**

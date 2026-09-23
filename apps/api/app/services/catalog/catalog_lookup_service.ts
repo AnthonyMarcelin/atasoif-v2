@@ -7,6 +7,7 @@ import BottleSource from '#models/bottle_source'
 import OpenFoodFactsClient from '#services/catalog/open_food_facts_client'
 import UpcItemDbClient from '#services/catalog/upcitemdb_client'
 import type { CatalogLookupOrigin, CatalogProductDraft } from '#services/catalog/catalog_types'
+import { isHttpPhotoUrl } from '#services/photo_url'
 import { readPostgresUniqueViolation } from '#services/postgres_error'
 
 export type CatalogBarcodeResult = {
@@ -87,6 +88,7 @@ export default class CatalogLookupService {
   private async writeDraft(draft: CatalogProductDraft): Promise<Bottle> {
     const category = await Category.findByOrFail('slug', draft.categorySlug)
     const rawHash = hashRaw(draft.raw)
+    const photoUrl = sanitizeRemotePhotoUrl(draft.photoUrl)
 
     return db.transaction(async (trx) => {
       let bottle = await Bottle.query({ client: trx })
@@ -102,7 +104,7 @@ export default class CatalogLookupService {
           origin: draft.origin,
           abv: draft.abv,
           volumeMl: draft.volumeMl,
-          photoUrl: draft.photoUrl ?? bottle.photoUrl,
+          photoUrl: photoUrl ?? bottle.photoUrl,
           attrs: { ...bottle.attrs, ...draft.attrs },
           categoryId: category.id,
         })
@@ -116,7 +118,7 @@ export default class CatalogLookupService {
             abv: draft.abv,
             volumeMl: draft.volumeMl,
             barcode: draft.barcode,
-            photoUrl: draft.photoUrl,
+            photoUrl,
             attrs: draft.attrs,
             categoryId: category.id,
           },
@@ -151,6 +153,15 @@ export function normalizeBarcode(raw: string): string | null {
     return null
   }
   return digits
+}
+
+/** Remote nurse photos are shown to every signed-in user — http(s) only. */
+export function sanitizeRemotePhotoUrl(value: string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
+  const trimmed = value.trim()
+  return isHttpPhotoUrl(trimmed) ? trimmed : null
 }
 
 function hashRaw(raw: unknown): string {

@@ -596,6 +596,41 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     assert.include(JSON.stringify(response.body()), 'La note doit rester entre 0 et 99,9')
   })
 
+  test('miss rejects arbitrary catalog attrs on a non-wine bottle', async ({ client, assert }) => {
+    const { token } = await signupAndVerify(client, {
+      email: 'attrs-poison@example.com',
+      pseudo: 'attrs_poison',
+    })
+    const category = await Category.updateOrCreate({ slug: 'gin' }, { name: 'Gin' })
+
+    const unknownKey = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({
+        bottle: {
+          name: 'Gin poison',
+          categoryId: category.id,
+          attrs: { evil: true, payload: 'x'.repeat(200) },
+        },
+        boughtAt: 'Cave',
+      })
+    unknownKey.assertStatus(422)
+
+    const wineOnGin = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({
+        bottle: {
+          name: 'Gin Pauillac',
+          categoryId: category.id,
+          attrs: { appellation: 'Pauillac' },
+        },
+        boughtAt: 'Cave',
+      })
+    wineOnGin.assertStatus(422)
+    assert.equal((wineOnGin.body() as { code: string }).code, 'E_WINE_ATTRS_CATEGORY')
+  })
+
   test('miss rejects unsafe catalog photo URLs and a duplicate barcode', async ({
     client,
     assert,

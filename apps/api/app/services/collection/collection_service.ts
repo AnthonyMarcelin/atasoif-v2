@@ -8,6 +8,8 @@ import {
   FREE_BOTTLE_LIMIT,
   isWineCategorySlug,
   mergeWineAttrsOverride,
+  WINE_ATTR_KEYS,
+  type WineAttrKey,
   type WineAttrsInput,
 } from '@atasoif/shared'
 import Bottle from '#models/bottle'
@@ -44,7 +46,7 @@ type CreateBottleMiss = {
   barcode?: string
   photoUrl?: string
   categoryId: number
-  attrs?: Record<string, unknown>
+  attrs?: WineAttrsInput
 }
 
 export type CreateUserBottleInput = {
@@ -217,7 +219,7 @@ export default class CollectionService {
               photoUrl: input.bottle.photoUrl ?? null,
               photoStatus: input.bottle.photoUrl ? PENDING_PHOTO_STATUS : null,
               categoryId: category.id,
-              attrs: input.bottle.attrs ?? {},
+              attrs: this.resolveCatalogMissAttrs(category.slug, input.bottle.attrs),
             },
             { client: trx }
           )
@@ -430,6 +432,37 @@ export default class CollectionService {
       )
     }
     return mergeWineAttrsOverride(current, patch)
+  }
+
+  /**
+   * Miss create may seed wine keys onto the shared catalog row — nothing else.
+   */
+  private resolveCatalogMissAttrs(
+    categorySlug: string | null,
+    attrs: WineAttrsInput | Record<string, unknown> | undefined
+  ): Record<string, unknown> {
+    if (!attrs || Object.keys(attrs).length === 0) {
+      return {}
+    }
+    if (!isWineCategorySlug(categorySlug)) {
+      throw new CollectionError(
+        'E_WINE_ATTRS_CATEGORY',
+        'Appellation, cépage et millésime sont réservés au vin',
+        422
+      )
+    }
+    const next: Record<string, unknown> = {}
+    for (const key of WINE_ATTR_KEYS) {
+      const raw = (attrs as WineAttrsInput)[key as WineAttrKey]
+      if (typeof raw !== 'string') {
+        continue
+      }
+      const value = raw.trim()
+      if (value) {
+        next[key] = value
+      }
+    }
+    return next
   }
 
   private async lockOwned(
