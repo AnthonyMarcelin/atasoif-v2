@@ -16,8 +16,10 @@
     </ul>
 
     <p class="auth-status" role="status">
-      Le paiement se fera dans l’app (App Store ou Google Play), jamais sur le site. En
-      attendant, retire une bouteille pour continuer.
+      Le paiement se fera dans l’app (App Store ou Google Play), jamais sur le site.
+      @if (reason() === 'limit') {
+        Retirer une bouteille ne libère pas de place.
+      }
     </p>
 
     <div class="auth-actions">

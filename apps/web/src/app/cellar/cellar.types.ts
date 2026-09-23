@@ -101,6 +101,8 @@ export interface UpdateUserBottlePayload {
   nameOverride?: string | null;
   brandOverride?: string | null;
   originOverride?: string | null;
+  /** Premium only. Free clients must omit this field (API returns 403). */
+  fillLevel?: number;
 }
 
 /** Resolved display fields for list / detail (overrides win). */

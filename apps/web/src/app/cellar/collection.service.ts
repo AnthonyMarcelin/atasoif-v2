@@ -60,6 +60,19 @@ export class CollectionService {
     );
   }
 
+  /**
+   * Premium shelf photo. Multipart field `photo` (jpeg, png, webp).
+   * Do not set Content-Type: the browser must add the multipart boundary.
+   */
+  uploadPhoto(id: number, file: File): Observable<CollectionItemResponse> {
+    const body = new FormData();
+    body.append('photo', file, file.name);
+    return this.http.post<CollectionItemResponse>(
+      `${this.apiBase}/api/v1/collection/bottles/${id}/photo`,
+      body,
+    );
+  }
+
   delete(id: number): Observable<{ data: { id: number; deleted: boolean }; meta: { freemium: FreemiumMeta } }> {
     return this.http.delete<{
       data: { id: number; deleted: boolean };

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
@@ -14,6 +14,7 @@ import {
   type UserBottle,
 } from './cellar.types';
 import { CollectionService } from './collection.service';
+import { cellarEmptyKind } from './freemium-counter';
 
 @Component({
   selector: 'app-cellar-list-page',
@@ -29,6 +30,8 @@ export class CellarListPage implements OnInit {
   readonly bottles = signal<UserBottle[]>([]);
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly category = signal<string | null>(null);
+  /** Header counter uses freemium meta (lifetime creates), never `bottles().length`. */
+  readonly emptyKind = computed(() => cellarEmptyKind(this.freemium()));
 
   readonly filters: Array<{ slug: string | null; label: string }> = [
     { slug: null, label: 'Tout' },

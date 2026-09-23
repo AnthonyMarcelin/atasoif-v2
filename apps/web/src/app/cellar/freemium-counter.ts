@@ -3,6 +3,25 @@ import { FREE_BOTTLE_LIMIT } from '@atasoif/shared';
 
 import type { FreemiumMeta } from './cellar.types';
 
+/** Empty cellar copy when the list has no rows. The cap uses lifetime creates, not row count. */
+export type CellarEmptyKind = 'first' | 'again' | 'full';
+
+export function cellarEmptyKind(freemium: FreemiumMeta | null): CellarEmptyKind {
+  if (!freemium) {
+    return 'first';
+  }
+  const capHit =
+    !freemium.entitlement &&
+    (freemium.remaining === 0 || freemium.count >= (freemium.limit || FREE_BOTTLE_LIMIT));
+  if (capHit) {
+    return 'full';
+  }
+  if (freemium.count > 0) {
+    return 'again';
+  }
+  return 'first';
+}
+
 @Component({
   selector: 'app-freemium-counter',
   standalone: true,
@@ -79,9 +98,10 @@ export class FreemiumCounter {
   }
 
   get ariaLabel(): string {
+    const limit = this.freemium?.limit ?? this.limit;
     if (this.entitled) {
-      return `${this.count} bouteilles en cave`;
+      return `${this.count} bouteilles ajoutées`;
     }
-    return `${this.count} sur ${this.freemium?.limit ?? this.limit} bouteilles`;
+    return `${this.count} sur ${limit} ajouts, suppressions comprises`;
   }
 }

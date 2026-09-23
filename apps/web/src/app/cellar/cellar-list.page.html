@@ -23,13 +23,37 @@
   } @else if (loading()) {
     <p class="auth-status" role="status">Ouverture de ta cave…</p>
   } @else if (bottles().length === 0) {
-    <div class="cellar-empty" role="status">
-      <p class="cellar-empty__title">Cave vide</p>
-      <p class="cellar-empty__lead">
-        Ajoute ta première bouteille · où tu l’as eue, combien, et si c’était bon.
-      </p>
-      <a class="auth-btn auth-btn--primary" routerLink="/cave/ajouter">Ajouter une bouteille</a>
-    </div>
+    @if (emptyKind() === 'full') {
+      <div class="cellar-empty" role="status">
+        <p class="cellar-empty__title">Cave pleine</p>
+        <p class="cellar-empty__lead">
+          Retirer une bouteille ne libère pas de place. Passe premium pour continuer.
+        </p>
+        <a
+          class="auth-btn auth-btn--primary"
+          routerLink="/cave/premium"
+          [queryParams]="{ reason: 'limit' }"
+        >
+          Passer premium
+        </a>
+      </div>
+    } @else if (emptyKind() === 'again') {
+      <div class="cellar-empty" role="status">
+        <p class="cellar-empty__title">Cave vide</p>
+        <p class="cellar-empty__lead">
+          Tu peux en remettre une. Tes ajouts passés comptent toujours.
+        </p>
+        <a class="auth-btn auth-btn--primary" routerLink="/cave/ajouter">Ajouter une bouteille</a>
+      </div>
+    } @else {
+      <div class="cellar-empty" role="status">
+        <p class="cellar-empty__title">Cave vide</p>
+        <p class="cellar-empty__lead">
+          Ajoute ta première bouteille · où tu l’as eue, combien, et si c’était bon.
+        </p>
+        <a class="auth-btn auth-btn--primary" routerLink="/cave/ajouter">Ajouter une bouteille</a>
+      </div>
+    }
   } @else {
     <ul class="cellar-list" aria-label="Bouteilles en cave">
       @for (entry of bottles(); track entry.id) {

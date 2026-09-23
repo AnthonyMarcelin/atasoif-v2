@@ -5,30 +5,68 @@
     <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
     <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à la cave</a>
   } @else if (entry(); as bottle) {
-    @if (!editing()) {
-      <article class="cellar-detail">
-        <div class="cellar-detail__hero">
+    <article class="cellar-detail">
+      <div class="cellar-detail__hero">
+        <div class="cellar-photo-slot">
           <app-bottle-photo
             [src]="photoOf(bottle)"
             [alt]="nameOf(bottle)"
             variant="detail"
           />
-          <div class="cellar-detail__titles">
-            @if (bottle.bottle?.category; as cat) {
-              <span class="cellar-card__stamp">{{ cat.name }}</span>
-            }
-            <h2 class="cellar-detail__name">{{ nameOf(bottle) }}</h2>
-            @if (brandOf(bottle); as brand) {
-              <p class="cellar-detail__brand">{{ brand }}</p>
-            }
-          </div>
+          @if (freemium()?.entitlement) {
+            <button
+              class="auth-btn auth-btn--secondary"
+              type="button"
+              (click)="photoInput.click()"
+              [disabled]="uploadingPhoto()"
+            >
+              {{ uploadingPhoto() ? 'Envoi…' : 'Remplacer la photo' }}
+            </button>
+            <input
+              #photoInput
+              class="cellar-photo-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+              tabindex="-1"
+              aria-hidden="true"
+              (change)="onPhotoSelected($event)"
+            />
+          } @else {
+            <a
+              class="auth-btn auth-btn--secondary"
+              routerLink="/cave/premium"
+              [queryParams]="{ reason: 'photo' }"
+            >
+              Photo perso · premium
+            </a>
+          }
+          @if (photoError(); as message) {
+            <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+          }
         </div>
+        <div class="cellar-detail__titles">
+          @if (bottle.bottle?.category; as cat) {
+            <span class="cellar-card__stamp">{{ cat.name }}</span>
+          }
+          <h2 class="cellar-detail__name">{{ nameOf(bottle) }}</h2>
+          @if (brandOf(bottle); as brand) {
+            <p class="cellar-detail__brand">{{ brand }}</p>
+          }
+        </div>
+      </div>
 
-        <app-fill-gauge
-          [fillLevel]="bottle.fillLevel"
-          [locked]="!freemium()?.entitlement"
-        />
+      <app-fill-gauge
+        [fillLevel]="bottle.fillLevel"
+        [locked]="freemium()?.entitlement !== true"
+        [syncKey]="fillSync()"
+        (levelChange)="onFillLevel($event)"
+        (lockedGesture)="onLockedGauge()"
+      />
+      @if (levelError(); as message) {
+        <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+      }
 
+      @if (!editing()) {
         <dl class="cellar-memory">
           <div>
             <dt>Acheté chez</dt>
@@ -74,7 +112,11 @@
             </button>
           } @else {
             <p class="auth-status auth-status--error" role="alert">
-              Tu retires vraiment cette bouteille ?
+              @if (freemium()?.entitlement) {
+                Tu retires vraiment cette bouteille ?
+              } @else {
+                Tu retires vraiment cette bouteille ? Ça ne libère pas de place gratuite.
+              }
             </p>
             <button
               class="auth-btn auth-btn--primary"
@@ -90,96 +132,96 @@
           }
           <a class="auth-btn auth-btn--ghost" routerLink="/cave">Retour</a>
         </div>
-      </article>
-    } @else {
-      <form class="auth-form cellar-detail" [formGroup]="form" (ngSubmit)="onSave()" novalidate>
-        <div [ngClass]="fieldClass('nameOverride')">
-          <label class="auth-field__label" for="edit-name">Nom</label>
-          <input
-            id="edit-name"
-            class="auth-field__control"
-            type="text"
-            formControlName="nameOverride"
-            (focus)="setFocused('nameOverride')"
-            (blur)="setFocused(null)"
-          />
-        </div>
+      } @else {
+        <form class="auth-form" [formGroup]="form" (ngSubmit)="onSave()" novalidate>
+          <div [ngClass]="fieldClass('nameOverride')">
+            <label class="auth-field__label" for="edit-name">Nom</label>
+            <input
+              id="edit-name"
+              class="auth-field__control"
+              type="text"
+              formControlName="nameOverride"
+              (focus)="setFocused('nameOverride')"
+              (blur)="setFocused(null)"
+            />
+          </div>
 
-        <div [ngClass]="fieldClass('brandOverride')">
-          <label class="auth-field__label" for="edit-brand">Marque</label>
-          <input
-            id="edit-brand"
-            class="auth-field__control"
-            type="text"
-            formControlName="brandOverride"
-            (focus)="setFocused('brandOverride')"
-            (blur)="setFocused(null)"
-          />
-        </div>
+          <div [ngClass]="fieldClass('brandOverride')">
+            <label class="auth-field__label" for="edit-brand">Marque</label>
+            <input
+              id="edit-brand"
+              class="auth-field__control"
+              type="text"
+              formControlName="brandOverride"
+              (focus)="setFocused('brandOverride')"
+              (blur)="setFocused(null)"
+            />
+          </div>
 
-        <div [ngClass]="fieldClass('boughtAt')">
-          <label class="auth-field__label" for="edit-bought-at">Acheté chez</label>
-          <input
-            id="edit-bought-at"
-            class="auth-field__control"
-            type="text"
-            formControlName="boughtAt"
-            (focus)="setFocused('boughtAt')"
-            (blur)="setFocused(null)"
-          />
-        </div>
+          <div [ngClass]="fieldClass('boughtAt')">
+            <label class="auth-field__label" for="edit-bought-at">Acheté chez</label>
+            <input
+              id="edit-bought-at"
+              class="auth-field__control"
+              type="text"
+              formControlName="boughtAt"
+              (focus)="setFocused('boughtAt')"
+              (blur)="setFocused(null)"
+            />
+          </div>
 
-        <div [ngClass]="fieldClass('pricePaid')">
-          <label class="auth-field__label" for="edit-price">Prix payé (€)</label>
-          <input
-            id="edit-price"
-            class="auth-field__control"
-            type="text"
-            inputmode="decimal"
-            formControlName="pricePaid"
-            (focus)="setFocused('pricePaid')"
-            (blur)="setFocused(null)"
-          />
-        </div>
+          <div [ngClass]="fieldClass('pricePaid')">
+            <label class="auth-field__label" for="edit-price">Prix payé (€)</label>
+            <input
+              id="edit-price"
+              class="auth-field__control"
+              type="text"
+              inputmode="decimal"
+              formControlName="pricePaid"
+              (focus)="setFocused('pricePaid')"
+              (blur)="setFocused(null)"
+            />
+          </div>
 
-        <div [ngClass]="fieldClass('note')">
-          <label class="auth-field__label" for="edit-note">Note</label>
-          <input
-            id="edit-note"
-            class="auth-field__control"
-            type="text"
-            inputmode="decimal"
-            formControlName="note"
-            (focus)="setFocused('note')"
-            (blur)="setFocused(null)"
-          />
-        </div>
+          <div [ngClass]="fieldClass('note')">
+            <label class="auth-field__label" for="edit-note">Note</label>
+            <input
+              id="edit-note"
+              class="auth-field__control"
+              type="text"
+              inputmode="decimal"
+              formControlName="note"
+              (focus)="setFocused('note')"
+              (blur)="setFocused(null)"
+            />
+          </div>
 
-        <div [ngClass]="fieldClass('review')">
-          <label class="auth-field__label" for="edit-review">Avis</label>
-          <textarea
-            id="edit-review"
-            class="auth-field__control auth-field__control--area"
-            formControlName="review"
-            rows="3"
-            (focus)="setFocused('review')"
-            (blur)="setFocused(null)"
-          ></textarea>
-        </div>
+          <div [ngClass]="fieldClass('review')">
+            <label class="auth-field__label" for="edit-review">Avis</label>
+            <textarea
+              id="edit-review"
+              class="auth-field__control auth-field__control--area"
+              formControlName="review"
+              rows="3"
+              (focus)="setFocused('review')"
+              (blur)="setFocused(null)"
+            ></textarea>
+          </div>
 
-        @if (formError(); as message) {
-          <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
-        }
+          @if (formError(); as message) {
+            <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+          }
 
-        <div class="auth-actions">
-          <button class="auth-btn auth-btn--primary" type="submit" [disabled]="saving()">
-            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
-          </button>
-          <button class="auth-btn auth-btn--ghost" type="button" (click)="cancelEdit()">
-            Annuler
-          </button>
-        </div>
-      </form>
-    }
+          <div class="auth-actions">
+            <button class="auth-btn auth-btn--primary" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+            <button class="auth-btn auth-btn--ghost" type="button" (click)="cancelEdit()">
+              Annuler
+            </button>
+          </div>
+        </form>
+      }
+    </article>
   }
 </app-cellar-shell>
