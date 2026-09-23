@@ -27,7 +27,8 @@
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
     "docker:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --build",
     "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
-    "catalog:off-dump": "bun --filter @atasoif/api catalog:off-dump"
+    "catalog:off-dump": "bun --filter @atasoif/api catalog:off-dump",
+    "migrate:v1-cellar": "bun --filter @atasoif/api migrate:v1-cellar"
   },
   "trustedDependencies": [
     "@parcel/watcher",

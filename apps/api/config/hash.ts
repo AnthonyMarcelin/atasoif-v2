@@ -3,12 +3,15 @@ import { defineConfig, drivers } from '@adonisjs/core/hash'
 /**
  * Hashing configuration.
  *
- * This starter uses Node.js scrypt under the hood.
- * Node.js reference: https://nodejs.org/api/crypto.html#cryptoscryptpassword-salt-keylen-options-callback
+ * Default remains scrypt (Node built-in, no extra dep for new signups).
+ * Argon2 is registered so legacy v1 `$argon2id$` PHC hashes can be verified
+ * after E2-T11 migration (see `#services/password_hasher`).
+ *
+ * Argon2 package: `argon2` (required for the argon driver).
  */
 const hashConfig = defineConfig({
   /**
-   * Default hasher used by the application.
+   * Default hasher used by the application for new hashes.
    */
   default: 'scrypt',
 
@@ -60,6 +63,20 @@ const hashConfig = defineConfig({
        * - Increase carefully on memory-constrained environments.
        */
       maxMemory: 33554432,
+    }),
+
+    /**
+     * Argon2id — verify (and optionally make) hashes from Railway v1.
+     * Keep configured as long as any user.password starts with `$argon2`.
+     */
+    argon: drivers.argon2({
+      version: 0x13,
+      variant: 'id',
+      iterations: 3,
+      memory: 65536,
+      parallelism: 4,
+      saltSize: 16,
+      hashLength: 32,
     }),
   },
 })

@@ -410,9 +410,15 @@ Freemium / premium-upsell screen (monthly €3.99 / yearly €39.99) — shell O
 Import owner’s ~9–15 bottles from legacy Railway Postgres / dump into Lucid models including place + level defaults.
 
 ### Acceptance criteria
-- [ ] Documented one-shot script or ace command
-- [ ] Idempotent where practical
-- [ ] Maps memory fields; sets `bought_at` / `fill_level` sensibly when missing
+- [x] Documented one-shot script or ace command
+- [x] Idempotent where practical
+- [x] Maps memory fields; sets `bought_at` / `fill_level` sensibly when missing
+
+### Tech notes (locked product decisions)
+- Ace: `node ace migrate:v1-cellar` (`apps/api/resources/migrate/v1/*.json` + live `DATABASE_PUBLIC_URL` for `$argon2id$` hashes)
+- All v1 users migrated (dedupe email keep lowest id); legacy `subscriptions` (`provider=legacy_v1`) for premium exception
+- Notes kept as-is; photos → `photo_url_override`; `fill_level` default 100
+- See store export / `resources/migrate/v1/README.md`
 
 ### Out of scope
 - Full user base migration tooling

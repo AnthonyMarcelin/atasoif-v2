@@ -122,7 +122,7 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 | OFF dump seed + `BottleSource` upsert | Sprint 3 / pre-launch | E3.1–E3.2 · [`CATALOG-SEED.md`](./CATALOG-SEED.md) · Ace `catalog:off-dump` |
 | Diff / soft-delete cron skeleton | Sprint 3 Should | E3.3 |
 | UPCitemdb curated nurse | Pre-launch ops (alongside / after first OFF seed) | [`CATALOG-NURSE.md`](./CATALOG-NURSE.md) · Ace `catalog:nurse` · not Bright Data |
-| v1 personal bottles (~9–15) | Sprint 3 Should | E2-T11 |
+| v1 personal bottles (~9–15) + users | Sprint 3 Should | E2-T11 · Ace `migrate:v1-cellar` · `resources/migrate/v1/` · legacy `subscriptions.provider=legacy_v1` |
 
 ---
 

@@ -1,0 +1,24 @@
+[
+  {
+    "id": 2,
+    "name": "test",
+    "description": "test",
+    "review": "test",
+    "note": 5.0,
+    "price": 1.0,
+    "photo": "https://ik.imagekit.io/atasoif/darksouls_FB00qv9Jq.jpg",
+    "label_id": 3,
+    "label_name": "Moyen",
+    "label_color": "#FF0",
+    "origin_id": 10,
+    "origin_country": "fr",
+    "supplier_id": 12,
+    "supplier_name": "fr",
+    "supplier_address": null,
+    "type_id": 31,
+    "type_name": "Blanc",
+    "user_id": 8,
+    "created_at": "2025-08-05T09:02:32.393+00:00",
+    "updated_at": "2025-08-05T09:03:39.115+00:00"
+  }
+]

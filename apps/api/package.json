@@ -19,7 +19,8 @@
     "migration:run": "node ace migration:run",
     "db:seed": "node ace db:seed",
     "catalog:nurse": "node ace catalog:nurse",
-    "catalog:off-dump": "node ace catalog:off-dump"
+    "catalog:off-dump": "node ace catalog:off-dump",
+    "migrate:v1-cellar": "node ace migrate:v1-cellar"
   },
   "engines": {
     "node": ">=24"
@@ -75,6 +76,7 @@
     "@japa/api-client": "^3.2.1",
     "@tuyau/core": "^1.2.2",
     "@vinejs/vine": "^4.4.0",
+    "argon2": "^0.45.1",
     "better-sqlite3": "^12.10.0",
     "luxon": "^3.7.2",
     "pg": "^8.22.0",
