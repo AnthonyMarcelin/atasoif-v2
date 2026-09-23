@@ -3,8 +3,8 @@ import { defineConfig, drivers } from '@adonisjs/core/hash'
 /**
  * Hashing configuration.
  *
- * This starter uses Node.js scrypt under the hood.
- * Node.js reference: https://nodejs.org/api/crypto.html#cryptoscryptpassword-salt-keylen-options-callback
+ * Default: scrypt for new signups (Node crypto, no native addon).
+ * Argon2: verify-only path for Railway v1 `$argon2id$` password hashes (E2-T11).
  */
 const hashConfig = defineConfig({
   /**
@@ -61,6 +61,21 @@ const hashConfig = defineConfig({
        */
       maxMemory: 33554432,
     }),
+
+    /**
+     * Argon2id for verifying Railway v1 password hashes (`$argon2id$…`).
+     * Requires the optional `argon2` peer dependency.
+     * Do not switch `default` to argon — new accounts stay on scrypt.
+     */
+    argon: drivers.argon2({
+      version: 0x13,
+      variant: 'id',
+      iterations: 3,
+      memory: 65536,
+      parallelism: 4,
+      saltSize: 16,
+      hashLength: 32,
+    }),
   },
 })
 
@@ -68,7 +83,7 @@ export default hashConfig
 
 /**
  * Inferring types for the list of hashers you have configured
- * in your application.
+ * in the application.
  */
 declare module '@adonisjs/core/types' {
   export interface HashersList extends InferHashers<typeof hashConfig> {}
