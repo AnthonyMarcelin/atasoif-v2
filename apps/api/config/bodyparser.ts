@@ -51,7 +51,11 @@ const bodyParserConfig = defineConfig({
     /**
      * Automatically process uploaded files into the system tmp directory.
      */
-    autoProcess: true,
+    /**
+     * Allowlist. Other routes reject multipart so uploads cannot land on random endpoints.
+     * Patterns must match the registered route pattern exactly.
+     */
+    autoProcess: ['/api/v1/collection/bottles', '/api/v1/collection/bottles/:id/photo'],
 
     /**
      * Normalize empty string values to null.

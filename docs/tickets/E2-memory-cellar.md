@@ -16,7 +16,7 @@ Each ticket is sized for a **sub-agent thread**. One ticket = one PR into `dev` 
 - Do **not** clone atasoif.fr v1 UI — Nuit only
 - Memory fields first: **price paid**, **« Acheté chez » (place)**, **note/review**, **photo**, **fill level (jauge)**
 - Freemium (aggressive conversion) — enforce **server-side**:
-  - Max **10** bottles without entitlement (`FREE_BOTTLE_LIMIT`)
+  - Max **10 lifetime creates** without entitlement (`FREE_BOTTLE_LIMIT`). Deleting a `UserBottle` does **not** free a slot (`users.bottles_created_count`, never decremented). An active subscription bypasses the cap.
   - **FREE:** catalog / seed photo only (`Bottle.photoUrl`)
   - **PREMIUM required:** user photo override (`UserBottle.photoUrlOverride` + upload) **and** bottle fill-level jauge (set / update `fillLevel`)
   - **Not gated** in E2 (unless a later ticket says otherwise): « Acheté chez », price, notes/review, boughtAt, catalog search/add
@@ -143,7 +143,7 @@ Personal cellar CRUD with memory fields, freemium enforcement (bottle cap **and*
 - [ ] Create supports catalog **hit** (existing `bottleId`) and **miss** (create `Bottle` with user source + `UserBottle` in one flow or documented two-step)
 - [ ] Required on create/update: **`boughtAt`** (« Acheté chez » / place); memory fields free for all plans: `pricePaid`, `note`, `review`
 - [ ] Overrides never mutate global `Bottle` by default
-- [ ] Freemium bottle cap: if no active entitlement and count ≥ `FREE_BOTTLE_LIMIT` (10), create returns **403** with clear JSON (reuse shared constant)
+- [ ] Freemium bottle cap: if no active entitlement and lifetime creates ≥ `FREE_BOTTLE_LIMIT` (10), create returns **403** with clear JSON (reuse shared constant). The counter increments on successful create and is not decremented on delete. Active subscription bypasses the cap.
 - [ ] **Premium gate — jauge (server-side):** without entitlement, create/update that sets or changes **`fillLevel`** (anything other than leaving the server default `100` untouched) returns **403** with a stable error code (e.g. `E_PREMIUM_REQUIRED` / feature `fillLevel`); free creates persist default `fill_level = 100` and must not accept client-driven level changes
 - [ ] **Premium gate — user photo (server-side):** without entitlement, create/update that sets **`photoUrlOverride`** (non-null) returns **403** with the same premium error shape (feature `photoOverride`); free users keep catalog `Bottle.photoUrl` only
 - [ ] Response includes freemium payload e.g. `{ count, limit, remaining, entitlement }` (or equivalent) so UI can hide/lock jauge + photo replace
@@ -185,7 +185,8 @@ Upload a **premium** personal bottle photo; store URL on `UserBottle.photoUrlOve
 - [ ] Validation: mime allowlist (jpeg/png/webp), max size documented, no path traversal
 - [ ] Storage: **local disk** under configured dir (VPS filesystem OK for MVP) — env documented in `.env.example`
 - [ ] Successful upload (entitled) returns URL/path usable as `photoUrlOverride`
-- [ ] Serving strategy documented (static route or signed path) without exposing other users’ files
+- [ ] Serving strategy documented (owner-only authenticated GET, files outside the web root) without exposing other users’ files
+- [ ] A catalog packshot contributed while creating a missing `Bottle` stays available on the free plan (`Bottle.photoUrl`). User-contributed catalog photos are stored with `photoStatus = pending` (moderation UI is a follow-up, not this ticket)
 - [ ] API tests: fixture image happy path with entitlement stub; free plan rejected; storage fake OK
 
 ### Out of scope

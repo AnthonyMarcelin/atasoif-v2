@@ -52,7 +52,7 @@ export class BottleSourceSchema extends BaseModel {
 }
 
 export class BottleSchema extends BaseModel {
-  static $columns = ['abv', 'attrs', 'barcode', 'brand', 'categoryId', 'createdAt', 'deletedAt', 'id', 'name', 'origin', 'photoUrl', 'updatedAt', 'volumeMl'] as const
+  static $columns = ['abv', 'attrs', 'barcode', 'brand', 'categoryId', 'createdAt', 'deletedAt', 'id', 'name', 'origin', 'photoStatus', 'photoUrl', 'updatedAt', 'volumeMl'] as const
   $columns = BottleSchema.$columns
   @column()
   declare abv: string | null
@@ -74,6 +74,8 @@ export class BottleSchema extends BaseModel {
   declare name: string
   @column()
   declare origin: string | null
+  @column()
+  declare photoStatus: string | null
   @column()
   declare photoUrl: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
@@ -217,8 +219,10 @@ export class UserBottleSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'isPublic', 'password', 'passwordResetVersion', 'pseudo', 'updatedAt'] as const
+  static $columns = ['bottlesCreatedCount', 'createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'isPublic', 'password', 'passwordResetVersion', 'pseudo', 'updatedAt'] as const
   $columns = UserSchema.$columns
+  @column()
+  declare bottlesCreatedCount: number
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()

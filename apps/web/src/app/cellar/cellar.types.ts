@@ -15,6 +15,8 @@ export interface CatalogBottle {
   volumeMl: number | null;
   barcode: string | null;
   photoUrl: string | null;
+  /** `pending` when a user contributed the catalog packshot. Moderation UI is later. */
+  photoStatus?: string | null;
   attrs: Record<string, unknown>;
   categoryId: number;
   category: CatalogCategory | null;
@@ -23,6 +25,7 @@ export interface CatalogBottle {
 }
 
 export interface FreemiumMeta {
+  /** Lifetime creates consumed. Deleting a bottle does not free a slot. */
   count: number;
   limit: number;
   remaining: number | null;

@@ -1,18 +1,19 @@
 import { DateTime } from 'luxon'
-import { Exception } from '@adonisjs/core/exceptions'
 import db from '@adonisjs/lucid/services/db'
-import {
-  BOTTLE_SOURCES,
-  FILL_LEVEL_DEFAULT,
-  FREE_BOTTLE_LIMIT,
-} from '@atasoif/shared'
+import { BOTTLE_SOURCES, FILL_LEVEL_DEFAULT, FREE_BOTTLE_LIMIT } from '@atasoif/shared'
 import Bottle from '#models/bottle'
 import BottleSource from '#models/bottle_source'
 import Category from '#models/category'
+import User from '#models/user'
 import UserBottle from '#models/user_bottle'
+import CellarPhotoStorage, { overridePhotoPath } from '#services/cellar_photo_storage'
+import { CollectionError } from '#services/collection/collection_error'
 import EntitlementService from '#services/entitlement_service'
 
+export { CollectionError } from '#services/collection/collection_error'
+
 export type FreemiumSnapshot = {
+  /** Lifetime creates consumed. Deletes do not free a slot. */
   count: number
   limit: number
   remaining: number | null
@@ -21,16 +22,7 @@ export type FreemiumSnapshot = {
 
 export type PremiumFeature = 'fillLevel' | 'photoOverride'
 
-export class CollectionError extends Exception {
-  constructor(
-    public readonly code: string,
-    message: string,
-    status: number,
-    public readonly extras: Record<string, unknown> = {}
-  ) {
-    super(message, { status })
-  }
-}
+const PENDING_PHOTO_STATUS = 'pending'
 
 type CreateBottleMiss = {
   name: string
@@ -84,14 +76,16 @@ export type ListUserBottlesInput = {
 }
 
 /**
- * Personal cellar CRUD with freemium bottle cap + premium gates (E2-T03).
- * Does not mutate global Bottle rows for personal memory fields.
+ * Personal cellar CRUD with a lifetime freemium cap + premium gates (E2-T03).
+ * `users.bottles_created_count` increments on successful create and never
+ * decrements on delete. Does not mutate global Bottle rows for personal fields.
  */
 export default class CollectionService {
   constructor(private readonly entitlements: EntitlementService = new EntitlementService()) {}
 
   /**
-   * Freemium payload for API responses — `remaining` is null when entitled (uncapped).
+   * Freemium payload for API responses. `count` is lifetime creates.
+   * `remaining` is null when entitled (uncapped).
    */
   async freemiumPayload(userId: number): Promise<FreemiumSnapshot> {
     const entitlement = await this.entitlements.hasActiveEntitlement(userId)
@@ -104,9 +98,12 @@ export default class CollectionService {
     }
   }
 
+  /**
+   * Slots consumed for the life of the account, not the current row count.
+   */
   async countFor(userId: number): Promise<number> {
-    const result = await UserBottle.query().where('user_id', userId).count('* as total')
-    return Number(result[0].$extras.total ?? 0)
+    const user = await User.findOrFail(userId)
+    return Number(user.bottlesCreatedCount ?? 0)
   }
 
   async list(userId: number, input: ListUserBottlesInput) {
@@ -169,23 +166,27 @@ export default class CollectionService {
     }
 
     const entitlement = await this.entitlements.hasActiveEntitlement(userId)
-    await this.assertBottleCap(userId, entitlement)
     this.assertPremiumWrites(entitlement, {
       fillLevel: input.fillLevel,
       photoUrlOverride: input.photoUrlOverride,
     })
 
     return db.transaction(async (trx) => {
+      const locked = await trx
+        .from('users')
+        .where('id', userId)
+        .forUpdate()
+        .select('bottles_created_count')
+        .first()
+      const createdCount = Number(locked?.bottles_created_count ?? 0)
+      this.assertBottleCap(createdCount, entitlement)
+
       let bottleId = input.bottleId
 
       if (hasMiss && input.bottle) {
         const category = await Category.find(input.bottle.categoryId, { client: trx })
         if (!category) {
-          throw new CollectionError(
-            'E_CATEGORY_NOT_FOUND',
-            'Catégorie introuvable',
-            422
-          )
+          throw new CollectionError('E_CATEGORY_NOT_FOUND', 'Catégorie introuvable', 422)
         }
 
         const bottle = await Bottle.create(
@@ -197,6 +198,7 @@ export default class CollectionService {
             volumeMl: input.bottle.volumeMl ?? null,
             barcode: input.bottle.barcode ?? null,
             photoUrl: input.bottle.photoUrl ?? null,
+            photoStatus: input.bottle.photoUrl ? PENDING_PHOTO_STATUS : null,
             categoryId: category.id,
             attrs: input.bottle.attrs ?? {},
           },
@@ -221,11 +223,7 @@ export default class CollectionService {
           .whereNull('deleted_at')
           .first()
         if (!catalogBottle) {
-          throw new CollectionError(
-            'E_BOTTLE_NOT_FOUND',
-            'Bouteille catalogue introuvable',
-            404
-          )
+          throw new CollectionError('E_BOTTLE_NOT_FOUND', 'Bouteille catalogue introuvable', 404)
         }
       }
 
@@ -249,7 +247,8 @@ export default class CollectionService {
           pricePaid: input.pricePaid ?? null,
           note: input.note ?? null,
           review: input.review ?? null,
-          fillLevel: entitlement && input.fillLevel !== undefined ? input.fillLevel : FILL_LEVEL_DEFAULT,
+          fillLevel:
+            entitlement && input.fillLevel !== undefined ? input.fillLevel : FILL_LEVEL_DEFAULT,
           fillLevelUpdatesCount:
             entitlement && input.fillLevel !== undefined && input.fillLevel !== FILL_LEVEL_DEFAULT
               ? 1
@@ -264,6 +263,13 @@ export default class CollectionService {
         },
         { client: trx }
       )
+
+      await trx
+        .from('users')
+        .where('id', userId)
+        .update({
+          bottles_created_count: createdCount + 1,
+        })
 
       await row.load('bottle', (bottleQuery) => {
         bottleQuery.preload('category')
@@ -333,16 +339,30 @@ export default class CollectionService {
     return row
   }
 
+  /**
+   * Owner + premium gate for a shelf photo. Does not write the file.
+   */
+  async preparePhotoOverride(userId: number, id: number): Promise<UserBottle> {
+    const row = await this.findOwned(userId, id)
+    const entitlement = await this.entitlements.hasActiveEntitlement(userId)
+    if (!entitlement) {
+      throw this.premiumRequired('photoOverride')
+    }
+    return row
+  }
+
   async delete(userId: number, id: number): Promise<void> {
     const row = await this.findOwned(userId, id)
+    if (row.photoUrlOverride === overridePhotoPath(row.id)) {
+      await new CellarPhotoStorage().deleteOverride(userId, row.id)
+    }
     await row.delete()
   }
 
-  private async assertBottleCap(userId: number, entitlement: boolean): Promise<void> {
+  private assertBottleCap(count: number, entitlement: boolean): void {
     if (entitlement) {
       return
     }
-    const count = await this.countFor(userId)
     if (count >= FREE_BOTTLE_LIMIT) {
       throw new CollectionError(
         'E_BOTTLE_LIMIT',

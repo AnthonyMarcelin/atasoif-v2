@@ -30,6 +30,13 @@ export default class Bottle extends BaseModel {
   @column()
   declare photoUrl: string | null
 
+  /**
+   * `pending` when a user contributed the catalog photo. `approved` is reserved
+   * for a later moderation pass. Null for seed / OFF / no photo.
+   */
+  @column()
+  declare photoStatus: string | null
+
   @column()
   declare attrs: Record<string, unknown>
 
