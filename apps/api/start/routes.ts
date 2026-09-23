@@ -14,6 +14,7 @@ const CatalogBottlesController = () => import('#controllers/catalog_bottles_cont
 const CatalogCategoriesController = () => import('#controllers/catalog_categories_controller')
 const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
 const CollectionPhotosController = () => import('#controllers/collection_photos_controller')
+const OpsKpisController = () => import('#controllers/ops_kpis_controller')
 
 router.get('/health', [HealthController, 'handle'])
 
@@ -70,6 +71,14 @@ router
       .prefix('catalog')
       .as('catalog')
       .use([middleware.auth(), middleware.emailVerified()])
+
+    router
+      .group(() => {
+        router.get('kpis', [OpsKpisController, 'index'])
+      })
+      .prefix('ops')
+      .as('ops')
+      .use([middleware.throttle({ maxAttempts: 60, windowMs: 60 * 1000 }), middleware.opsToken()])
 
     router
       .group(() => {

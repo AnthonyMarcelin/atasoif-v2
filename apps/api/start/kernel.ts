@@ -48,4 +48,5 @@ export const middleware = router.named({
   auth: () => import('#middleware/auth_middleware'),
   emailVerified: () => import('#middleware/email_verified_middleware'),
   throttle: () => import('#middleware/auth_throttle_middleware'),
+  opsToken: () => import('#middleware/ops_token_middleware'),
 })

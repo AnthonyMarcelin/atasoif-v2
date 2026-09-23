@@ -62,6 +62,10 @@ décident du produit :
 3. **L'annuel churne trois fois moins que le mensuel** et vaut 2,7 fois plus.
    Le pousser au moment du blocage 10/10 est le levier le plus rentable.
 
+## Contrat API
+
+Les chiffres de ce dossier restent des exemples. La lecture réelle (Habitudes, étapes cave de l'entonnoir, compteurs bouteilles de la vue d'ensemble) est dans [kpi-api.md](./kpi-api.md). Pas d'interface admin dans cette livraison.
+
 ## Ce qui n'est pas maquetté
 
 Authentification admin, gestion des rôles, et le journal d'administration lui-même.
