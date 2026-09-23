@@ -63,6 +63,29 @@ Ticket source of truth: [`tickets/E2-memory-cellar.md` § E2-T01](./tickets/E2-m
 
 UI may hide or tease premium controls; **authorization is always server-side**.
 
+### Wine category attrs (E2-T12)
+
+Only the category slug `wine` shows these fields. Other categories keep the same add and edit forms.
+
+| Key | JSON type | Max length | UI label |
+|---|---|---|---|
+| `appellation` | string | 255 | Appellation |
+| `grape` | string | 255 | Cépage |
+| `vintage` | string | 64 | Millésime |
+
+`vintage` is a short free-text millésime (a year such as `2015`, or a short mention). No other wine keys are part of this ticket.
+
+Storage:
+
+- Catalog value: `bottles.attrs.<key>` (seed, or a manual miss that creates the catalog row).
+- Personal value: `user_bottles.attrs_override.<key>`. A non-empty override wins for that key. A missing or cleared key falls back to the catalog value.
+- Editing a cellar entry writes `attrsOverride` only. It does not change the global `Bottle` row.
+- A manual miss in `wine` may set the same keys on the new `Bottle.attrs`.
+
+`PATCH /api/v1/collection/bottles/:id` and catalog-hit `POST` accept `attrsOverride` with only these keys (string, blank string, or null). Unknown keys are rejected. Sending `attrsOverride` for a non-wine bottle returns 422 `E_WINE_ATTRS_CATEGORY`. Omitting the field leaves other categories unchanged.
+
+Constants live in `@atasoif/shared`: `WINE_CATEGORY_SLUG`, `WINE_ATTR_KEYS`, `WINE_ATTR_LIMITS`.
+
 ---
 
 ## 3. Catalog strategy — cache-first by EAN

@@ -1,8 +1,5 @@
 import { test } from '@japa/runner'
-import {
-  createUserBottleValidator,
-  updateUserBottleValidator,
-} from '#validators/user_bottle'
+import { createUserBottleValidator, updateUserBottleValidator } from '#validators/user_bottle'
 
 test.group('UserBottle validators (E2-T01)', () => {
   test('create requires boughtAt place and accepts fillLevel 0-100', async ({ assert }) => {
@@ -42,5 +39,44 @@ test.group('UserBottle validators (E2-T01)', () => {
 
     const full = await updateUserBottleValidator.validate({ fillLevel: 100 })
     assert.equal(full.fillLevel, 100)
+  })
+
+  test('update accepts wine attrs and rejects unknown or oversized keys', async ({ assert }) => {
+    const data = await updateUserBottleValidator.validate({
+      attrsOverride: {
+        appellation: '  Pauillac ',
+        grape: 'Cabernet sauvignon',
+        vintage: '2015',
+      },
+    })
+
+    assert.deepEqual(data.attrsOverride, {
+      appellation: 'Pauillac',
+      grape: 'Cabernet sauvignon',
+      vintage: '2015',
+    })
+
+    const cleared = await updateUserBottleValidator.validate({
+      attrsOverride: { grape: null },
+    })
+    assert.deepEqual(cleared.attrsOverride, { grape: null })
+
+    await assert.rejects(() =>
+      updateUserBottleValidator.validate({
+        attrsOverride: { region: 'Médoc' },
+      })
+    )
+
+    await assert.rejects(() =>
+      updateUserBottleValidator.validate({
+        attrsOverride: { vintage: 'x'.repeat(65) },
+      })
+    )
+  })
+
+  test('update without wine attrs stays valid for other categories', async ({ assert }) => {
+    const data = await updateUserBottleValidator.validate({ boughtAt: 'Nicolas' })
+    assert.equal(data.boughtAt, 'Nicolas')
+    assert.isUndefined(data.attrsOverride)
   })
 })

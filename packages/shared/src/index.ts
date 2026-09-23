@@ -42,3 +42,14 @@ export const FILL_LEVEL_MIN = 0;
 export const FILL_LEVEL_MAX = 100;
 export const FILL_LEVEL_DEFAULT = 100;
 export const FILL_LEVEL_FINISHED = 0;
+
+export {
+  WINE_ATTR_KEYS,
+  WINE_ATTR_LIMITS,
+  WINE_CATEGORY_SLUG,
+  isWineCategorySlug,
+  mergeWineAttrsOverride,
+  readWineAttr,
+  resolvedWineAttr,
+} from './wine-attrs';
+export type { WineAttrKey, WineAttrsInput } from './wine-attrs';

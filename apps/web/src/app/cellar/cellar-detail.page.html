@@ -68,6 +68,20 @@
 
       @if (!editing()) {
         <dl class="cellar-memory">
+          @if (isWine(bottle)) {
+            <div>
+              <dt>Appellation</dt>
+              <dd>{{ wineLabel('appellation') }}</dd>
+            </div>
+            <div>
+              <dt>Cépage</dt>
+              <dd>{{ wineLabel('grape') }}</dd>
+            </div>
+            <div>
+              <dt>Millésime</dt>
+              <dd>{{ wineLabel('vintage') }}</dd>
+            </div>
+          }
           <div>
             <dt>Acheté chez</dt>
             <dd>{{ bottle.boughtAt || 'Pas renseigné' }}</dd>
@@ -157,6 +171,53 @@
               (blur)="setFocused(null)"
             />
           </div>
+
+          @if (isWine(bottle)) {
+            <p class="cellar-section-label">Le vin</p>
+
+            <div [ngClass]="fieldClass('appellation')">
+              <label class="auth-field__label" for="edit-appellation">Appellation</label>
+              <input
+                id="edit-appellation"
+                class="auth-field__control"
+                type="text"
+                formControlName="appellation"
+                autocomplete="off"
+                [attr.maxlength]="wineLimits.appellation"
+                (focus)="setFocused('appellation')"
+                (blur)="setFocused(null)"
+              />
+            </div>
+
+            <div [ngClass]="fieldClass('grape')">
+              <label class="auth-field__label" for="edit-grape">Cépage</label>
+              <input
+                id="edit-grape"
+                class="auth-field__control"
+                type="text"
+                formControlName="grape"
+                autocomplete="off"
+                [attr.maxlength]="wineLimits.grape"
+                (focus)="setFocused('grape')"
+                (blur)="setFocused(null)"
+              />
+            </div>
+
+            <div [ngClass]="fieldClass('vintage')">
+              <label class="auth-field__label" for="edit-vintage">Millésime</label>
+              <input
+                id="edit-vintage"
+                class="auth-field__control"
+                type="text"
+                formControlName="vintage"
+                autocomplete="off"
+                inputmode="numeric"
+                [attr.maxlength]="wineLimits.vintage"
+                (focus)="setFocused('vintage')"
+                (blur)="setFocused(null)"
+              />
+            </div>
+          }
 
           <div [ngClass]="fieldClass('boughtAt')">
             <label class="auth-field__label" for="edit-bought-at">Acheté chez</label>

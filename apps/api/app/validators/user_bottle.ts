@@ -1,8 +1,5 @@
 import vine from '@vinejs/vine'
-import {
-  FILL_LEVEL_MAX,
-  FILL_LEVEL_MIN,
-} from '@atasoif/shared'
+import { FILL_LEVEL_MAX, FILL_LEVEL_MIN, WINE_ATTR_KEYS, WINE_ATTR_LIMITS } from '@atasoif/shared'
 
 /**
  * « Acheté chez » / purchase place (maps to `user_bottles.bought_at`).
@@ -13,13 +10,48 @@ const boughtAtPlace = () => vine.string().trim().minLength(1).maxLength(255)
 /**
  * Jauge fill level. Range only — premium entitlement is enforced in the service.
  */
-const fillLevel = () =>
-  vine.number().withoutDecimals().min(FILL_LEVEL_MIN).max(FILL_LEVEL_MAX)
+const fillLevel = () => vine.number().withoutDecimals().min(FILL_LEVEL_MIN).max(FILL_LEVEL_MAX)
 
 /**
  * Numeric score (`note`). Scale (/5, /10, /20) is not locked yet — keep flexible.
  */
 const noteScore = () => vine.number().decimal([0, 1]).optional()
+
+/**
+ * Wine keys only (`appellation`, `grape`, `vintage`). See docs/DATABASE.md.
+ * Blank or null clears that key in `attrsOverride`. Unknown keys are rejected.
+ */
+const wineAttrText = (maxLength: number) =>
+  vine.string().trim().maxLength(maxLength).nullable().optional()
+
+const WINE_ATTR_KEY_SET = new Set<string>(WINE_ATTR_KEYS)
+
+/**
+ * Vine objects drop unknown keys instead of failing. Reject them so a client
+ * cannot think an undocumented wine key was saved.
+ */
+const rejectUnknownWineKeys = vine.createRule((value: unknown, _options, field) => {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return
+  }
+  for (const key of Object.keys(value)) {
+    if (!WINE_ATTR_KEY_SET.has(key)) {
+      field.report('Clé de vin inconnue', 'wine.unknownKey', field)
+      return
+    }
+  }
+})
+
+const wineAttrsOverride = () =>
+  vine
+    .object({
+      appellation: wineAttrText(WINE_ATTR_LIMITS.appellation),
+      grape: wineAttrText(WINE_ATTR_LIMITS.grape),
+      vintage: wineAttrText(WINE_ATTR_LIMITS.vintage),
+    })
+    .use(rejectUnknownWineKeys())
+    .nullable()
+    .optional()
 
 const catalogMissBottle = {
   name: vine.string().trim().minLength(1).maxLength(255),
@@ -52,6 +84,7 @@ export const createUserBottleValidator = vine.create({
   originOverride: vine.string().trim().maxLength(255).optional(),
   abvOverride: vine.number().min(0).max(100).decimal([0, 2]).optional(),
   volumeMlOverride: vine.number().withoutDecimals().positive().optional(),
+  attrsOverride: wineAttrsOverride(),
   isPublic: vine.boolean().optional(),
 })
 
@@ -71,6 +104,7 @@ export const updateUserBottleValidator = vine.create({
   originOverride: vine.string().trim().maxLength(255).nullable().optional(),
   abvOverride: vine.number().min(0).max(100).decimal([0, 2]).nullable().optional(),
   volumeMlOverride: vine.number().withoutDecimals().positive().nullable().optional(),
+  attrsOverride: wineAttrsOverride(),
   isPublic: vine.boolean().optional(),
 })
 

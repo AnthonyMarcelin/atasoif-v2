@@ -436,9 +436,9 @@ Import owner’s ~9–15 bottles from legacy Railway Postgres / dump into Lucid 
 Wine-specific fields via `attrs` / `attrsOverride` (appellation, grape, vintage…).
 
 ### Acceptance criteria
-- [ ] Documented attr keys
-- [ ] Add/edit UI shows wine fields when category is wine
-- [ ] Does not break other categories
+- [x] Documented attr keys (`appellation`, `grape`, `vintage` only). See `docs/DATABASE.md` § Wine category attrs.
+- [x] Add/edit UI shows wine fields when category is wine
+- [x] Does not break other categories
 
 ### Out of scope
 - Full wine social network features
