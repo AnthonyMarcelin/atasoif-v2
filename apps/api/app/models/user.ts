@@ -1,5 +1,4 @@
 import { UserSchema } from '#database/schema'
-import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { type AccessToken, DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
@@ -7,8 +6,9 @@ import { column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import type { HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import UserBottle from '#models/user_bottle'
 import Subscription from '#models/subscription'
+import { passwordHasher } from '#services/password_hasher'
 
-export default class User extends compose(UserSchema, withAuthFinder(hash)) {
+export default class User extends compose(UserSchema, withAuthFinder(passwordHasher)) {
   /**
    * Bearer tokens expire by default (XSS / localStorage blast radius).
    * Override per-create with `{ expiresIn }` when a shorter TTL is required.
