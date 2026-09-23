@@ -66,7 +66,13 @@ router
       .group(() => {
         router.get('categories', [CatalogCategoriesController, 'index'])
         router.get('bottles', [CatalogBottlesController, 'index'])
-        router.get('bottles/barcode/:barcode', [CatalogBottlesController, 'showByBarcode'])
+        router.get('bottles/barcode/:barcode', [CatalogBottlesController, 'showByBarcode']).use(
+          middleware.throttle({
+            maxAttempts: 60,
+            windowMs: 15 * 60 * 1000,
+            bucket: 'catalog-barcode',
+          })
+        )
       })
       .prefix('catalog')
       .as('catalog')
@@ -84,7 +90,13 @@ router
       .group(() => {
         router.get('bottles', [CollectionBottlesController, 'index'])
         router.post('bottles', [CollectionBottlesController, 'store'])
-        router.post('bottles/:id/photo', [CollectionPhotosController, 'store'])
+        router.post('bottles/:id/photo', [CollectionPhotosController, 'store']).use(
+          middleware.throttle({
+            maxAttempts: 30,
+            windowMs: 15 * 60 * 1000,
+            bucket: 'cellar-photo',
+          })
+        )
         router.get('bottles/:id/photo', [CollectionPhotosController, 'show'])
         router.get('bottles/:id', [CollectionBottlesController, 'show'])
         router.patch('bottles/:id', [CollectionBottlesController, 'update'])

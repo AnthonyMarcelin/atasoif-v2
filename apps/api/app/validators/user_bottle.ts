@@ -15,7 +15,46 @@ const fillLevel = () => vine.number().withoutDecimals().min(FILL_LEVEL_MIN).max(
 /**
  * Numeric score (`note`). Scale (/5, /10, /20) is not locked yet — keep flexible.
  */
-const noteScore = () => vine.number().decimal([0, 1]).optional()
+const noteScore = () =>
+  vine
+    .number()
+    .decimal([0, 1])
+    .use(frenchRange(0, 99.9, 'La note doit rester entre 0 et 99,9'))
+    .optional()
+
+const pricePaid = () =>
+  vine
+    .number()
+    .decimal([0, 2])
+    .use(frenchRange(0, 99_999_999.99, 'Le prix est trop élevé.'))
+
+const volumeMl = () =>
+  vine
+    .number()
+    .withoutDecimals()
+    .positive()
+    .use(frenchRange(1, 200_000, 'Le volume est trop élevé.'))
+
+/**
+ * `note` is decimal(3,1) and `price_paid` is decimal(10,2). Values past that
+ * precision used to surface as a database 500.
+ */
+function frenchRange(min: number, max: number, message: string) {
+  return vine.createRule((value: unknown, _options, field) => {
+    if (value === null || value === undefined) {
+      return
+    }
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
+      field.report(message, 'decimal.bounds', field)
+    }
+  })()
+}
+
+const barcodeDigits = vine.createRule((value: unknown, _options, field) => {
+  if (typeof value !== 'string' || !/^\d{8,14}$/.test(value)) {
+    field.report('Le code-barres doit contenir 8 à 14 chiffres', 'barcode.format', field)
+  }
+})
 
 /**
  * Wine keys only (`appellation`, `grape`, `vintage`). See docs/DATABASE.md.
@@ -58,8 +97,8 @@ const catalogMissBottle = {
   brand: vine.string().trim().maxLength(255).optional(),
   origin: vine.string().trim().maxLength(255).optional(),
   abv: vine.number().min(0).max(100).decimal([0, 2]).optional(),
-  volumeMl: vine.number().withoutDecimals().positive().optional(),
-  barcode: vine.string().trim().maxLength(32).optional(),
+  volumeMl: volumeMl().optional(),
+  barcode: vine.string().trim().use(barcodeDigits()).optional(),
   photoUrl: vine.string().trim().maxLength(2048).optional(),
   categoryId: vine.number().withoutDecimals().positive(),
   attrs: vine.record(vine.any()).optional(),
@@ -74,7 +113,7 @@ export const createUserBottleValidator = vine.create({
   bottleId: vine.number().withoutDecimals().positive().optional(),
   bottle: vine.object(catalogMissBottle).optional(),
   boughtAt: boughtAtPlace(),
-  pricePaid: vine.number().min(0).decimal([0, 2]).optional(),
+  pricePaid: pricePaid().optional(),
   note: noteScore(),
   review: vine.string().trim().maxLength(5000).optional(),
   fillLevel: fillLevel().optional(),
@@ -83,7 +122,7 @@ export const createUserBottleValidator = vine.create({
   brandOverride: vine.string().trim().maxLength(255).optional(),
   originOverride: vine.string().trim().maxLength(255).optional(),
   abvOverride: vine.number().min(0).max(100).decimal([0, 2]).optional(),
-  volumeMlOverride: vine.number().withoutDecimals().positive().optional(),
+  volumeMlOverride: volumeMl().optional(),
   attrsOverride: wineAttrsOverride(),
   isPublic: vine.boolean().optional(),
 })
@@ -94,8 +133,13 @@ export const createUserBottleValidator = vine.create({
  */
 export const updateUserBottleValidator = vine.create({
   boughtAt: boughtAtPlace().optional(),
-  pricePaid: vine.number().min(0).decimal([0, 2]).nullable().optional(),
-  note: vine.number().decimal([0, 1]).nullable().optional(),
+  pricePaid: pricePaid().nullable().optional(),
+  note: vine
+    .number()
+    .decimal([0, 1])
+    .use(frenchRange(0, 99.9, 'La note doit rester entre 0 et 99,9'))
+    .nullable()
+    .optional(),
   review: vine.string().trim().maxLength(5000).nullable().optional(),
   fillLevel: fillLevel().optional(),
   photoUrlOverride: vine.string().trim().maxLength(2048).nullable().optional(),
@@ -103,7 +147,7 @@ export const updateUserBottleValidator = vine.create({
   brandOverride: vine.string().trim().maxLength(255).nullable().optional(),
   originOverride: vine.string().trim().maxLength(255).nullable().optional(),
   abvOverride: vine.number().min(0).max(100).decimal([0, 2]).nullable().optional(),
-  volumeMlOverride: vine.number().withoutDecimals().positive().nullable().optional(),
+  volumeMlOverride: volumeMl().nullable().optional(),
   attrsOverride: wineAttrsOverride(),
   isPublic: vine.boolean().optional(),
 })

@@ -579,4 +579,80 @@ test.group('Collection bottles API (E2-T03)', (group) => {
 
     response.assertStatus(422)
   })
+
+  test('miss rejects a note that overflows the decimal column', async ({ client, assert }) => {
+    const { token } = await signupAndVerify(client, {
+      email: 'note-max@example.com',
+      pseudo: 'note_max',
+    })
+    const bottle = await seedCatalogBottle('-note')
+
+    const response = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({ bottleId: bottle.id, boughtAt: 'Cave', note: 100 })
+
+    response.assertStatus(422)
+    assert.include(JSON.stringify(response.body()), 'La note doit rester entre 0 et 99,9')
+  })
+
+  test('miss rejects unsafe catalog photo URLs and a duplicate barcode', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await signupAndVerify(client, {
+      email: 'photo-url@example.com',
+      pseudo: 'photo_url',
+    })
+    const category = await Category.updateOrCreate({ slug: 'gin' }, { name: 'Gin' })
+    const barcode = '8601234567890'
+    await Bottle.create({
+      name: 'Existing gin',
+      categoryId: category.id,
+      barcode,
+      attrs: {},
+    })
+
+    const script = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({
+        bottle: {
+          name: 'Gin script',
+          categoryId: category.id,
+          photoUrl: 'javascript:alert(1)',
+        },
+        boughtAt: 'Cave',
+      })
+    script.assertStatus(422)
+    assert.equal((script.body() as { code: string }).code, 'E_PHOTO_INVALID')
+
+    const apiPath = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({
+        bottle: {
+          name: 'Gin api',
+          categoryId: category.id,
+          photoUrl: '/api/v1/account/profile',
+        },
+        boughtAt: 'Cave',
+      })
+    apiPath.assertStatus(422)
+    assert.equal((apiPath.body() as { code: string }).code, 'E_PHOTO_INVALID')
+
+    const duplicate = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({
+        bottle: {
+          name: 'Gin copie',
+          categoryId: category.id,
+          barcode,
+        },
+        boughtAt: 'Cave',
+      })
+    duplicate.assertStatus(409)
+    assert.equal((duplicate.body() as { code: string }).code, 'E_BARCODE_EXISTS')
+  })
 })

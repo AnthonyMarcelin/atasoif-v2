@@ -74,6 +74,32 @@ test.group('UserBottle validators (E2-T01)', () => {
     )
   })
 
+  test('rejects a note or price that cannot fit the decimal columns', async ({ assert }) => {
+    await assert.rejects(() => createUserBottleValidator.validate({ boughtAt: 'Cave', note: 100 }))
+    await assert.rejects(() =>
+      createUserBottleValidator.validate({ boughtAt: 'Cave', pricePaid: 100_000_000 })
+    )
+
+    const edge = await createUserBottleValidator.validate({
+      boughtAt: 'Cave',
+      note: 99.9,
+      pricePaid: 99_999_999.99,
+    })
+    assert.equal(edge.note, 99.9)
+    assert.equal(edge.pricePaid, 99_999_999.99)
+  })
+
+  test('update can clear price, note and volume', async ({ assert }) => {
+    const data = await updateUserBottleValidator.validate({
+      pricePaid: null,
+      note: null,
+      volumeMlOverride: null,
+    })
+    assert.isNull(data.pricePaid)
+    assert.isNull(data.note)
+    assert.isNull(data.volumeMlOverride)
+  })
+
   test('update without wine attrs stays valid for other categories', async ({ assert }) => {
     const data = await updateUserBottleValidator.validate({ boughtAt: 'Nicolas' })
     assert.equal(data.boughtAt, 'Nicolas')

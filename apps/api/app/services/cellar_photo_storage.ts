@@ -1,18 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import { createReadStream } from 'node:fs'
-import { mkdir, readdir, rm, unlink } from 'node:fs/promises'
+import { mkdir, open, readdir, rm, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import app from '@adonisjs/core/services/app'
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import env from '#start/env'
 import { CollectionError } from '#services/collection/collection_error'
+import { imageExtForHeader, type ImageExt } from '#services/image_signature'
 
 const DEFAULT_MAX_BYTES = 5 * 1024 * 1024
 
 const FILE_NAME =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/i
-
-const ALLOWED_SUBTYPES = new Set(['jpeg', 'jpg', 'png', 'webp'])
 
 export const CATALOG_PHOTO_PREFIX = '/api/v1/media/catalog/'
 
@@ -55,7 +54,7 @@ export default class CellarPhotoStorage {
     userBottleId: number,
     file: MultipartFile
   ): Promise<StoredPhoto> {
-    const ext = this.canonicalExt(file)
+    const ext = await this.sniffedExt(file)
     const root = this.root()
     const dir = this.overrideDir(root, userId, userBottleId)
     await rm(dir, { recursive: true, force: true })
@@ -68,7 +67,7 @@ export default class CellarPhotoStorage {
   }
 
   async storeCatalog(file: MultipartFile): Promise<StoredPhoto> {
-    const ext = this.canonicalExt(file)
+    const ext = await this.sniffedExt(file)
     const root = this.root()
     const dir = path.join(root, 'catalog')
     await mkdir(dir, { recursive: true })
@@ -133,16 +132,21 @@ export default class CellarPhotoStorage {
     return 'image/jpeg'
   }
 
-  private canonicalExt(file: MultipartFile): 'jpg' | 'png' | 'webp' {
-    const subtype = (file.subtype ?? '').toLowerCase()
-    const ext = (file.extname ?? '').toLowerCase().replace(/^\./, '')
-    if (!ALLOWED_SUBTYPES.has(subtype) && !ALLOWED_SUBTYPES.has(ext)) {
+  /**
+   * Read the header before any directory is replaced, so a rejected upload
+   * does not delete the previous shelf photo.
+   */
+  private async sniffedExt(file: MultipartFile): Promise<ImageExt> {
+    const tmpPath = file.tmpPath
+    if (!tmpPath) {
       throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
     }
-    if (ext === 'png' || subtype === 'png') return 'png'
-    if (ext === 'webp' || subtype === 'webp') return 'webp'
-    if (ext === 'jpg' || ext === 'jpeg' || subtype === 'jpeg' || subtype === 'jpg') return 'jpg'
-    throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
+    const header = await readFileHeader(tmpPath)
+    const ext = imageExtForHeader(header)
+    if (!ext) {
+      throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
+    }
+    return ext
   }
 
   private overrideDir(root: string, userId: number, userBottleId: number): string {
@@ -164,5 +168,16 @@ export default class CellarPhotoStorage {
       throw new CollectionError('E_PHOTO_INVALID', 'Chemin de photo invalide', 400)
     }
     return target
+  }
+}
+
+async function readFileHeader(filePath: string): Promise<Buffer> {
+  const handle = await open(filePath, 'r')
+  try {
+    const header = Buffer.alloc(16)
+    const { bytesRead } = await handle.read(header, 0, 16, 0)
+    return header.subarray(0, bytesRead)
+  } finally {
+    await handle.close()
   }
 }

@@ -7,6 +7,33 @@ type ThrottleOptions = {
   maxAttempts?: number
   /** Sliding window length in ms (default 15 minutes). */
   windowMs?: number
+  /**
+   * Stable bucket id. Required when the path varies (barcode, bottle id).
+   * Without it, each URL would get its own window and the limit would not hold.
+   */
+  bucket?: string
+}
+
+/**
+ * One window per route bucket, not per query string or path parameter.
+ * Authenticated callers share a bucket by user id so a NAT does not collide.
+ */
+export function throttleStorageKey(input: {
+  method: string
+  scope: string
+  ip: string
+  userId?: number | null
+}): string {
+  const actor = input.userId ? `user:${input.userId}` : `ip:${input.ip}`
+  return `${input.method}:${input.scope}:${actor}`
+}
+
+export function throttleScope(input: { bucket?: string; url: string }): string {
+  if (input.bucket && input.bucket.trim().length > 0) {
+    return input.bucket.trim()
+  }
+  const pathOnly = input.url.split('?')[0]
+  return pathOnly && pathOnly.length > 0 ? pathOnly : input.url
 }
 
 type Bucket = {
@@ -42,7 +69,14 @@ export default class AuthThrottleMiddleware {
     const now = Date.now()
     pruneExpired(now)
 
-    const key = `${ctx.request.method()}:${ctx.request.url()}:${ctx.request.ip()}`
+    const authUser = ctx.auth.user as { id?: number } | undefined
+    const userId = typeof authUser?.id === 'number' ? authUser.id : null
+    const key = throttleStorageKey({
+      method: ctx.request.method(),
+      scope: throttleScope({ bucket: options.bucket, url: ctx.request.url() }),
+      ip: ctx.request.ip(),
+      userId,
+    })
     let bucket = buckets.get(key)
 
     if (!bucket || bucket.resetAt <= now) {
