@@ -5,8 +5,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { BottlePhoto } from './bottle-photo';
-import { cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
+import { apiErrorFeature, cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
+import { shelfPhotoRejection } from './shelf-photo';
 import {
   displayBrand,
   displayName,
@@ -34,9 +35,13 @@ export class CellarDetailPage implements OnInit {
   readonly deleting = signal(false);
   readonly editing = signal(false);
   readonly confirmDelete = signal(false);
+  readonly uploadingPhoto = signal(false);
   readonly error = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
+  readonly levelError = signal<string | null>(null);
+  readonly photoError = signal<string | null>(null);
   readonly savedOk = signal(false);
+  readonly fillSync = signal(0);
   readonly entry = signal<UserBottle | null>(null);
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly focusedField = signal<string | null>(null);
@@ -53,6 +58,8 @@ export class CellarDetailPage implements OnInit {
   readonly nameOf = displayName;
   readonly brandOf = displayBrand;
   readonly photoOf = displayPhotoUrl;
+
+  private levelSaveSeq = 0;
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -163,6 +170,97 @@ export class CellarDetailPage implements OnInit {
       });
   }
 
+  onFillLevel(level: number): void {
+    const current = this.entry();
+    if (!current) {
+      return;
+    }
+    if (this.freemium()?.entitlement !== true) {
+      this.onLockedGauge();
+      return;
+    }
+    if (level === current.fillLevel) {
+      return;
+    }
+
+    this.levelError.set(null);
+    const seq = ++this.levelSaveSeq;
+    this.collection.update(current.id, { fillLevel: level }).subscribe({
+      next: (body) => {
+        if (seq !== this.levelSaveSeq) {
+          return;
+        }
+        this.entry.set(body.data);
+        this.freemium.set(body.meta.freemium);
+      },
+      error: (err: unknown) => {
+        if (seq !== this.levelSaveSeq) {
+          return;
+        }
+        this.fillSync.update((n) => n + 1);
+        if (isFreemiumGateError(err)) {
+          this.goPremium(apiErrorFeature(err) === 'photoOverride' ? 'photo' : 'jauge');
+          return;
+        }
+        this.levelError.set(cellarErrorMessage(err, 'Niveau impossible à enregistrer. Réessaie.'));
+      },
+    });
+  }
+
+  onLockedGauge(): void {
+    this.goPremium('jauge');
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) {
+      return;
+    }
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    this.submitShelfPhoto(file);
+  }
+
+  submitShelfPhoto(file: File): void {
+    const current = this.entry();
+    if (!current) {
+      return;
+    }
+    if (this.freemium()?.entitlement !== true) {
+      this.goPremium('photo');
+      return;
+    }
+
+    const rejection = shelfPhotoRejection(file);
+    if (rejection) {
+      this.photoError.set(rejection);
+      return;
+    }
+
+    this.photoError.set(null);
+    this.uploadingPhoto.set(true);
+    this.collection
+      .uploadPhoto(current.id, file)
+      .pipe(finalize(() => this.uploadingPhoto.set(false)))
+      .subscribe({
+        next: (body) => {
+          this.entry.set(body.data);
+          this.freemium.set(body.meta.freemium);
+          this.savedOk.set(true);
+        },
+        error: (err: unknown) => {
+          if (isFreemiumGateError(err)) {
+            this.goPremium(apiErrorFeature(err) === 'fillLevel' ? 'jauge' : 'photo');
+            return;
+          }
+          this.photoError.set(cellarErrorMessage(err, 'Photo impossible à envoyer. Réessaie.'));
+        },
+      });
+  }
+
   askDelete(): void {
     this.confirmDelete.set(true);
   }
@@ -213,6 +311,10 @@ export class CellarDetailPage implements OnInit {
       note: entry.note !== null && entry.note !== undefined ? String(entry.note) : '',
       review: entry.review ?? '',
     });
+  }
+
+  private goPremium(reason: 'jauge' | 'photo' | 'limit' | 'premium'): void {
+    void this.router.navigate(['/cave/premium'], { queryParams: { reason } });
   }
 
   private parseOptionalNumber(value: string): number | null | 'invalid' {
