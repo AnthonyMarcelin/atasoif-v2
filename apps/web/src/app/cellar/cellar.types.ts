@@ -91,6 +91,11 @@ export interface CreateUserBottlePayload {
   nameOverride?: string;
   brandOverride?: string;
   originOverride?: string;
+  attrsOverride?: {
+    appellation?: string | null;
+    grape?: string | null;
+    vintage?: string | null;
+  };
 }
 
 export interface UpdateUserBottlePayload {
@@ -101,6 +106,11 @@ export interface UpdateUserBottlePayload {
   nameOverride?: string | null;
   brandOverride?: string | null;
   originOverride?: string | null;
+  attrsOverride?: {
+    appellation?: string | null;
+    grape?: string | null;
+    vintage?: string | null;
+  } | null;
   /** Premium only. Free clients must omit this field (API returns 403). */
   fillLevel?: number;
 }

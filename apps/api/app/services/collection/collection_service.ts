@@ -1,6 +1,13 @@
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
-import { BOTTLE_SOURCES, FILL_LEVEL_DEFAULT, FREE_BOTTLE_LIMIT } from '@atasoif/shared'
+import {
+  BOTTLE_SOURCES,
+  FILL_LEVEL_DEFAULT,
+  FREE_BOTTLE_LIMIT,
+  isWineCategorySlug,
+  mergeWineAttrsOverride,
+  type WineAttrsInput,
+} from '@atasoif/shared'
 import Bottle from '#models/bottle'
 import BottleSource from '#models/bottle_source'
 import Category from '#models/category'
@@ -50,6 +57,7 @@ export type CreateUserBottleInput = {
   originOverride?: string
   abvOverride?: number
   volumeMlOverride?: number
+  attrsOverride?: WineAttrsInput | null
   isPublic?: boolean
 }
 
@@ -65,6 +73,7 @@ export type UpdateUserBottleInput = {
   originOverride?: string | null
   abvOverride?: number | null
   volumeMlOverride?: number | null
+  attrsOverride?: WineAttrsInput | null
   isPublic?: boolean
 }
 
@@ -182,12 +191,14 @@ export default class CollectionService {
       this.assertBottleCap(createdCount, entitlement)
 
       let bottleId = input.bottleId
+      let categorySlug: string | null = null
 
       if (hasMiss && input.bottle) {
         const category = await Category.find(input.bottle.categoryId, { client: trx })
         if (!category) {
           throw new CollectionError('E_CATEGORY_NOT_FOUND', 'Catégorie introuvable', 422)
         }
+        categorySlug = category.slug
 
         const bottle = await Bottle.create(
           {
@@ -225,7 +236,14 @@ export default class CollectionService {
         if (!catalogBottle) {
           throw new CollectionError('E_BOTTLE_NOT_FOUND', 'Bouteille catalogue introuvable', 404)
         }
+        await catalogBottle.load('category')
+        categorySlug = catalogBottle.category?.slug ?? null
       }
+
+      const attrsOverride =
+        input.attrsOverride !== undefined
+          ? this.resolveWineAttrs(categorySlug, null, input.attrsOverride)
+          : null
 
       const existing = await UserBottle.query({ client: trx })
         .where('user_id', userId)
@@ -259,6 +277,7 @@ export default class CollectionService {
           originOverride: input.originOverride ?? null,
           abvOverride: input.abvOverride ?? null,
           volumeMlOverride: input.volumeMlOverride ?? null,
+          attrsOverride,
           isPublic: input.isPublic ?? false,
         },
         { client: trx }
@@ -315,6 +334,10 @@ export default class CollectionService {
     if (input.volumeMlOverride !== undefined) {
       row.volumeMlOverride = input.volumeMlOverride
     }
+    if (input.attrsOverride !== undefined) {
+      const slug = row.bottle?.category?.slug ?? null
+      row.attrsOverride = this.resolveWineAttrs(slug, row.attrsOverride, input.attrsOverride)
+    }
     if (input.isPublic !== undefined) {
       row.isPublic = input.isPublic
     }
@@ -357,6 +380,24 @@ export default class CollectionService {
       await new CellarPhotoStorage().deleteOverride(userId, row.id)
     }
     await row.delete()
+  }
+
+  /**
+   * Wine keys belong on a wine bottle only. Other categories must omit `attrsOverride`.
+   */
+  private resolveWineAttrs(
+    categorySlug: string | null,
+    current: Record<string, unknown> | null,
+    patch: WineAttrsInput | null
+  ): Record<string, unknown> | null {
+    if (!isWineCategorySlug(categorySlug)) {
+      throw new CollectionError(
+        'E_WINE_ATTRS_CATEGORY',
+        'Appellation, cépage et millésime sont réservés au vin',
+        422
+      )
+    }
+    return mergeWineAttrsOverride(current, patch)
   }
 
   private assertBottleCap(count: number, entitlement: boolean): void {

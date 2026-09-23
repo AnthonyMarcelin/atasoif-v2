@@ -122,6 +122,56 @@
         </div>
       }
 
+      @if (showWineFields()) {
+        <p class="cellar-section-label">Le vin</p>
+
+        <div [ngClass]="fieldClass('appellation')">
+          <label class="auth-field__label" for="add-appellation">Appellation</label>
+          <input
+            id="add-appellation"
+            class="auth-field__control"
+            type="text"
+            formControlName="appellation"
+            autocomplete="off"
+            placeholder="Saint-Émilion"
+            [attr.maxlength]="wineLimits.appellation"
+            (focus)="setFocused('appellation')"
+            (blur)="setFocused(null)"
+          />
+        </div>
+
+        <div [ngClass]="fieldClass('grape')">
+          <label class="auth-field__label" for="add-grape">Cépage</label>
+          <input
+            id="add-grape"
+            class="auth-field__control"
+            type="text"
+            formControlName="grape"
+            autocomplete="off"
+            placeholder="Merlot"
+            [attr.maxlength]="wineLimits.grape"
+            (focus)="setFocused('grape')"
+            (blur)="setFocused(null)"
+          />
+        </div>
+
+        <div [ngClass]="fieldClass('vintage')">
+          <label class="auth-field__label" for="add-vintage">Millésime</label>
+          <input
+            id="add-vintage"
+            class="auth-field__control"
+            type="text"
+            formControlName="vintage"
+            autocomplete="off"
+            inputmode="numeric"
+            placeholder="2015"
+            [attr.maxlength]="wineLimits.vintage"
+            (focus)="setFocused('vintage')"
+            (blur)="setFocused(null)"
+          />
+        </div>
+      }
+
       <p class="cellar-section-label">Le souvenir</p>
 
       <div [ngClass]="fieldClass('boughtAt')">

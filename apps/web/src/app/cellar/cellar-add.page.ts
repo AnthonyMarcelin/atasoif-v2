@@ -12,6 +12,7 @@ import {
   switchMap,
   takeUntil,
 } from 'rxjs';
+import { isWineCategorySlug, readWineAttr, WINE_ATTR_LIMITS } from '@atasoif/shared';
 
 import { BottlePhoto } from './bottle-photo';
 import { CatalogService, looksLikeBarcode } from './catalog.service';
@@ -19,6 +20,7 @@ import { cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
 import type { CatalogBottle, CatalogCategory, FreemiumMeta } from './cellar.types';
 import { CollectionService } from './collection.service';
+import { wineCatalogAttrs, wineOverrideFromForm, wineOverrideHasValue } from './wine-attrs';
 
 type AddStep = 'search' | 'confirm';
 
@@ -48,6 +50,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   readonly saving = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly wineLimits = WINE_ATTR_LIMITS;
 
   readonly searchControl = this.fb.control('');
 
@@ -55,6 +58,9 @@ export class CellarAddPage implements OnInit, OnDestroy {
     name: ['', [Validators.required, Validators.maxLength(255)]],
     brand: ['', [Validators.maxLength(255)]],
     categoryId: [0 as number, [Validators.required, Validators.min(1)]],
+    appellation: ['', [Validators.maxLength(WINE_ATTR_LIMITS.appellation)]],
+    grape: ['', [Validators.maxLength(WINE_ATTR_LIMITS.grape)]],
+    vintage: ['', [Validators.maxLength(WINE_ATTR_LIMITS.vintage)]],
     boughtAt: ['', [Validators.required, Validators.maxLength(255)]],
     pricePaid: ['' as string],
     note: ['' as string],
@@ -152,6 +158,9 @@ export class CellarAddPage implements OnInit, OnDestroy {
       name: bottle.name,
       brand: bottle.brand ?? '',
       categoryId: bottle.categoryId,
+      appellation: readWineAttr(bottle.attrs, 'appellation'),
+      grape: readWineAttr(bottle.attrs, 'grape'),
+      vintage: readWineAttr(bottle.attrs, 'vintage'),
       boughtAt: '',
       pricePaid: '',
       note: '',
@@ -171,6 +180,9 @@ export class CellarAddPage implements OnInit, OnDestroy {
       name: looksLikeBarcode(q) ? '' : q,
       brand: '',
       categoryId: defaultCategoryId,
+      appellation: '',
+      grape: '',
+      vintage: '',
       boughtAt: '',
       pricePaid: '',
       note: '',
@@ -207,6 +219,14 @@ export class CellarAddPage implements OnInit, OnDestroy {
     }
 
     const selected = this.selected();
+    const wineEntered = {
+      appellation: raw.appellation,
+      grape: raw.grape,
+      vintage: raw.vintage,
+    };
+    const wine = this.showWineFields();
+    const wineOverride = wine ? wineOverrideFromForm(wineEntered, selected?.attrs) : null;
+    const catalogWineAttrs = wine && this.isMiss() ? wineCatalogAttrs(wineEntered) : undefined;
     const payload =
       selected && !this.isMiss()
         ? {
@@ -221,12 +241,16 @@ export class CellarAddPage implements OnInit, OnDestroy {
             ...(raw.brand.trim() && raw.brand.trim() !== (selected.brand ?? '')
               ? { brandOverride: raw.brand.trim() }
               : {}),
+            ...(wineOverride && wineOverrideHasValue(wineOverride)
+              ? { attrsOverride: wineOverride }
+              : {}),
           }
         : {
             bottle: {
               name: raw.name.trim(),
               ...(raw.brand.trim() ? { brand: raw.brand.trim() } : {}),
               categoryId: Number(raw.categoryId),
+              ...(catalogWineAttrs ? { attrs: catalogWineAttrs } : {}),
             },
             boughtAt,
             ...(pricePaid !== null ? { pricePaid } : {}),
@@ -254,6 +278,15 @@ export class CellarAddPage implements OnInit, OnDestroy {
           );
         },
       });
+  }
+
+  showWineFields(): boolean {
+    if (!this.isMiss()) {
+      return isWineCategorySlug(this.selected()?.category?.slug);
+    }
+    const categoryId = Number(this.form.controls.categoryId.value);
+    const category = this.categories().find((row) => row.id === categoryId);
+    return isWineCategorySlug(category?.slug);
   }
 
   setFocused(field: string | null): void {

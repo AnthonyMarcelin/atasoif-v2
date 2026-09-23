@@ -3,6 +3,12 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import {
+  isWineCategorySlug,
+  resolvedWineAttr,
+  WINE_ATTR_LIMITS,
+  type WineAttrKey,
+} from '@atasoif/shared';
 
 import { BottlePhoto } from './bottle-photo';
 import { apiErrorFeature, cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
@@ -17,6 +23,7 @@ import {
 } from './cellar.types';
 import { CollectionService } from './collection.service';
 import { FillGauge } from './fill-gauge';
+import { wineOverrideFromForm } from './wine-attrs';
 
 @Component({
   selector: 'app-cellar-detail-page',
@@ -46,9 +53,14 @@ export class CellarDetailPage implements OnInit {
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly focusedField = signal<string | null>(null);
 
+  readonly wineLimits = WINE_ATTR_LIMITS;
+
   readonly form = this.fb.group({
     nameOverride: ['', [Validators.maxLength(255)]],
     brandOverride: ['', [Validators.maxLength(255)]],
+    appellation: ['', [Validators.maxLength(WINE_ATTR_LIMITS.appellation)]],
+    grape: ['', [Validators.maxLength(WINE_ATTR_LIMITS.grape)]],
+    vintage: ['', [Validators.maxLength(WINE_ATTR_LIMITS.vintage)]],
     boughtAt: ['', [Validators.required, Validators.maxLength(255)]],
     pricePaid: ['' as string],
     note: ['' as string],
@@ -139,6 +151,16 @@ export class CellarDetailPage implements OnInit {
     const catalogBrand = current.bottle?.brand ?? '';
     const nameTrim = raw.nameOverride.trim();
     const brandTrim = raw.brandOverride.trim();
+    const wineOverride = this.isWine(current)
+      ? wineOverrideFromForm(
+          {
+            appellation: raw.appellation,
+            grape: raw.grape,
+            vintage: raw.vintage,
+          },
+          current.bottle?.attrs,
+        )
+      : null;
 
     this.saving.set(true);
     this.collection
@@ -149,6 +171,7 @@ export class CellarDetailPage implements OnInit {
         review: raw.review.trim() ? raw.review.trim() : null,
         nameOverride: nameTrim && nameTrim !== catalogName ? nameTrim : null,
         brandOverride: brandTrim && brandTrim !== catalogBrand ? brandTrim : null,
+        ...(wineOverride ? { attrsOverride: wineOverride } : {}),
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
@@ -289,6 +312,19 @@ export class CellarDetailPage implements OnInit {
       });
   }
 
+  isWine(entry: UserBottle | null = this.entry()): boolean {
+    return isWineCategorySlug(entry?.bottle?.category?.slug);
+  }
+
+  wineLabel(key: WineAttrKey): string {
+    const entry = this.entry();
+    if (!entry) {
+      return 'Pas renseigné';
+    }
+    const value = resolvedWineAttr(entry.attrsOverride, entry.bottle?.attrs, key);
+    return value || 'Pas renseigné';
+  }
+
   setFocused(field: string | null): void {
     this.focusedField.set(field);
   }
@@ -306,6 +342,9 @@ export class CellarDetailPage implements OnInit {
     this.form.reset({
       nameOverride: entry.nameOverride ?? entry.bottle?.name ?? '',
       brandOverride: entry.brandOverride ?? entry.bottle?.brand ?? '',
+      appellation: resolvedWineAttr(entry.attrsOverride, entry.bottle?.attrs, 'appellation'),
+      grape: resolvedWineAttr(entry.attrsOverride, entry.bottle?.attrs, 'grape'),
+      vintage: resolvedWineAttr(entry.attrsOverride, entry.bottle?.attrs, 'vintage'),
       boughtAt: entry.boughtAt ?? '',
       pricePaid: entry.pricePaid !== null && entry.pricePaid !== undefined ? String(entry.pricePaid) : '',
       note: entry.note !== null && entry.note !== undefined ? String(entry.note) : '',

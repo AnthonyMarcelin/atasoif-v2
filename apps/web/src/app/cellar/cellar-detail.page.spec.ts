@@ -146,6 +146,8 @@ describe('CellarDetailPage premium gates', () => {
 
   it('persists the free memory fields without fillLevel or a photo override', () => {
     page.startEdit();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#edit-appellation')).toBeNull();
     page.onSave();
 
     expect(update).toHaveBeenCalled();
@@ -154,5 +156,37 @@ describe('CellarDetailPage premium gates', () => {
     expect(payload.pricePaid).toBe(42);
     expect(payload.fillLevel).toBeUndefined();
     expect('photoUrlOverride' in payload).toBeFalse();
+    expect(payload.attrsOverride).toBeUndefined();
+  });
+
+  it('shows wine fields on a wine bottle and saves attrsOverride', () => {
+    const row = bottle();
+    row.bottle = {
+      ...row.bottle!,
+      attrs: { appellation: 'Margaux', grape: 'Merlot' },
+      category: { id: 3, slug: 'wine', name: 'Vin' },
+    };
+    state.row = row;
+    page.load(4);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Appellation');
+    expect(fixture.nativeElement.textContent).toContain('Margaux');
+    expect(fixture.nativeElement.querySelector('#edit-appellation')).toBeNull();
+
+    page.startEdit();
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('#edit-appellation') as HTMLInputElement;
+    expect(input.value).toBe('Margaux');
+    page.form.controls.appellation.setValue('Pauillac');
+    page.onSave();
+
+    const payload = update.calls.mostRecent().args[1] as UpdateUserBottlePayload;
+    expect(payload.attrsOverride).toEqual({
+      appellation: 'Pauillac',
+      grape: null,
+      vintage: null,
+    });
+    expect(payload.fillLevel).toBeUndefined();
   });
 });

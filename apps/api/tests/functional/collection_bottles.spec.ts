@@ -432,6 +432,139 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     gone.assertStatus(404)
   })
 
+  test('wine cellar entry stores attrsOverride and leaves the catalog bottle unchanged', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await signupAndVerify(client, {
+      email: 'wine@example.com',
+      pseudo: 'wine_user',
+    })
+    const category = await Category.updateOrCreate({ slug: 'wine' }, { name: 'Vin' })
+    const bottle = await Bottle.create({
+      name: 'Château Example',
+      brand: 'Example',
+      categoryId: category.id,
+      attrs: { appellation: 'Margaux', grape: 'Merlot', vintage: '2015' },
+    })
+
+    const created = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({
+        bottleId: bottle.id,
+        boughtAt: 'Cave du marché',
+        attrsOverride: { appellation: 'Pauillac', grape: null, vintage: null },
+      })
+
+    created.assertStatus(201)
+    const createdBody = created.body() as {
+      data: {
+        attrsOverride: Record<string, unknown> | null
+        bottle: { attrs: Record<string, unknown> }
+      }
+    }
+    assert.deepEqual(createdBody.data.attrsOverride, { appellation: 'Pauillac' })
+    assert.deepEqual(createdBody.data.bottle.attrs, {
+      appellation: 'Margaux',
+      grape: 'Merlot',
+      vintage: '2015',
+    })
+
+    const id = (created.body() as { data: { id: number } }).data.id
+    const updated = await client
+      .patch(`/api/v1/collection/bottles/${id}`)
+      .bearerToken(token)
+      .json({
+        attrsOverride: { grape: 'Cabernet franc', vintage: '' },
+      })
+
+    updated.assertStatus(200)
+    const updatedBody = updated.body() as {
+      data: { attrsOverride: Record<string, unknown> | null }
+    }
+    assert.deepEqual(updatedBody.data.attrsOverride, {
+      appellation: 'Pauillac',
+      grape: 'Cabernet franc',
+    })
+
+    const catalog = await Bottle.findOrFail(bottle.id)
+    assert.deepEqual(catalog.attrs, {
+      appellation: 'Margaux',
+      grape: 'Merlot',
+      vintage: '2015',
+    })
+  })
+
+  test('wine miss writes wine keys on the new catalog bottle', async ({ client, assert }) => {
+    const { token } = await signupAndVerify(client, {
+      email: 'wine-miss@example.com',
+      pseudo: 'wine_miss',
+    })
+    const category = await Category.updateOrCreate({ slug: 'wine' }, { name: 'Vin' })
+
+    const response = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({
+        bottle: {
+          name: 'Chinon maison',
+          categoryId: category.id,
+          attrs: { appellation: 'Chinon', grape: 'Cabernet franc', vintage: '2018' },
+        },
+        boughtAt: 'Producteur',
+      })
+
+    response.assertStatus(201)
+    const body = response.body() as {
+      data: {
+        attrsOverride: Record<string, unknown> | null
+        bottle: { attrs: Record<string, unknown> }
+      }
+    }
+    assert.deepEqual(body.data.bottle.attrs, {
+      appellation: 'Chinon',
+      grape: 'Cabernet franc',
+      vintage: '2018',
+    })
+    assert.isNull(body.data.attrsOverride)
+  })
+
+  test('non-wine update rejects wine attrs and still accepts memory fields', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await signupAndVerify(client, {
+      email: 'notwine@example.com',
+      pseudo: 'not_wine',
+    })
+    const bottle = await seedCatalogBottle('-nw')
+    const created = await client
+      .post('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .json({ bottleId: bottle.id, boughtAt: 'Nicolas' })
+    created.assertStatus(201)
+    const id = (created.body() as { data: { id: number } }).data.id
+
+    const rejected = await client
+      .patch(`/api/v1/collection/bottles/${id}`)
+      .bearerToken(token)
+      .json({ attrsOverride: { appellation: 'Margaux' } })
+    rejected.assertStatus(422)
+    assert.equal((rejected.body() as { code: string }).code, 'E_WINE_ATTRS_CATEGORY')
+
+    const kept = await client
+      .patch(`/api/v1/collection/bottles/${id}`)
+      .bearerToken(token)
+      .json({ boughtAt: 'Cave', pricePaid: 30 })
+    kept.assertStatus(200)
+    const keptBody = kept.body() as {
+      data: { boughtAt: string; attrsOverride: Record<string, unknown> | null }
+    }
+    assert.equal(keptBody.data.boughtAt, 'Cave')
+    assert.isNull(keptBody.data.attrsOverride)
+  })
+
   test('create rejects missing boughtAt', async ({ client }) => {
     const { token } = await signupAndVerify(client, {
       email: 'nobought@example.com',
