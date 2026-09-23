@@ -71,7 +71,8 @@ export class CellarDetailPage implements OnInit {
   readonly brandOf = displayBrand;
   readonly photoOf = displayPhotoUrl;
 
-  private levelSaveSeq = 0;
+  private levelInFlight = false;
+  private queuedLevel: number | null = null;
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -202,24 +203,39 @@ export class CellarDetailPage implements OnInit {
       this.onLockedGauge();
       return;
     }
+    this.queuedLevel = level;
+    this.flushLevel();
+  }
+
+  /**
+   * One save at a time. A slower earlier gesture must not land after a newer level.
+   */
+  private flushLevel(): void {
+    if (this.levelInFlight || this.queuedLevel === null) {
+      return;
+    }
+    const current = this.entry();
+    if (!current) {
+      return;
+    }
+    const level = this.queuedLevel;
+    this.queuedLevel = null;
     if (level === current.fillLevel) {
       return;
     }
 
     this.levelError.set(null);
-    const seq = ++this.levelSaveSeq;
+    this.levelInFlight = true;
     this.collection.update(current.id, { fillLevel: level }).subscribe({
       next: (body) => {
-        if (seq !== this.levelSaveSeq) {
-          return;
-        }
         this.entry.set(body.data);
         this.freemium.set(body.meta.freemium);
+        this.levelInFlight = false;
+        this.flushLevel();
       },
       error: (err: unknown) => {
-        if (seq !== this.levelSaveSeq) {
-          return;
-        }
+        this.levelInFlight = false;
+        this.queuedLevel = null;
         this.fillSync.update((n) => n + 1);
         if (isFreemiumGateError(err)) {
           this.goPremium(apiErrorFeature(err) === 'photoOverride' ? 'photo' : 'jauge');
@@ -346,7 +362,8 @@ export class CellarDetailPage implements OnInit {
       grape: resolvedWineAttr(entry.attrsOverride, entry.bottle?.attrs, 'grape'),
       vintage: resolvedWineAttr(entry.attrsOverride, entry.bottle?.attrs, 'vintage'),
       boughtAt: entry.boughtAt ?? '',
-      pricePaid: entry.pricePaid !== null && entry.pricePaid !== undefined ? String(entry.pricePaid) : '',
+      pricePaid:
+        entry.pricePaid !== null && entry.pricePaid !== undefined ? String(entry.pricePaid) : '',
       note: entry.note !== null && entry.note !== undefined ? String(entry.note) : '',
       review: entry.review ?? '',
     });

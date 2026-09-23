@@ -1,4 +1,6 @@
 import { DateTime } from 'luxon'
+import type { MultipartFile } from '@adonisjs/core/bodyparser'
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import db from '@adonisjs/lucid/services/db'
 import {
   BOTTLE_SOURCES,
@@ -16,6 +18,8 @@ import UserBottle from '#models/user_bottle'
 import CellarPhotoStorage, { overridePhotoPath } from '#services/cellar_photo_storage'
 import { CollectionError } from '#services/collection/collection_error'
 import EntitlementService from '#services/entitlement_service'
+import { isCatalogPhotoUrl, isHttpPhotoUrl, isOwnShelfPhotoUrl } from '#services/photo_url'
+import { readPostgresUniqueViolation } from '#services/postgres_error'
 
 export { CollectionError } from '#services/collection/collection_error'
 
@@ -179,199 +183,227 @@ export default class CollectionService {
       fillLevel: input.fillLevel,
       photoUrlOverride: input.photoUrlOverride,
     })
+    this.assertStoredPhotoUrls(input)
 
-    return db.transaction(async (trx) => {
-      const locked = await trx
-        .from('users')
-        .where('id', userId)
-        .forUpdate()
-        .select('bottles_created_count')
-        .first()
-      const createdCount = Number(locked?.bottles_created_count ?? 0)
-      this.assertBottleCap(createdCount, entitlement)
-
-      let bottleId = input.bottleId
-      let categorySlug: string | null = null
-
-      if (hasMiss && input.bottle) {
-        const category = await Category.find(input.bottle.categoryId, { client: trx })
-        if (!category) {
-          throw new CollectionError('E_CATEGORY_NOT_FOUND', 'Catégorie introuvable', 422)
-        }
-        categorySlug = category.slug
-
-        const bottle = await Bottle.create(
-          {
-            name: input.bottle.name,
-            brand: input.bottle.brand ?? null,
-            origin: input.bottle.origin ?? null,
-            abv: input.bottle.abv ?? null,
-            volumeMl: input.bottle.volumeMl ?? null,
-            barcode: input.bottle.barcode ?? null,
-            photoUrl: input.bottle.photoUrl ?? null,
-            photoStatus: input.bottle.photoUrl ? PENDING_PHOTO_STATUS : null,
-            categoryId: category.id,
-            attrs: input.bottle.attrs ?? {},
-          },
-          { client: trx }
-        )
-
-        await BottleSource.create(
-          {
-            bottleId: bottle.id,
-            source: BOTTLE_SOURCES.user,
-            externalId: `user:${userId}:${bottle.id}`,
-            rawHash: null,
-            lastSyncedAt: DateTime.utc(),
-          },
-          { client: trx }
-        )
-
-        bottleId = bottle.id
-      } else {
-        const catalogBottle = await Bottle.query({ client: trx })
-          .where('id', bottleId!)
-          .whereNull('deleted_at')
+    try {
+      return await db.transaction(async (trx) => {
+        const locked = await trx
+          .from('users')
+          .where('id', userId)
+          .forUpdate()
+          .select('bottles_created_count')
           .first()
-        if (!catalogBottle) {
-          throw new CollectionError('E_BOTTLE_NOT_FOUND', 'Bouteille catalogue introuvable', 404)
+        const createdCount = Number(locked?.bottles_created_count ?? 0)
+        this.assertBottleCap(createdCount, entitlement)
+
+        let bottleId = input.bottleId
+        let categorySlug: string | null = null
+
+        if (hasMiss && input.bottle) {
+          const category = await Category.find(input.bottle.categoryId, { client: trx })
+          if (!category) {
+            throw new CollectionError('E_CATEGORY_NOT_FOUND', 'Catégorie introuvable', 422)
+          }
+          categorySlug = category.slug
+
+          const bottle = await Bottle.create(
+            {
+              name: input.bottle.name,
+              brand: input.bottle.brand ?? null,
+              origin: input.bottle.origin ?? null,
+              abv: input.bottle.abv ?? null,
+              volumeMl: input.bottle.volumeMl ?? null,
+              barcode: input.bottle.barcode ?? null,
+              photoUrl: input.bottle.photoUrl ?? null,
+              photoStatus: input.bottle.photoUrl ? PENDING_PHOTO_STATUS : null,
+              categoryId: category.id,
+              attrs: input.bottle.attrs ?? {},
+            },
+            { client: trx }
+          )
+
+          await BottleSource.create(
+            {
+              bottleId: bottle.id,
+              source: BOTTLE_SOURCES.user,
+              externalId: `user:${userId}:${bottle.id}`,
+              rawHash: null,
+              lastSyncedAt: DateTime.utc(),
+            },
+            { client: trx }
+          )
+
+          bottleId = bottle.id
+        } else {
+          const catalogBottle = await Bottle.query({ client: trx })
+            .where('id', bottleId!)
+            .whereNull('deleted_at')
+            .first()
+          if (!catalogBottle) {
+            throw new CollectionError('E_BOTTLE_NOT_FOUND', 'Bouteille catalogue introuvable', 404)
+          }
+          await catalogBottle.load('category')
+          categorySlug = catalogBottle.category?.slug ?? null
         }
-        await catalogBottle.load('category')
-        categorySlug = catalogBottle.category?.slug ?? null
-      }
 
-      const attrsOverride =
-        input.attrsOverride !== undefined
-          ? this.resolveWineAttrs(categorySlug, null, input.attrsOverride)
-          : null
+        const attrsOverride =
+          input.attrsOverride !== undefined
+            ? this.resolveWineAttrs(categorySlug, null, input.attrsOverride)
+            : null
 
-      const existing = await UserBottle.query({ client: trx })
-        .where('user_id', userId)
-        .where('bottle_id', bottleId!)
-        .first()
-      if (existing) {
-        throw new CollectionError(
-          'E_USER_BOTTLE_EXISTS',
-          'Cette bouteille est déjà dans ta cave',
-          409
+        const existing = await UserBottle.query({ client: trx })
+          .where('user_id', userId)
+          .where('bottle_id', bottleId!)
+          .first()
+        if (existing) {
+          throw new CollectionError(
+            'E_USER_BOTTLE_EXISTS',
+            'Cette bouteille est déjà dans ta cave',
+            409
+          )
+        }
+
+        const row = await UserBottle.create(
+          {
+            userId,
+            bottleId: bottleId!,
+            boughtAt: input.boughtAt,
+            pricePaid: input.pricePaid ?? null,
+            note: input.note ?? null,
+            review: input.review ?? null,
+            fillLevel:
+              entitlement && input.fillLevel !== undefined ? input.fillLevel : FILL_LEVEL_DEFAULT,
+            fillLevelUpdatesCount:
+              entitlement && input.fillLevel !== undefined && input.fillLevel !== FILL_LEVEL_DEFAULT
+                ? 1
+                : 0,
+            photoUrlOverride: entitlement ? (input.photoUrlOverride ?? null) : null,
+            nameOverride: input.nameOverride ?? null,
+            brandOverride: input.brandOverride ?? null,
+            originOverride: input.originOverride ?? null,
+            abvOverride: input.abvOverride ?? null,
+            volumeMlOverride: input.volumeMlOverride ?? null,
+            attrsOverride,
+            isPublic: input.isPublic ?? false,
+          },
+          { client: trx }
         )
-      }
 
-      const row = await UserBottle.create(
-        {
-          userId,
-          bottleId: bottleId!,
-          boughtAt: input.boughtAt,
-          pricePaid: input.pricePaid ?? null,
-          note: input.note ?? null,
-          review: input.review ?? null,
-          fillLevel:
-            entitlement && input.fillLevel !== undefined ? input.fillLevel : FILL_LEVEL_DEFAULT,
-          fillLevelUpdatesCount:
-            entitlement && input.fillLevel !== undefined && input.fillLevel !== FILL_LEVEL_DEFAULT
-              ? 1
-              : 0,
-          photoUrlOverride: entitlement ? (input.photoUrlOverride ?? null) : null,
-          nameOverride: input.nameOverride ?? null,
-          brandOverride: input.brandOverride ?? null,
-          originOverride: input.originOverride ?? null,
-          abvOverride: input.abvOverride ?? null,
-          volumeMlOverride: input.volumeMlOverride ?? null,
-          attrsOverride,
-          isPublic: input.isPublic ?? false,
-        },
-        { client: trx }
-      )
+        await trx
+          .from('users')
+          .where('id', userId)
+          .update({
+            bottles_created_count: createdCount + 1,
+          })
 
-      await trx
-        .from('users')
-        .where('id', userId)
-        .update({
-          bottles_created_count: createdCount + 1,
+        await row.load('bottle', (bottleQuery) => {
+          bottleQuery.preload('category')
         })
 
-      await row.load('bottle', (bottleQuery) => {
-        bottleQuery.preload('category')
+        return row
       })
-
-      return row
-    })
+    } catch (error) {
+      throw this.translateUnique(error)
+    }
   }
 
   async update(userId: number, id: number, input: UpdateUserBottleInput): Promise<UserBottle> {
     const entitlement = await this.entitlements.hasActiveEntitlement(userId)
-    const row = await this.findOwned(userId, id)
 
     this.assertPremiumWrites(entitlement, {
       fillLevel: input.fillLevel,
       photoUrlOverride: input.photoUrlOverride,
     })
+    this.assertStoredPhotoUrls(input, id)
 
-    if (input.boughtAt !== undefined) {
-      row.boughtAt = input.boughtAt
-    }
-    if (input.pricePaid !== undefined) {
-      row.pricePaid = input.pricePaid
-    }
-    if (input.note !== undefined) {
-      row.note = input.note
-    }
-    if (input.review !== undefined) {
-      row.review = input.review
-    }
-    if (input.nameOverride !== undefined) {
-      row.nameOverride = input.nameOverride
-    }
-    if (input.brandOverride !== undefined) {
-      row.brandOverride = input.brandOverride
-    }
-    if (input.originOverride !== undefined) {
-      row.originOverride = input.originOverride
-    }
-    if (input.abvOverride !== undefined) {
-      row.abvOverride = input.abvOverride
-    }
-    if (input.volumeMlOverride !== undefined) {
-      row.volumeMlOverride = input.volumeMlOverride
-    }
-    if (input.attrsOverride !== undefined) {
-      const slug = row.bottle?.category?.slug ?? null
-      row.attrsOverride = this.resolveWineAttrs(slug, row.attrsOverride, input.attrsOverride)
-    }
-    if (input.isPublic !== undefined) {
-      row.isPublic = input.isPublic
-    }
+    return db.transaction(async (trx) => {
+      const row = await this.lockOwned(userId, id, trx)
 
-    if (entitlement && input.fillLevel !== undefined) {
-      if (row.fillLevel !== input.fillLevel) {
-        row.fillLevel = input.fillLevel
-        row.fillLevelUpdatesCount = row.fillLevelUpdatesCount + 1
+      if (input.boughtAt !== undefined) {
+        row.boughtAt = input.boughtAt
       }
-    }
+      if (input.pricePaid !== undefined) {
+        row.pricePaid = input.pricePaid
+      }
+      if (input.note !== undefined) {
+        row.note = input.note
+      }
+      if (input.review !== undefined) {
+        row.review = input.review
+      }
+      if (input.nameOverride !== undefined) {
+        row.nameOverride = input.nameOverride
+      }
+      if (input.brandOverride !== undefined) {
+        row.brandOverride = input.brandOverride
+      }
+      if (input.originOverride !== undefined) {
+        row.originOverride = input.originOverride
+      }
+      if (input.abvOverride !== undefined) {
+        row.abvOverride = input.abvOverride
+      }
+      if (input.volumeMlOverride !== undefined) {
+        row.volumeMlOverride = input.volumeMlOverride
+      }
+      if (input.attrsOverride !== undefined) {
+        const slug = row.bottle?.category?.slug ?? null
+        row.attrsOverride = this.resolveWineAttrs(slug, row.attrsOverride, input.attrsOverride)
+      }
+      if (input.isPublic !== undefined) {
+        row.isPublic = input.isPublic
+      }
 
-    if (entitlement && input.photoUrlOverride !== undefined) {
-      row.photoUrlOverride = input.photoUrlOverride
-    } else if (!entitlement && input.photoUrlOverride === null) {
-      row.photoUrlOverride = null
-    }
+      if (entitlement && input.fillLevel !== undefined) {
+        const nextLevel = input.fillLevel
+        if (Number(row.fillLevel) !== nextLevel) {
+          row.fillLevel = nextLevel
+          row.fillLevelUpdatesCount = Number(row.fillLevelUpdatesCount) + 1
+        }
+      }
 
-    await row.save()
-    await row.load('bottle', (bottleQuery) => {
-      bottleQuery.preload('category')
+      if (entitlement && input.photoUrlOverride !== undefined) {
+        row.photoUrlOverride = input.photoUrlOverride
+      } else if (!entitlement && input.photoUrlOverride === null) {
+        row.photoUrlOverride = null
+      }
+
+      await row.save()
+      await row.load('bottle', (bottleQuery) => {
+        bottleQuery.preload('category')
+      })
+      return row
     })
-    return row
   }
 
   /**
-   * Owner + premium gate for a shelf photo. Does not write the file.
+   * Premium shelf photo. The row lock keeps two uploads from leaving two files.
+   * Signature check happens before the previous file is replaced.
    */
-  async preparePhotoOverride(userId: number, id: number): Promise<UserBottle> {
-    const row = await this.findOwned(userId, id)
+  async saveShelfPhoto(userId: number, id: number, file: MultipartFile): Promise<UserBottle> {
     const entitlement = await this.entitlements.hasActiveEntitlement(userId)
     if (!entitlement) {
       throw this.premiumRequired('photoOverride')
     }
-    return row
+
+    return db.transaction(async (trx) => {
+      const row = await this.lockOwned(userId, id, trx)
+      const storage = new CellarPhotoStorage()
+      try {
+        const stored = await storage.storeOverride(userId, row.id, file)
+        row.photoUrlOverride = stored.publicPath
+        await row.save()
+      } catch (error) {
+        if (!(error instanceof CollectionError)) {
+          await storage.deleteOverride(userId, row.id)
+        }
+        throw error
+      }
+      await row.load('bottle', (bottleQuery) => {
+        bottleQuery.preload('category')
+      })
+      return row
+    })
   }
 
   async delete(userId: number, id: number): Promise<void> {
@@ -398,6 +430,76 @@ export default class CollectionService {
       )
     }
     return mergeWineAttrsOverride(current, patch)
+  }
+
+  private async lockOwned(
+    userId: number,
+    id: number,
+    trx: TransactionClientContract
+  ): Promise<UserBottle> {
+    const row = await UserBottle.query({ client: trx })
+      .where('id', id)
+      .where('user_id', userId)
+      .forUpdate()
+      .first()
+
+    if (!row) {
+      throw new CollectionError(
+        'E_USER_BOTTLE_NOT_FOUND',
+        'Cette bouteille n’est pas dans ta cave',
+        404
+      )
+    }
+
+    row.useTransaction(trx)
+    await row.load('bottle', (bottleQuery) => {
+      bottleQuery.preload('category')
+    })
+    return row
+  }
+
+  /**
+   * Catalog URLs are shown to every signed-in user. A relative `/api/` path
+   * would be fetched with that viewer's bearer token.
+   */
+  private assertStoredPhotoUrls(
+    input: { bottle?: { photoUrl?: string }; photoUrlOverride?: string | null },
+    shelfId?: number
+  ): void {
+    const catalogUrl = input.bottle?.photoUrl
+    if (catalogUrl && !isCatalogPhotoUrl(catalogUrl)) {
+      throw new CollectionError('E_PHOTO_INVALID', 'URL de photo invalide', 422)
+    }
+
+    const override = input.photoUrlOverride
+    if (override === undefined || override === null) {
+      return
+    }
+    if (isHttpPhotoUrl(override)) {
+      return
+    }
+    if (shelfId !== undefined && isOwnShelfPhotoUrl(override, shelfId)) {
+      return
+    }
+    throw new CollectionError('E_PHOTO_INVALID', 'URL de photo invalide', 422)
+  }
+
+  private translateUnique(error: unknown): unknown {
+    if (error instanceof CollectionError) {
+      return error
+    }
+    const constraint = readPostgresUniqueViolation(error)
+    if (constraint === 'bottles_barcode_active_unique') {
+      return new CollectionError('E_BARCODE_EXISTS', 'Ce code-barres est déjà au catalogue', 409)
+    }
+    if (constraint && constraint.includes('user_id_bottle_id')) {
+      return new CollectionError(
+        'E_USER_BOTTLE_EXISTS',
+        'Cette bouteille est déjà dans ta cave',
+        409
+      )
+    }
+    return error
   }
 
   private assertBottleCap(count: number, entitlement: boolean): void {

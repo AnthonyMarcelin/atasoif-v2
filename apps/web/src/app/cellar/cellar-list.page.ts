@@ -40,6 +40,9 @@ export class CellarListPage implements OnInit {
     { slug: 'beer', label: 'Bière' },
     { slug: 'wine', label: 'Vin' },
     { slug: 'gin', label: 'Gin' },
+    { slug: 'cognac', label: 'Cognac' },
+    { slug: 'vodka', label: 'Vodka' },
+    { slug: 'liqueur', label: 'Liqueur' },
     { slug: 'other', label: 'Autre' },
   ];
 

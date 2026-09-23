@@ -17,7 +17,6 @@ export default class CollectionPhotosController {
     const storage = new CellarPhotoStorage()
 
     try {
-      const row = await service.preparePhotoOverride(user.id, Number(params.id))
       const photo = request.file('photo', {
         size: storage.maxBytes(),
         extnames: PHOTO_EXTNAMES,
@@ -29,15 +28,7 @@ export default class CollectionPhotosController {
         throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
       }
 
-      const stored = await storage.storeOverride(user.id, row.id, photo)
-      row.photoUrlOverride = stored.publicPath
-      try {
-        await row.save()
-      } catch (error) {
-        await storage.deleteOverride(user.id, row.id)
-        throw error
-      }
-
+      const row = await service.saveShelfPhoto(user.id, Number(params.id), photo)
       const freemium = await service.freemiumPayload(user.id)
       return response.ok({
         data: new UserBottleTransformer(row).toObject(),

@@ -7,6 +7,7 @@ import BottleSource from '#models/bottle_source'
 import OpenFoodFactsClient from '#services/catalog/open_food_facts_client'
 import UpcItemDbClient from '#services/catalog/upcitemdb_client'
 import type { CatalogLookupOrigin, CatalogProductDraft } from '#services/catalog/catalog_types'
+import { readPostgresUniqueViolation } from '#services/postgres_error'
 
 export type CatalogBarcodeResult = {
   bottle: Bottle
@@ -69,6 +70,21 @@ export default class CatalogLookupService {
   }
 
   async persistDraft(draft: CatalogProductDraft): Promise<Bottle> {
+    try {
+      return await this.writeDraft(draft)
+    } catch (error) {
+      if (readPostgresUniqueViolation(error) !== 'bottles_barcode_active_unique') {
+        throw error
+      }
+      const existing = await this.findLocalByBarcode(draft.barcode)
+      if (!existing) {
+        throw error
+      }
+      return existing
+    }
+  }
+
+  private async writeDraft(draft: CatalogProductDraft): Promise<Bottle> {
     const category = await Category.findByOrFail('slug', draft.categorySlug)
     const rawHash = hashRaw(draft.raw)
 

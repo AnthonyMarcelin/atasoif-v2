@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { CellarDetailPage } from './cellar-detail.page';
 import { CollectionService } from './collection.service';
@@ -62,17 +62,20 @@ describe('CellarDetailPage premium gates', () => {
   beforeEach(async () => {
     state.freemium = freeMeta;
     state.row = bottle();
-    update = jasmine.createSpy('update').and.callFake((_id: number, payload: UpdateUserBottlePayload) =>
-      of({
-        data: {
-          ...state.row,
-          ...payload,
-          fillLevel: payload.fillLevel ?? state.row.fillLevel,
-          fillLevelUpdatesCount: payload.fillLevel !== undefined ? 1 : state.row.fillLevelUpdatesCount,
-        },
-        meta: { freemium: state.freemium },
-      }),
-    );
+    update = jasmine
+      .createSpy('update')
+      .and.callFake((_id: number, payload: UpdateUserBottlePayload) =>
+        of({
+          data: {
+            ...state.row,
+            ...payload,
+            fillLevel: payload.fillLevel ?? state.row.fillLevel,
+            fillLevelUpdatesCount:
+              payload.fillLevel !== undefined ? 1 : state.row.fillLevelUpdatesCount,
+          },
+          meta: { freemium: state.freemium },
+        }),
+      );
     uploadPhoto = jasmine.createSpy('uploadPhoto').and.callFake(() =>
       of({
         data: state.row,
@@ -96,7 +99,8 @@ describe('CellarDetailPage premium gates', () => {
             get: () => of({ data: state.row, meta: { freemium: state.freemium } }),
             update,
             uploadPhoto,
-            delete: () => of({ data: { id: 4, deleted: true }, meta: { freemium: state.freemium } }),
+            delete: () =>
+              of({ data: { id: 4, deleted: true }, meta: { freemium: state.freemium } }),
           },
         },
       ],
@@ -188,5 +192,38 @@ describe('CellarDetailPage premium gates', () => {
       vintage: null,
     });
     expect(payload.fillLevel).toBeUndefined();
+  });
+
+  it('does not let a slower fill save overwrite a newer level', () => {
+    state.freemium = premiumMeta;
+    page.freemium.set(premiumMeta);
+    const pending: Array<() => void> = [];
+    update.and.callFake((_id: number, payload: UpdateUserBottlePayload) => {
+      return new Observable((subscriber) => {
+        pending.push(() => {
+          subscriber.next({
+            data: {
+              ...state.row,
+              fillLevel: payload.fillLevel ?? state.row.fillLevel,
+              fillLevelUpdatesCount: 1,
+            },
+            meta: { freemium: premiumMeta },
+          });
+          subscriber.complete();
+        });
+      });
+    });
+
+    page.onFillLevel(40);
+    page.onFillLevel(15);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.calls.argsFor(0)[1]).toEqual({ fillLevel: 40 });
+
+    pending[0]();
+    expect(update).toHaveBeenCalledTimes(2);
+    expect(update.calls.argsFor(1)[1]).toEqual({ fillLevel: 15 });
+
+    pending[1]();
+    expect(page.entry()?.fillLevel).toBe(15);
   });
 });
