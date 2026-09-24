@@ -2,6 +2,22 @@
 
 Containerize **API + database** only in Compose. Angular/Capacitor stay on the host for native store builds.
 
+## Production Dokploy — API
+
+API Adonis en prod : image **`ghcr.io/anthonymarcelin/atasoif-api`**, trigger **`main`**, webhook Tailscale → Dokploy.
+
+**Guide complet (service, réseau PostGIS, env, secrets) :** [`docs/DOKPLOY-API.md`](./DOKPLOY-API.md).
+
+| Item | Value |
+|---|---|
+| Dockerfile | `Dockerfile` (racine, target `production`) |
+| GHCR image | **`ghcr.io/anthonymarcelin/atasoif-api`** |
+| Tags | `latest` on pushes to **`main`** · also short/long `sha-*` |
+| Workflow | [`.github/workflows/api-ghcr.yml`](../.github/workflows/api-ghcr.yml) |
+| Secret webhook | `DOKPLOY_API_DEPLOY_WEBHOOK` (+ Tailscale secrets partagés avec le site) |
+
+`dev` merges do **not** deploy the API. Site workflow still triggers on **`dev`** (below); API is intentionally on **`main`** for prod.
+
 ## Marketing site (`apps/site`) → GHCR → Dokploy
 
 La landing Astro static a son **propre** image nginx. CI builds and pushes it; **Dokploy does not build from git**.
@@ -57,6 +73,7 @@ Settings → Secrets and variables → Actions → **New repository secret**.
 | Secret | Required | Purpose |
 |---|---|---|
 | `DOKPLOY_SITE_DEPLOY_WEBHOOK` | **Yes** | Full Dokploy deploy webhook URL (Tailscale IP, e.g. `http://100.x.y.z:3000/api/deploy/...`). Copy from Dokploy service `site` — do **not** put it in the repo. |
+| `DOKPLOY_API_DEPLOY_WEBHOOK` | For API deploys | Same pattern for service `api` — see [`DOKPLOY-API.md`](./DOKPLOY-API.md). |
 | `TS_OAUTH_CLIENT_ID` | One of the Tailscale auth options | Tailscale OAuth client ID (`auth_keys` scope, tags include `tag:ci`) |
 | `TS_OAUTH_SECRET` | With OAuth | Tailscale OAuth client secret |
 | `TS_AUTHKEY` | **Or** instead of OAuth | Reusable auth key tagged for CI (`tag:ci`), **ephemeral** (and pre-approved if the tailnet uses device approval) |
@@ -81,10 +98,12 @@ Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`,
 
 | File | Role |
 |---|---|
-| `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime) |
+| `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime; `@atasoif/shared` vendored) |
 | `apps/site/Dockerfile` | Astro static → nginx (built in CI → GHCR) |
-| `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` + Tailscale → Dokploy webhook |
+| `.github/workflows/api-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-api` on **`main`** + Tailscale → Dokploy webhook |
+| `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` on **`dev`** + Tailscale → Dokploy webhook |
 | `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
+| `docs/DOKPLOY-API.md` | Dokploy service `api` (GHCR, PostGIS, env, secrets) |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
 | `docker-compose.prod.yml` | OVH / prod-like overrides |
@@ -131,6 +150,7 @@ The Compose project is explicitly named **`atasoif`** (`name: atasoif` in `docke
 | **Prod** | Postgres | *(not published)* | Reachable only on the Compose network as hostname `postgres` |
 | **Prod** | API | `${API_PORT:-3000} → 3000` | Put TLS reverse proxy in front later (E0.7) |
 | **Dokploy** | Site | host → **80** | Prebuilt GHCR image `atasoif-site` |
+| **Dokploy** | API | host → **3000** | Prebuilt GHCR image `atasoif-api` · DB `infra-postgis-rfekdz` · see [`DOKPLOY-API.md`](./DOKPLOY-API.md) |
 
 ## `DB_*` cheat sheet
 

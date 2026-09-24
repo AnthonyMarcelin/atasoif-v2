@@ -1,0 +1,121 @@
+# Build Adonis API image and push to GHCR for Dokploy Docker provider.
+# Image: ghcr.io/anthonymarcelin/atasoif-api
+# Trigger: push/merge to main (prod) — aligned with historical site deploy preference.
+# After push: join Tailscale then POST Dokploy deploy webhook (secrets only — never commit URL).
+name: API GHCR
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "packages/shared/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "docker-compose.prod.yml"
+      - "docker-compose.dev.yml"
+      - "package.json"
+      - "bun.lock"
+      - ".dockerignore"
+      - ".github/workflows/api-ghcr.yml"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: anthonymarcelin/atasoif-api
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # GHA layer cache (cache-from/to type=gha)
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=,format=short
+            type=sha,prefix=sha-,format=long
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # GitHub-hosted runners are not on Tailscale; join the tailnet then hit Dokploy's private webhook.
+  notify-dokploy:
+    name: Notify Dokploy (Tailscale)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    permissions:
+      contents: read
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          # Prefer OAuth client (auth_keys scope + tag:ci). Else set TS_AUTHKEY only
+          # (reusable + ephemeral + tagged auth key recommended).
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          authkey: ${{ secrets.TS_AUTHKEY }}
+          tags: tag:ci
+          version: latest
+
+      - name: Trigger Dokploy API deploy webhook
+        env:
+          DOKPLOY_API_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_API_DEPLOY_WEBHOOK }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DOKPLOY_API_DEPLOY_WEBHOOK:-}" ]; then
+            echo "::error::Missing secret DOKPLOY_API_DEPLOY_WEBHOOK (full Dokploy deploy URL on Tailscale)"
+            exit 1
+          fi
+
+          # Wait for peer visibility without printing the webhook URL (secret).
+          webhook_host="$(python3 -c 'import os, urllib.parse; print(urllib.parse.urlparse(os.environ["DOKPLOY_API_DEPLOY_WEBHOOK"]).hostname or "")')"
+          if [ -n "${webhook_host}" ]; then
+            echo "Waiting for Tailscale peer ${webhook_host}…"
+            # Fail loudly if the Dokploy host never becomes reachable on the tailnet.
+            tailscale ping -c 5 "${webhook_host}"
+          fi
+
+          # Do not echo the URL or response body (may contain tokens).
+          http_code="$(curl --silent --show-error --output /tmp/dokploy-webhook.out \
+            --write-out '%{http_code}' --max-time 60 \
+            -X POST \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d '{}' \
+            "${DOKPLOY_API_DEPLOY_WEBHOOK}")"
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "::error::Dokploy deploy webhook failed with HTTP ${http_code}"
+            exit 1
+          fi
+          echo "Dokploy deploy webhook accepted (HTTP ${http_code})"
