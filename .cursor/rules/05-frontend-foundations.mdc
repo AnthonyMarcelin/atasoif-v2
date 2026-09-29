@@ -1,0 +1,67 @@
+---
+description: Apply mobile-first, accessible, responsive, performant, and consistent frontend development practices.
+globs: "**/*.{html,css,scss,sass,less,js,jsx,ts,tsx,vue,astro,antlers.php}"
+alwaysApply: false
+---
+
+# Frontend foundations
+
+## Responsive strategy
+
+- Design and implement mobile-first.
+- Start with the smallest supported viewport, then enhance layouts progressively for larger screens.
+- Treat tablet and desktop layouts as deliberate adaptations, not scaled-up mobile screens.
+- Avoid fixed dimensions that break content, localization, zoom, or small screens.
+- Test important interfaces across representative mobile, tablet, and desktop viewport sizes.
+
+## Accessibility
+
+- Treat accessibility as a functional requirement, not an optional polish step.
+- Use semantic HTML and native interactive elements before recreating behavior with generic elements.
+- Preserve keyboard navigation, visible focus states, logical focus order, and accessible names.
+- Associate form controls with labels and expose validation errors clearly.
+- Provide text alternatives for meaningful images and hide purely decorative images from assistive technology.
+- Maintain sufficient color contrast and never communicate meaning through color alone.
+- Respect reduced-motion preferences for non-essential animation.
+- Do not add ARIA when native semantics already provide the correct behavior.
+- Follow the project's target WCAG level; use WCAG 2.2 AA as the default target when none is specified.
+
+## Components and consistency
+
+- Reuse existing components, design tokens, layout primitives, form controls, icons, and interaction patterns before creating new ones.
+- Do not create a duplicate component because its existing API has not been inspected.
+- Extract a reusable component when repetition is real and the shared behavior is stable.
+- Do not force reuse when a project-specific requirement explicitly makes isolated implementations clearer or safer.
+- Keep component responsibilities focused and APIs understandable.
+- Preserve visual and behavioral consistency across equivalent actions.
+
+## User experience
+
+- Prioritize clarity, task completion, and understandable feedback over decorative complexity.
+- Provide explicit loading, empty, success, and error states when relevant.
+- Write client-facing content in French unless the project specifies another locale or multilingual support.
+- Make error messages actionable and avoid exposing technical internals.
+- Prevent destructive accidental actions with suitable confirmation or undo mechanisms.
+
+## Performance
+
+- Avoid unnecessary client-side JavaScript and unnecessary rerenders.
+- Optimize images for their displayed size and format.
+- Use responsive images and lazy loading where appropriate without delaying critical content.
+- Load non-critical code and assets progressively.
+- Avoid large dependencies for minor interface behavior.
+- Protect Core Web Vitals and perceived responsiveness when making visual changes.
+
+## Localization
+
+- In multilingual projects, do not hardcode translatable interface strings in components.
+- Use the project's localization system and stable translation keys.
+- Ensure layouts tolerate longer translated content.
+- Keep locale-specific formatting for dates, numbers, currencies, and pluralization in the localization layer.
+
+## Validation
+
+- Check keyboard operation and focus behavior for interactive changes.
+- Check responsive behavior and content overflow.
+- Run the project's linting, type checking, component tests, and accessibility checks when available.
+- Report accessibility or responsive limitations that could not be validated automatically.

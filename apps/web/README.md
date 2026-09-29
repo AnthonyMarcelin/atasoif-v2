@@ -1,5 +1,7 @@
 # Web
 
+Angular 20 app for À ta soif. Prefer repo-root scripts (`bun run dev:web`). Package manager: **Bun** (see [`docs/BUN.md`](../../docs/BUN.md)).
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.32.
 
 ## Development server
@@ -7,7 +9,8 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 To start a local development server, run:
 
 ```bash
-ng serve
+bun run start
+# from monorepo root: bun run dev:web
 ```
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.

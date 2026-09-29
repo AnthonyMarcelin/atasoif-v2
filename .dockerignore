@@ -1,0 +1,19 @@
+node_modules
+dist
+.git
+.angular
+coverage
+tmp
+uploads
+# Exclude Angular app from API/site images, but keep package.json so Bun
+# workspace lockfile resolution works for apps/site Dockerfile stubs.
+apps/web/**
+!apps/web/package.json
+**/*.md
+docs
+.cursor
+.env
+.env.*
+!**/.env.example
+**/node_modules
+**/.DS_Store

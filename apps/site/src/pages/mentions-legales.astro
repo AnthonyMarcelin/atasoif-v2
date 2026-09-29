@@ -1,0 +1,70 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+
+const contactEmail = 'contact@atasoif.fr';
+const updated = '18 septembre 2026';
+---
+
+<LegalLayout
+  title="Mentions légales"
+  description="Mentions légales du site atasoif.fr (À ta soif)."
+>
+  <p class="meta">Dernière mise à jour : {updated}</p>
+
+  <h2>Éditeur du site</h2>
+  <p>
+    Le site <strong>atasoif.fr</strong> est édité par :
+  </p>
+  <ul>
+    <li>Nom de l'entreprise : <strong>EI Anthony Marcelin</strong></li>
+    <li>
+      Nom commercial :
+      <a href="https://forgedigitalesolutions.com" rel="noopener noreferrer" target="_blank"
+        >Forge Digitale Solutions</a
+      >
+    </li>
+    <li>Statut juridique : Entrepreneur individuel (micro-entreprise)</li>
+    <li>SIREN : <strong>100 857 838</strong></li>
+    <li>Code APE : 62.01Z (Programmation informatique)</li>
+    <li>Adresse : 6 rue Saint-Julien, 33112 Saint-Laurent-Médoc, France</li>
+    <li>TVA : non applicable, art. 293 B du CGI</li>
+    <li>Responsable légal / directeur de la publication : Anthony Marcelin</li>
+    <li>
+      Contact produit À ta soif :
+      <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+    </li>
+  </ul>
+
+  <h2>Hébergement</h2>
+  <p>
+    Le site est hébergé par <strong>OVH SAS</strong>, 2 rue Kellermann, 59100 Roubaix, France
+    (<a href="https://www.ovhcloud.com" rel="noopener noreferrer" target="_blank">www.ovhcloud.com</a>),
+    sur un serveur VPS déployé via Dokploy.
+  </p>
+
+  <h2>Objet du site</h2>
+  <p>
+    atasoif.fr présente le service <strong>À ta soif</strong>, une application mobile
+    de cave numérique multi-alcools (carnet de bouteilles). En phase de pré-lancement,
+    le site propose notamment une liste d'attente (collecte d'adresse e-mail).
+  </p>
+
+  <h2>Propriété intellectuelle</h2>
+  <p>
+    L'ensemble des éléments du site (textes, graphismes, logos, icônes, maquettes,
+    structure) est protégé par le droit de la propriété intellectuelle. Toute
+    reproduction non autorisée est interdite.
+  </p>
+
+  <h2>Alcool</h2>
+  <p>
+    L'abus d'alcool est dangereux pour la santé. À consommer avec modération.
+    Contenu réservé aux personnes majeures (18 ans et plus).
+  </p>
+
+  <h2>Données personnelles</h2>
+  <p>
+    Pour le traitement des données collectées via le site, voir la
+    <a href="/confidentialite">politique de confidentialité</a>.
+  </p>
+</LegalLayout>

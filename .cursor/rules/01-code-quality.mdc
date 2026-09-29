@@ -1,0 +1,53 @@
+---
+description: Enforce clear, maintainable, minimal, and explicit code across the project.
+alwaysApply: true
+---
+
+# Code quality
+
+## Design and structure
+
+- Keep functions, methods, classes, modules, and components focused on one clear responsibility.
+- Prefer explicit data flow and dependencies over hidden coupling or global state.
+- Use descriptive names that communicate intent without requiring comments.
+- Avoid deeply nested control flow when guard clauses or smaller units improve readability.
+- Avoid god classes, oversized services, duplicated business logic, and cross-layer leakage.
+- Preserve existing architectural boundaries unless a deliberate architecture change is required.
+
+## Simplicity
+
+- Choose the simplest implementation that fully satisfies the requirement.
+- Avoid premature optimization, premature abstraction, and generic systems created for hypothetical future needs.
+- Extract an abstraction only when it removes real duplication, expresses a stable concept, or enforces an important boundary.
+- Do not create wrappers that merely rename a framework API without adding meaningful behavior.
+- Reuse existing helpers, services, components, validation rules, and patterns when they remain appropriate.
+
+## Dependencies
+
+- Check the language, framework, and project capabilities before adding a package.
+- Add dependencies only when they provide clear value that justifies maintenance, security, and upgrade costs.
+- Prefer mature, actively maintained, well-documented dependencies.
+- Avoid overlapping libraries that solve the same concern.
+- Remove unused dependencies and imports.
+
+## Error handling
+
+- Never ignore or silently swallow errors.
+- Do not use empty catch blocks.
+- Catch errors only when the current layer can recover, add useful context, translate the error, or perform required cleanup.
+- Preserve the original cause when wrapping an error.
+- Return or display actionable messages appropriate to the audience without leaking sensitive internals.
+- Log operationally useful context while excluding secrets and unnecessary personal data.
+
+## Configuration
+
+- Do not hardcode environment-specific URLs, credentials, tokens, ports, or deployment values in application code.
+- Centralize configuration through the framework's configuration system and environment variables.
+- Validate required configuration at startup when practical.
+- Provide safe documented defaults only when a default is genuinely valid.
+
+## Cleanup
+
+- Do not leave commented-out code, unused variables, dead branches, placeholder implementations, or unexplained TODO comments.
+- Keep formatting, static analysis, and linting consistent with the project's configured tools.
+- Limit changes to the requested scope unless an adjacent correction is necessary for correctness.

@@ -1,34 +1,38 @@
-# UX — Ajout bouteille (chemin conversion)
+# UX — Add bottle (conversion path)
 
-Objectif : ajouter une bouteille en **moins de 30 secondes**.  
-C’est le funnel qui fait passer de 0 → 10 → paywall.
+Goal: add a bottle in **under 30 seconds**.  
+This is the funnel that moves users from 0 → 10 → paywall.
 
 ## Flow
 
 ```
-[Rechercher] ──hit──► [Prérempli éditable] ──► [Confirmer]
-     │                        ▲
-     └──miss──► [Créer fiche]─┘
+[Search] ──hit──► [Editable prefill] ──► [Confirm]
+    │                      ▲
+    └──miss──► [Create entry]─┘
 ```
 
-## Règles
+## Rules
 
-1. **Search first** — champ unique, debounce ~250ms, résultats instantanés (nom, marque, barcode).
-2. **Hit catalogue** — préremplit name, brand, origin, abv, volume, photo, attrs.
-3. **Tout est éditable** — note, avis, prix payé, et aussi les champs catalogue via *overrides* (`nameOverride`, `photoUrlOverride`, …). La fiche globale n’est pas écrasée par défaut.
-4. **Photo** — garder la photo catalogue ou remplacer (upload). Preview immédiate.
-5. **Miss** — “Pas trouvé ? Ajouter” → crée `Bottle` (source=`user`) + `UserBottle`.
-6. **Gate 10** — au 11e essai : paywall abo (mensuel / annuel). Compteur visible avant (ex. `7/10`).
-7. **Erreurs** — messages courts, jamais de mur de validation.
+1. **Search first** — single field, ~250ms debounce, instant results (name, brand, barcode).
+2. **Catalog hit** — prefills name, brand, origin, abv, volume, **catalog photo**, attrs.
+3. **Everything editable that the plan allows** — memory fields first-class: **price paid**, **where bought**, **personal note/review**. Photo replace and fill-level jauge are **premium** (free keeps catalog/seed photo; no interactive jauge).
+4. **Photo** — free: catalog/DB photo only. Premium: replace (upload) with immediate preview.
+5. **Miss** — “Not found? Add it” → create `Bottle` (`source=user`) + `UserBottle`.
+6. **Gates** — on the 11th bottle **or** when free tries photo override / jauge: subscription paywall (monthly / yearly). Show counter earlier (e.g. `7/10`).
+7. **Errors** — short messages, never a wall of validation.
+
+Do not design this flow by copying atasoif.fr v1. Optimize for “I remember this bottle.”
 
 ## Anti-patterns
 
-- Formulaire 15 champs avant la recherche
-- Fiche catalogue non modifiable (“c’est dans la base, point”)
-- Paywall surprise sans compteur
-- Trop d’étapes / modales empilées
+- 15-field form before search
+- Read-only catalog hit (“it’s in the DB, deal with it”)
+- Surprise paywall without a counter
+- Hiding premium photo/jauge controls client-side without server 403
+- Too many stacked steps / modals
 
-## Copy (ton)
+## Copy (tone)
 
-- Tutoiement, court, un peu insolent
-- Paywall : “Cave pleine — passe premium pour continuer” (pas “limite atteinte”)
+- Informal French “tu”, short, slightly cheeky
+- Paywall example: “Cave pleine — passe premium pour continuer” (not “limite atteinte”)
+- Feature upsell example: short FR for photo perso / jauge (no eng jargon)

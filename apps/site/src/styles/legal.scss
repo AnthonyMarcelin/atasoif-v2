@@ -1,0 +1,78 @@
+/* Legal document pages (mentions, CGU, privacy) */
+
+.legal-page {
+  padding-block: 48px 72px;
+}
+
+.legal-page__inner {
+  max-width: 720px;
+}
+
+.legal-page__eyebrow {
+  margin: 0 0 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  a {
+    color: var(--color-ink-3);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-accent);
+    }
+  }
+}
+
+.legal-page__title {
+  margin: 0 0 28px;
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.legal-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  color: var(--color-ink-2);
+  font-size: 15px;
+  line-height: 1.65;
+
+  h2 {
+    margin: 8px 0 0;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+  }
+
+  p,
+  ul {
+    margin: 0;
+  }
+
+  ul {
+    padding-left: 1.2em;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  a {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--color-ink-disabled);
+    text-transform: uppercase;
+  }
+}

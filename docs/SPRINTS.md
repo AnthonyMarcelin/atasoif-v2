@@ -1,53 +1,232 @@
-# Sprints
+# Sprint planning
 
-Dev solo + Cursor. Un sprint = un objectif shippable.
+Solo + Cursor. One sprint ≈ focused outcome. Prefer finishing an epic slice over starting three.
 
-## Sprint 0 — Fondations
+**North star:** memory cellar (where / price / was it good) — not social, not v1 clone.
 
-- [x] Monorepo pnpm (`apps/api`, `apps/web`, `packages/shared`)
-- [x] Schéma Prisma (catalogue, collection, social, billing, auth)
-- [x] Tokens design cave nocturne
-- [x] Doc UX ajout bouteille
-- [x] `pnpm install` + Prisma generate + tests API
-- [ ] Postgres local (`docker compose up -d`) + migrate + seed
-- [ ] Repo GitHub **privé**
-- [ ] Brancher `PrismaModule` dans `AppModule`
+Epics: [`EPICS.md`](./EPICS.md)
 
-## Sprint 1 — Auth + health
+---
 
-- Better Auth (email + Google ; Apple plus tard stores)
-- Endpoints health / me
-- Guard Nest + session cookie
+## Cadence
 
-## Sprint 2 — Cave MVP
+| | |
+|---|---|
+| Length | Flexible (outcome-based), aim 3–7 days of focused work |
+| Branch | Feature from `dev` → PR into `dev` → release PR `dev` → `main` |
+| DoD | See `90-project-context.mdc` + sprint exit criteria below |
+| Language | Code/docs/commits EN · UI FR |
 
-- CRUD catégories / search bottles
-- Add bottle flow (search → prefill → overrides + photo)
-- Compteur freemium 10
-- Migration 15 bouteilles v1
+---
 
-## Sprint 3 — Seed catalogue
+## Sprint 0 — Foundations
 
-- Import Open Food Facts (filtre alcool)
-- `BottleSource` + script one-shot
-- Cron diff (structure, pas Bright Data)
+**Epics:** E0  
+**Status:** ✅ Closed
 
-## Sprint 4 — Mobile + IAP
+- [x] Bun monorepo (`apps/*`, `packages/*`) + Adonis `apps/api` on Node ≥ 24 (was pnpm + standalone npm lock)
+- [x] Lucid domain migrations (catalog, collection, social, billing, auth)
+- [x] Dark cellar design tokens
+- [x] Add-bottle UX doc
+- [x] Adonis 7 install (Node ≥ 24) + Ally stubs (Google/Facebook)
+- [x] Cursor rules (global + project context)
+- [x] Local Postgres (`docker compose`) + migrate + seed
+- [x] Nest archived under `archive/nest-api`
+- [x] `GET /health` reports `database: up`
 
-- Capacitor iOS/Android
-- RevenueCat / StoreKit + Play Billing
-- Paywall UI
+### Exit criteria
 
-## Sprint 5 — Social
+- Adonis API boots against local Postgres
+- Categories seeded (9)
+- Lucid migrations applied
+- `/health` → `{ status: "ok", database: "up" }`
 
-- Amis (pseudo / lien)
-- Partage collection
-- Messagerie
-- Signalement / blocage
+---
 
-## Sprint 6 — Stores + legal
+## Sprint 1 — Auth
+
+**Epics:** E1  
+**Tickets:** [`docs/tickets/E1-identity.md`](./tickets/E1-identity.md) — T01→T08 (T09 deferred to S5)  
+**Depends on:** Sprint 0 closed + Adonis API up
+
+### Scope
+
+- T01 Adonis Auth bootstrap + `/health`
+- T02 Signup / login / logout / me
+- T03 Verify email + password reset
+- T04 Auth UI shell (Angular)
+- T05 Wire web → Bearer tokens
+- T06 Pseudo + visibility (should)
+- T07 Ally Google (should)
+- T08 Ally Facebook (should)
+
+### Explicitly out
+
+- Apple Sign In → **E1-T09 / Sprint 5** (custom Ally driver)
+- Social friends / FB friends import
+
+### Exit criteria
+
+- New user can register, verify (or dev bypass documented), sign in, hit a protected route
+- Unauthenticated requests rejected server-side
+- All Must tickets T01–T05 done (T03 may ship with documented mail bypass)
+---
+
+## Sprint 2 — Memory cellar MVP
+
+**Epics:** E2 (core), E4.1 stub paywall UI optional  
+**Tickets:** [`docs/tickets/E2-memory-cellar.md`](./tickets/E2-memory-cellar.md) — T01→T09 Must (T10 Should; T11–T12 later)  
+**Depends on:** Sprint 1
+
+### Scope
+
+- T01 Schema: `boughtAt` = « Acheté chez » (existing column) + `fillLevel` column (default 100; **write = premium** in T03)
+- T02 Catalog search API (local DB)
+- T03 Collection CRUD API + freemium (10-bottle cap **+** server premium gates for jauge / photo override) + **`emailVerified` hard-gate** on cellar routes
+- T04 Photo upload/storage — **premium** user override; free uses catalog/seed photo only
+- T05 Cave list / filter UI + freemium `x/10` counter
+- T06 Bottle detail UI (memory fields + jauge display / free locked teaser)
+- T07 Add flow UI: search → hit prefill / miss create → confirm (&lt;30s); photo replace + jauge = premium upsell
+- T08 Edit / delete UI + jauge swipe (**premium**)
+- T09 Ops **thin** KPI API aligned to `docs/conception/ops/` mockups (Habitudes + cellar funnel stages; stub billing/social)
+- T10 Paywall screen shell (Should — 11th bottle **or** photo/jauge upsell; non-billing OK if Sprint 4 not ready)
+
+### Explicitly out
+
+- Full ops / admin UI (10 screens) — API feed only
+- Catalog remote lookup / OFF bulk import (Sprint 3)
+- IAP purchase (Sprint 4)
+- Friends / social
+- Inventing KPIs not present in ops mockups
+- Gating « Acheté chez », price, notes/review behind premium (out of scope for freemium photo/jauge decision)
+
+### Exit criteria
+
+- Happy path free: search → add → see bottle with **lieu / price / note / catalog photo** in &lt;30s UX intent
+- « Acheté chez » required end-to-end (schema + UI); fill-level column defaulted; **interactive jauge + user photo = premium**
+- 11th bottle blocked without entitlement (server + UI)
+- Free plan blocked **server-side** on `fillLevel` write and `photoUrlOverride` / upload (403 premium); UI does not bypass
+- Unverified email cannot hit cellar APIs (403 `E_EMAIL_UNVERIFIED`)
+- Ops thin endpoints can feed Habitudes-style aggregates from real cellar data (live vs stub documented)
+- No dependency on atasoif.fr v1 layouts
+
+---
+
+## Sprint 3 — Catalog seed
+
+**Epics:** E3.1–E3.3, E2.13 migrate v1  
+**Depends on:** Sprint 2 (search exists); can start import scripts earlier  
+**Plan:** [`DATABASE.md`](./DATABASE.md) (OFF dump primary · cache-first EAN · UPCitemdb nurse)
+
+### Scope
+
+- OFF dump filter → upsert bottles + `BottleSource` ([`CATALOG-SEED.md`](./CATALOG-SEED.md) · Ace `catalog:off-dump`)
+- One-shot script + documented runbook
+- Cron/diff skeleton (schedule + soft-delete)
+- Migrate personal ~15 bottles from v1 DB
+- Optional: UPCitemdb ~100/day nurse from curated EAN list (pre-launch gaps only)
+
+### Exit criteria
+
+- Search returns a useful volume of real products (beer/wine/spirits)
+- Re-run import is idempotent
+- Owner collection migrated or import path documented
+
+---
+
+## Sprint 4 — Billing + Capacitor
+
+**Epics:** E4 + E5 (bootstrap)  
+**Depends on:** Sprint 2 freemium gate
+
+### Scope
+
+- Capacitor iOS/Android from `apps/web`
+- RevenueCat (or chosen IAP layer)
+- Entitlement sync → `Subscription`
+- Real paywall (monthly / yearly)
+- Restore purchases
+
+### Exit criteria
+
+- Sandbox purchase unlocks &gt;10 bottles on device build
+- API trusts verified entitlement (not client flag alone)
+
+---
+
+## Sprint 5 — Harden mobile + Apple auth
+
+**Epics:** E1.5, E5.2–E5.4, start E7  
+**Depends on:** Sprint 4
+
+### Scope
 
 - Apple Sign In
-- Age rating 17+
-- RGPD / CGU
-- Screenshots + listing
+- Icons, splash, store assets draft
+- Camera / photo picker for bottles
+- Privacy policy + ToS drafts
+
+### Exit criteria
+
+- TestFlight / internal testing track installable
+- Auth works with email + Google + Apple on device
+
+---
+
+## Sprint 6 — Store release
+
+**Epics:** E7.1–E7.4  
+**Depends on:** Sprint 5
+
+### Scope
+
+- Store listings FR, age 17+, alcohol compliance review
+- Account deletion / export
+- Production OVH + monitoring basics
+- Submit iOS + Android
+
+### Exit criteria
+
+- Apps submitted (or live)
+- Legal pages linked in-app and on atasoif.fr
+
+---
+
+## Sprint 7+ — Social & growth (backlog)
+
+**Epics:** E6, E7.5, E3.4
+
+- Friends / share collection / messaging
+- Report & block
+- TikTok content pipeline (outside repo or separate tooling)
+- Optional `locales/` — only on explicit request
+
+Do not pull Sprint 7 into MVP unless memory + paywall are live.
+
+---
+
+## Priority board (now → later)
+
+```text
+NOW     S0 close → S1 Auth → S2 Memory cellar
+NEXT    S3 Catalog seed ∥ polish S2
+THEN    S4 IAP + Capacitor → S5 Apple → S6 Stores
+LATER   S7 Social / growth / locales
+```
+
+## Risks to watch each sprint
+
+| Risk | Mitigation |
+|---|---|
+| Scope creep (social, scrapers, i18n) | Epics E6 / E3.5 / locales explicitly later |
+| Add flow too heavy | UX-ADD-BOTTLE.md; memory fields first |
+| IAP complexity | Paywall shell in S2; real IAP only S4 |
+| Catalog empty → bad conversion | S3 right after S2, not after stores |
+| Solo bandwidth | One sprint goal; no parallel epics unless blocked |
+
+## Suggested Cursor workflow
+
+1. Open sprint section + linked epic IDs
+2. One feature branch per story cluster
+3. Implement → narrow tests → update sprint checkboxes in this file
+4. PR to `dev`

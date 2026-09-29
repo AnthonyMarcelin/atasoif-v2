@@ -1,74 +1,101 @@
 # À ta soif ! — v2
 
-Cave numérique multi-alcools (whisky, rhum, bière, vin…).  
-Monorepo **privé** recommandé (app payante + secrets stores / OAuth).
+Digital multi-alcohol cellar (whisky, rum, beer, wine, and more).  
+**Private** repository recommended (paid app + store / OAuth secrets).
 
 ## Stack
 
-| Couche | Techno |
+| Layer | Technology |
 |---|---|
-| API | NestJS + Prisma + PostgreSQL |
-| Auth | Better Auth (email + Google + Apple) |
+| Tooling | **Bun** (package manager + scripts) · **Node ≥ 24** (Adonis runtime) |
+| API | AdonisJS 7 + Lucid + PostgreSQL |
+| Auth | Adonis Auth (access tokens) + Ally (Google, Facebook; Apple custom driver) |
 | Front | Angular 20 + Capacitor (iOS / Android) |
-| Host | VPS OVH |
-| Billing | IAP (RevenueCat) — 3,99€/mois · 39,99€/an |
+| Host | OVH VPS |
+| Billing | IAP (RevenueCat) — €3.99/month · €39.99/year |
 
 ## Structure
 
 ```
 atasoif-v2/
-├── apps/api          # NestJS
-├── apps/web          # Angular (+ Capacitor plus tard)
-├── packages/shared   # constantes / types partagés
-└── docs/             # produit, UX, sprints
+├── apps/api          # AdonisJS 7 (Bun workspace; Node ≥ 24 to run ace/server)
+├── apps/web          # Angular (+ Capacitor later)
+├── packages/shared   # shared constants / types
+├── archive/nest-api  # former Nest/Prisma API (reference only)
+└── docs/             # product, UX, epics, sprints
 ```
 
-Monorepo OK pour les stores : Capacitor build depuis `apps/web` uniquement.
+Planning: [`docs/EPICS.md`](docs/EPICS.md) · [`docs/SPRINTS.md`](docs/SPRINTS.md) · [`docs/tickets/`](docs/tickets/) · [`docs/DATABASE.md`](docs/DATABASE.md) · [`docs/DOCKER.md`](docs/DOCKER.md) · [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md) · [`docs/BUN.md`](docs/BUN.md)
 
-## Décisions produit
+Bun workspaces cover `apps/*` + `packages/*` (single root `bun.lock`).
 
-- Catalogue **global** + collection **perso**
-- Freemium : **10 bouteilles** total, puis abo
-- Social : amis + partage collection + messagerie (après MVP)
-- IA : **hors app** (com TikTok uniquement)
-- Seed start : Open Food Facts + migration v1 + catégories
+## Product decisions
 
-## UX critique — ajout bouteille (conversion)
+- **Global** catalog + **personal** collection
+- Freemium: **10 bottles** total, then subscription
+- Social: friends + collection sharing + messaging (after MVP)
+- AI: **outside the app** (TikTok content only)
+- Start seed: Open Food Facts + v1 migration + categories
 
-1. Recherche catalogue (debounce)
-2. Hit → formulaire **prérempli**
-3. Tous les champs + photo **modifiables** (overrides `UserBottle`)
-4. Miss → création fiche catalogue + ajout collection
-5. Gate freemium claire, fun, non culpabilisante
+## Critical UX — add bottle (conversion)
 
-Détail : [`docs/UX-ADD-BOTTLE.md`](docs/UX-ADD-BOTTLE.md)
+1. Search catalog (debounce)
+2. Hit → **prefilled** form
+3. All fields + photo **editable** (`UserBottle` overrides)
+4. Miss → create catalog entry + add to collection
+5. Clear, playful freemium gate
+
+Details: [`docs/UX-ADD-BOTTLE.md`](docs/UX-ADD-BOTTLE.md)
 
 ## Design
 
-Direction **cave nocturne / ambre** — tokens dans `apps/web/src/styles/_tokens.scss`.
+Direction **dark cellar / amber** — tokens in `apps/web/src/styles/_tokens.scss`.  
+Client-facing copy is **French only** (MVP); code, commits, and technical docs are **English**.  
+Later: optional i18n via a `locales/` folder — not in scope until requested.
 
 ## Setup
 
-```bash
-cd atasoif-v2
-cp .env.example .env   # puis DATABASE_URL
-pnpm install
-pnpm --filter @atasoif/shared build
-pnpm db:generate
-pnpm db:migrate
-pnpm db:seed
-pnpm dev:api           # :3000
-pnpm dev:web           # :4200
-```
-
-## Repo Git
-
-Créer un repo GitHub **privé** (pas public) quand tu es prêt :
+Requires **Bun ≥ 1.2** and **Node ≥ 24** (Adonis 7 runtime). See [`docs/BUN.md`](docs/BUN.md).
 
 ```bash
 cd atasoif-v2
-git init
-gh repo create atasoif-v2 --private --source=. --remote=origin
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+# set APP_KEY: cd apps/api && node ace generate:key
+
+bun install
+bun run --filter @atasoif/shared build
+bun run db:migrate
+bun run db:seed
+bun run dev:api           # :3000 (Node ace serve)
+bun run dev:web           # :4200
 ```
 
-La v1 (`SpiritsManagement-*`) reste intacte à côté pour migration.
+Auth locally (access tokens + `/health`): see [`docs/STACK-ADONIS.md`](docs/STACK-ADONIS.md#local-auth-adonis-access-tokens). Keep `CORS_ORIGIN=http://localhost:4200` for the Angular app.
+
+### Docker (API + Postgres)
+
+Full guide: [`docs/DOCKER.md`](docs/DOCKER.md).
+
+```bash
+# Dev — API + Postgres in containers (Postgres on host :5432)
+bun run docker:dev
+
+# Prod-like — Postgres not published on host; set secrets in .env
+bun run docker:prod
+
+bun run docker:down
+```
+
+Day-to-day: Postgres in Docker (`localhost:5432`) + Adonis on the host (`bun run dev:api`). Full `docker:dev` validates prod-like topology.
+
+## Git
+
+- `main` — production
+- `dev` — active development
+- Feature branches from `dev`
+- Conventional Commits in English, no AI co-authors
+
+## Cursor rules
+
+Project rules live in `.cursor/rules/` (from [AnthonyMarcelin/cursor-rules](https://github.com/AnthonyMarcelin/cursor-rules), without Laravel stack rules). See `90-project-context.mdc` for identity and commands.

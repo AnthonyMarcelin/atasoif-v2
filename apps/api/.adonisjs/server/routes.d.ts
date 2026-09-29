@@ -1,0 +1,41 @@
+import '@adonisjs/core/types/http'
+
+type ParamValue = string | number | bigint | boolean
+
+export type ScannedRoutes = {
+  ALL: {
+    'health': { paramsTuple?: []; params?: {} }
+    'auth.new_account.store': { paramsTuple?: []; params?: {} }
+    'auth.access_tokens.store': { paramsTuple?: []; params?: {} }
+    'auth.email_verifications.store': { paramsTuple?: []; params?: {} }
+    'auth.password_resets.store': { paramsTuple?: []; params?: {} }
+    'auth.password_resets.update': { paramsTuple?: []; params?: {} }
+    'profile.profile.show': { paramsTuple?: []; params?: {} }
+    'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
+    'profile.email_verifications.resend': { paramsTuple?: []; params?: {} }
+    'profile.profile.update': { paramsTuple?: []; params?: {} }
+  }
+  GET: {
+    'health': { paramsTuple?: []; params?: {} }
+    'profile.profile.show': { paramsTuple?: []; params?: {} }
+  }
+  HEAD: {
+    'health': { paramsTuple?: []; params?: {} }
+    'profile.profile.show': { paramsTuple?: []; params?: {} }
+  }
+  POST: {
+    'auth.new_account.store': { paramsTuple?: []; params?: {} }
+    'auth.access_tokens.store': { paramsTuple?: []; params?: {} }
+    'auth.email_verifications.store': { paramsTuple?: []; params?: {} }
+    'auth.password_resets.store': { paramsTuple?: []; params?: {} }
+    'auth.password_resets.update': { paramsTuple?: []; params?: {} }
+    'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
+    'profile.email_verifications.resend': { paramsTuple?: []; params?: {} }
+  }
+  PATCH: {
+    'profile.profile.update': { paramsTuple?: []; params?: {} }
+  }
+}
+declare module '@adonisjs/core/types/http' {
+  export interface RoutesList extends ScannedRoutes {}
+}

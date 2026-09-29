@@ -1,0 +1,49 @@
+<section class="auth-page">
+  <div class="auth-page__inner">
+    <h1 class="auth-title">Confirme<br />ton e-mail</h1>
+    <p class="auth-lead">
+      Un lien t’attend dans ta boîte mail. Sans confirmation, ta cave reste fermée.
+    </p>
+
+    @if (verifying()) {
+      <p class="auth-status" role="status">Confirmation en cours…</p>
+    }
+
+    @if (verifiedOk()) {
+      <p class="auth-status auth-status--ok" role="status">E-mail confirmé · bienvenue.</p>
+    }
+
+    @if (statusError(); as message) {
+      <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+    }
+
+    @if (resendOk()) {
+      <p class="auth-status auth-status--ok" role="status">Nouveau lien envoyé · vérifie ta boîte.</p>
+    }
+
+    @if (user(); as profile) {
+      <p class="auth-meta auth-meta--profile">
+        <span>{{ profile.email }}</span>
+      </p>
+    }
+
+    <div class="auth-actions">
+      @if (user() && !verifiedOk()) {
+        <button
+          class="auth-btn auth-btn--primary"
+          type="button"
+          (click)="resend()"
+          [disabled]="resending() || verifying()"
+        >
+          {{ resending() ? 'Envoi…' : 'Renvoyer le lien' }}
+        </button>
+        <button class="auth-btn auth-btn--ghost" type="button" (click)="logout()">
+          Se déconnecter
+        </button>
+      } @else if (!user()) {
+        <a class="auth-btn auth-btn--primary" routerLink="/auth/login">Se connecter</a>
+      }
+      <a class="auth-btn auth-btn--ghost" routerLink="/">Accueil</a>
+    </div>
+  </div>
+</section>

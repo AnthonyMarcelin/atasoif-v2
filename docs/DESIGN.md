@@ -1,19 +1,57 @@
-# Design — Cave nocturne / ambre
+# Design — Direction Nuit (retenue)
 
-## Intention
-Premium (matière, sombre, typo display) + fun (ambre, vert bouteille, micro-mouvements).  
-Différenciant vs Vivino (clair) et apps spiritueux génériques.
+**Source of truth**
+- Maquettes + DS interactif : `docs/conception/design-system/AtaSoif-Nuit.dc.html`
+- Assets livrables (PNG, SVG, splash, routes) : `docs/conception/assets/` (+ `README.md`)
+- Tokens runtime : `apps/web/src/styles/_tokens.scss` (copie des tokens Nuit)
+- Landing marketing : `apps/site` (Astro) · maquette `docs/conception/landing/`
+
+Marque régénérable : `docs/conception/design-system/AtaSoif-Assets.dc.html` (lockups, icônes, splash).
+
+## Intent
+
+Cave nocturne + rigueur de carnet. Premium sombre, accent ambre unique, mobile / tablette only (Angular + Capacitor).  
+Différencie de Vivino (clair) et des apps spiritueuses génériques.
 
 ## Tokens
-Voir `apps/web/src/styles/_tokens.scss`.
 
-## Règles UI
-- Pas de cards décoratives dans le hero
+Déjà dans `apps/web/src/styles/_tokens.scss` (pack Nuit).
+
+| Role | Value |
+|---|---|
+| Accent | `#E39A3C` (ambre unique) |
+| Fonds | `#0E0C0A` / surfaces sombres |
+| Radius | **0** |
+| Shadows | **aucune** |
+| Trait | 1,5px (actif 2,5px) |
+
+## Typography (Nuit)
+
+- Titres : **Bricolage Grotesque 800**
+- UI : **Schibsted Grotesk**
+- Données (prix, degrés, dates) : **Space Mono**
+
+## UI rules
+
 - Une intention par écran
-- CTA ambre primaire, secondaire outline ivoire
-- Compteur freemium toujours visible dans la cave (`x/10`)
-- Photos bouteilles = ancre visuelle réelle
+- CTA primaire ambre, secondaire contour clair
+- Compteur freemium toujours visible en cave (`x/10`)
+- Jauge interactive + photo perso = **premium** (teaser / paywall en free)
+- Pas de cadratin (—) dans les libellés : préférer `·`, `:`, virgule
+- Copy client : français, tutoiement, ton direct
 
-## Typo
-- Display : Fraunces
-- UI : DM Sans
+## Photos de bouteilles
+
+Décision produit :
+1. **FREE:** photo catalogue / seed (`Bottle.photoUrl`) seulement ; composant Angular de **fallback rayé** (motif maquette, ratio 3:4 détail / carré listes) quand absente.
+2. **PREMIUM:** upload user → `UserBottle.photoUrlOverride` (+ seed catalogue Open Food Facts / E3).
+3. Le placeholder ne se shippe que comme fallback.
+
+## Écrans
+
+Voir table écran → route dans `docs/conception/assets/README.md` (12 PNG + navigation 5 onglets).
+
+## Copy / i18n
+
+- Client-facing : French only for MVP (informal “tu”)
+- Code / docs / commits : English

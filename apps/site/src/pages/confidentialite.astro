@@ -1,0 +1,125 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+
+const contactEmail = 'contact@atasoif.fr';
+const updated = '18 septembre 2026';
+---
+
+<LegalLayout
+  title="Politique de confidentialité"
+  description="Politique de confidentialité du site atasoif.fr (À ta soif)."
+>
+  <p class="meta">Dernière mise à jour : {updated}</p>
+
+  <h2>1. Responsable du traitement</h2>
+  <p>
+    Le responsable du traitement des données collectées via le site
+    <strong>atasoif.fr</strong> est :
+  </p>
+  <ul>
+    <li>EI Anthony Marcelin · nom commercial Forge Digitale Solutions</li>
+    <li>SIREN : 100 857 838</li>
+    <li>6 rue Saint-Julien, 33112 Saint-Laurent-Médoc, France</li>
+    <li>
+      Contact produit :
+      <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+    </li>
+  </ul>
+
+  <h2>2. Périmètre</h2>
+  <p>
+    La présente politique concerne le site marketing atasoif.fr en phase de
+    pré-lancement (page d'attente / liste d'attente). L'application mobile À ta soif
+    fera l'objet d'une information complémentaire lors de sa mise à disposition.
+  </p>
+
+  <h2>3. Données collectées</h2>
+  <p>Selon votre utilisation du Site, peuvent être traités :</p>
+  <ul>
+    <li>
+      <strong>Adresse e-mail</strong>, si vous vous inscrivez à la liste d'attente
+      (« Être prévenu ») ;
+    </li>
+    <li>
+      <strong>Données techniques de connexion</strong> éventuellement générées par
+      l'hébergement ou le reverse-proxy (adresse IP, journaux d'accès, user-agent),
+      pour la sécurité et le bon fonctionnement du Site ;
+    </li>
+    <li>
+      <strong>Contenu des messages</strong> que vous envoyez volontairement à
+      {contactEmail}.
+    </li>
+  </ul>
+  <p>
+    Aucune donnée de paiement n'est collectée sur ce Site en l'état. Aucun cookie
+    de tracking publicitaire n'est déployé intentionnellement sur la landing actuelle.
+  </p>
+
+  <h2>4. Finalités et bases légales</h2>
+  <ul>
+    <li>
+      Liste d'attente : vous informer du lancement de l'application
+      (intérêt légitime et/ou mesures précontractuelles à votre demande) ;
+    </li>
+    <li>
+      Réponse aux demandes de contact (intérêt légitime / exécution de mesures
+      précontractuelles) ;
+    </li>
+    <li>
+      Sécurité et maintenance du Site (intérêt légitime).
+    </li>
+  </ul>
+
+  <h2>5. Destinataires</h2>
+  <p>
+    Les données sont destinées à l'Éditeur. Elles peuvent transiter par des
+    prestataires techniques d'hébergement, notamment
+    <strong>OVH SAS</strong> (2 rue Kellermann, 59100 Roubaix ;
+    <a href="https://www.ovhcloud.com" rel="noopener noreferrer" target="_blank">www.ovhcloud.com</a>),
+    via un déploiement Dokploy, agissant en tant que sous-traitants dans la limite
+    nécessaire au fonctionnement du Site.
+  </p>
+  <p>Les données ne sont pas vendues.</p>
+
+  <h2>6. Durée de conservation</h2>
+  <ul>
+    <li>
+      E-mails de liste d'attente : jusqu'à l'envoi de l'information de lancement,
+      puis suppression ou archivage limité, sauf inscription ultérieure à un autre
+      service avec information distincte ;
+    </li>
+    <li>
+      Messages de contact : le temps nécessaire au traitement de la demande ;
+    </li>
+    <li>
+      Journaux techniques : durée courte compatible avec les besoins de sécurité
+      (à préciser opérationnellement par l'Éditeur).
+    </li>
+  </ul>
+
+  <h2>7. Vos droits (RGPD)</h2>
+  <p>
+    Conformément au Règlement (UE) 2016/679 et à la loi Informatique et Libertés,
+    vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation,
+    d'opposition, et le cas échéant de portabilité, ainsi que du droit de définir
+    des directives relatives au sort de vos données après votre décès.
+  </p>
+  <p>
+    Pour exercer vos droits : <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
+    Vous pouvez également introduire une réclamation auprès de la CNIL
+    (<a href="https://www.cnil.fr" rel="noopener noreferrer" target="_blank">cnil.fr</a>).
+  </p>
+
+  <h2>8. Sécurité</h2>
+  <p>
+    L'Éditeur met en œuvre des mesures raisonnables pour protéger les données
+    (HTTPS, cloisonnement de l'hébergement). Aucun système n'est toutefois infaillible.
+  </p>
+
+  <h2>9. Évolutions</h2>
+  <p>
+    Cette politique peut être mise à jour. La date de dernière mise à jour figure
+    en tête de page. En cas de changement substantiel, une information pourra être
+    publiée sur le Site.
+  </p>
+</LegalLayout>

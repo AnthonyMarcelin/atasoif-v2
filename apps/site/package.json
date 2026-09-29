@@ -1,0 +1,24 @@
+{
+  "name": "@atasoif/site",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "À ta soif ! · marketing landing (Astro static)",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev --port 4321",
+    "build": "astro build",
+    "preview": "astro preview --port 4321",
+    "astro": "astro",
+    "lint": "echo \"lint: not configured yet\""
+  },
+  "dependencies": {
+    "astro": "^7.3.3",
+    "sharp": "^0.35.4"
+  },
+  "devDependencies": {
+    "sass": "^1.104.1"
+  }
+}

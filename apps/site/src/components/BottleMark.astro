@@ -1,0 +1,97 @@
+---
+interface Props {
+  size?: 'sm' | 'md' | 'lg';
+  muted?: boolean;
+  fill?: number;
+  class?: string;
+}
+
+const { size = 'md', muted = false, fill = 62, class: className } = Astro.props;
+---
+
+<span class:list={['mark', `mark--${size}`, muted && 'mark--muted', className]} aria-hidden="true">
+  <span class="mark__neck"></span>
+  <span class="mark__body"><span class="mark__fill" style={`height:${fill}%`}></span></span>
+</span>
+
+<style lang="scss">
+  .mark {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+
+    &--sm {
+      width: 14px;
+      .mark__neck {
+        width: 6px;
+        height: 7px;
+        border-width: 1.5px;
+      }
+      .mark__body {
+        width: 14px;
+        height: 27px;
+        border-width: 1.5px;
+      }
+    }
+
+    &--md {
+      width: 17px;
+      .mark__neck {
+        width: 7px;
+        height: 8px;
+        border-width: 2px;
+      }
+      .mark__body {
+        width: 17px;
+        height: 33px;
+        border-width: 2px;
+      }
+    }
+
+    &--lg {
+      width: 42px;
+      .mark__neck {
+        width: 15px;
+        height: 20px;
+        border-width: 2.5px;
+      }
+      .mark__body {
+        width: 42px;
+        height: 84px;
+        border-width: 2.5px;
+      }
+    }
+
+    &--muted {
+      .mark__neck,
+      .mark__body {
+        border-color: var(--color-ink-muted);
+      }
+      .mark__fill {
+        background: var(--color-ink-muted);
+      }
+    }
+  }
+
+  .mark__neck {
+    border-style: solid;
+    border-color: var(--color-ink);
+    border-bottom: none;
+    box-sizing: border-box;
+  }
+
+  .mark__body {
+    border-style: solid;
+    border-color: var(--color-ink);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .mark__fill {
+    background: var(--color-accent);
+    width: 100%;
+  }
+</style>

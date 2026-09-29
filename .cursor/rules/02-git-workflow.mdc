@@ -1,0 +1,55 @@
+---
+description: Apply the repository branching, commit, merge, and collaboration workflow.
+alwaysApply: true
+---
+
+# Git workflow
+
+## Branch roles
+
+- `main` is the production branch and must remain deployable.
+- `dev` is the normal integration and active development branch.
+- Use `staging` when the project requires a client-accessible preview or pre-production environment.
+- Keep `dev` and `staging` aligned according to the project's delivery workflow, without treating staging as the source branch for new development.
+
+## Feature work
+
+- Start meaningful feature, refactor, or fix branches from an up-to-date `dev` branch.
+- Use short, descriptive, English branch names with an appropriate prefix such as `feature/`, `fix/`, `refactor/`, `chore/`, or `docs/`.
+- Small, low-risk corrections may be committed directly to `dev` when the project workflow permits it.
+- Never push application changes directly to `main`.
+
+## Commits
+
+- Use Conventional Commits in English.
+- Keep each commit focused on one coherent change.
+- Write commit messages that explain the purpose of the change, not merely the edited files.
+- Do not add AI agents or tools as commit co-authors.
+- Do not include generated attribution such as `Co-authored-by` for Cursor, Claude, Codex, or another AI.
+- Do not commit secrets, local environment files, build artifacts, dependency directories, or unrelated changes.
+
+Examples:
+
+```text
+feat: add appointment booking flow
+fix: prevent duplicate payment callbacks
+refactor: extract notification service
+test: cover account deletion workflow
+docs: document local development setup
+chore: update dependency audit workflow
+```
+
+## Merges and protection
+
+- Merge into `main` through a pull request or merge request.
+- Block the merge when required critical checks fail.
+- In collaborative projects, require the author's validation and at least one additional human approval before merging into a protected branch.
+- Resolve conflicts deliberately; do not accept one side wholesale without understanding the resulting behavior.
+- Prefer a clean, understandable history appropriate to the repository's configured merge strategy.
+
+## Agent behavior
+
+- Before proposing Git operations, inspect the current branch and repository state.
+- Never stage, commit, discard, reset, or overwrite unrelated user changes.
+- Never force-push unless explicitly requested and the impact is understood.
+- Summarize files changed, checks run, and remaining risks before proposing a merge.

@@ -1,0 +1,94 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+
+const contactEmail = 'contact@atasoif.fr';
+const updated = '18 septembre 2026';
+---
+
+<LegalLayout
+  title="Conditions générales d'utilisation"
+  description="Conditions générales d'utilisation du site atasoif.fr (À ta soif)."
+>
+  <p class="meta">Dernière mise à jour : {updated}</p>
+
+  <h2>1. Objet</h2>
+  <p>
+    Les présentes conditions générales d'utilisation (CGU) régissent l'accès et
+    l'utilisation du site marketing <strong>atasoif.fr</strong> (ci-après le « Site »),
+    édité dans le cadre du projet <strong>À ta soif</strong>.
+  </p>
+  <p>
+    L'application mobile À ta soif, lorsqu'elle sera disponible, pourra être régie
+    par des conditions spécifiques complémentaires.
+  </p>
+
+  <h2>2. Acceptation</h2>
+  <p>
+    L'accès au Site implique l'acceptation des présentes CGU. Si vous n'acceptez pas
+    ces conditions, veuillez ne pas utiliser le Site.
+  </p>
+
+  <h2>3. Public concerné</h2>
+  <p>
+    Le Site s'adresse à un public majeur (18 ans et plus). En utilisant le Site,
+    vous déclarez avoir l'âge légal requis.
+  </p>
+
+  <h2>4. Liste d'attente</h2>
+  <p>
+    Le formulaire « Être prévenu » permet de laisser une adresse e-mail afin d'être
+    informé du lancement de l'application. L'inscription est facultative. Un seul
+    message de lancement est envisagé ; aucune newsletter marketing n'est promise
+    à ce stade.
+  </p>
+  <p>
+    L'Éditeur ne garantit pas une date de sortie précise ni la disponibilité du
+    service sur toutes les plateformes.
+  </p>
+
+  <h2>5. Contenu et disponibilité</h2>
+  <p>
+    Les informations présentées (fonctionnalités, tarifs indicatifs, captures) sont
+    fournies à titre informatif et peuvent évoluer. L'Éditeur s'efforce d'assurer
+    l'accessibilité du Site, sans obligation de résultat ni garantie d'absence
+    d'interruption.
+  </p>
+
+  <h2>6. Comportement de l'utilisateur</h2>
+  <p>Il est interdit d'utiliser le Site pour :</p>
+  <ul>
+    <li>porter atteinte à son bon fonctionnement (surcharge, intrusion, etc.) ;</li>
+    <li>collecter des données d'autres utilisateurs de manière automatisée non autorisée ;</li>
+    <li>diffuser un contenu illicite via les moyens de contact mis à disposition.</li>
+  </ul>
+
+  <h2>7. Propriété intellectuelle</h2>
+  <p>
+    Les marques, logos et contenus du Site restent la propriété de leurs titulaires.
+    Aucune licence n'est concédée au-delà du droit de consultation du Site.
+  </p>
+
+  <h2>8. Responsabilité</h2>
+  <p>
+    Dans les limites autorisées par la loi, l'Éditeur ne saurait être tenu responsable
+    des dommages indirects liés à l'utilisation ou à l'impossibilité d'utiliser le Site.
+  </p>
+
+  <h2>9. Données personnelles</h2>
+  <p>
+    Les traitements de données sont décrits dans la
+    <a href="/confidentialite">politique de confidentialité</a>.
+  </p>
+
+  <h2>10. Droit applicable</h2>
+  <p>
+    Les présentes CGU sont régies par le droit français. En cas de litige, et à défaut
+    de résolution amiable, les tribunaux français compétents seront saisis.
+  </p>
+
+  <h2>11. Contact</h2>
+  <p>
+    Pour toute question relative aux présentes CGU :
+    <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
+  </p>
+</LegalLayout>

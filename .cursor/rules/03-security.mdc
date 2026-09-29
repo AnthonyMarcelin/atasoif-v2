@@ -1,0 +1,55 @@
+---
+description: Apply secure development defaults and prevent common application security failures.
+alwaysApply: true
+---
+
+# Security
+
+## Secrets and configuration
+
+- Never hardcode credentials, API keys, tokens, passwords, private keys, or sensitive connection strings.
+- Store secrets in environment variables or the project's approved secret-management system.
+- Keep `.env` and local secret files out of version control.
+- Provide a sanitized `.env.example` when environment variables must be documented.
+- Never print secrets in logs, exceptions, test snapshots, fixtures, or debugging output.
+
+## Secure implementation
+
+- Follow current OWASP guidance and the security conventions of the language and framework.
+- Validate untrusted input at the application boundary.
+- Enforce authorization server-side for every protected action and resource.
+- Do not rely on hidden interface elements or client-side checks for access control.
+- Use framework protections for CSRF, XSS, SQL injection, mass assignment, session security, and output escaping.
+- Use parameterized queries or the framework ORM/query builder; never build SQL from untrusted string concatenation.
+- Escape output according to its rendering context and avoid rendering unsanitized HTML.
+- Use secure password hashing and established authentication mechanisms; never create custom cryptography.
+- Apply least privilege to users, services, database accounts, tokens, and file permissions.
+
+## Web security
+
+- Configure appropriate security headers for the deployed application.
+- Use HTTPS in production and secure cookie settings where cookies are used.
+- Configure CORS narrowly according to actual consumers; do not default to unrestricted origins with credentials.
+- Apply rate limiting and abuse protection to authentication, public forms, expensive endpoints, and sensitive operations where relevant.
+- Avoid exposing stack traces, internal paths, infrastructure details, or sensitive identifiers to clients.
+
+## Dependencies and supply chain
+
+- Run dependency vulnerability scans in CI using the ecosystem's appropriate tooling.
+- Treat high-severity and critical findings as blocking unless an explicit documented exception is approved.
+- Prefer maintained dependencies with a clear security history.
+- Pin or lock dependency versions through the ecosystem's lockfile.
+- Review the purpose and permissions of new packages before adding them.
+
+## Data handling
+
+- Collect and retain only data required by the product.
+- Avoid logging unnecessary personal or confidential data.
+- Apply explicit validation, authorization, and retention rules to uploaded files and user-generated content.
+- Use safe defaults for destructive operations and require deliberate confirmation where appropriate.
+
+## Agent behavior
+
+- Flag security-sensitive assumptions and unresolved risks explicitly.
+- Do not weaken an existing security control merely to make a test or feature pass.
+- When security requirements conflict with convenience, preserve security and explain the trade-off.
