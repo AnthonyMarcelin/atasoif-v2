@@ -49,14 +49,17 @@ ENV NODE_ENV=production \
     GOOGLE_CLIENT_SECRET=placeholder \
     FACEBOOK_CLIENT_ID=placeholder \
     FACEBOOK_CLIENT_SECRET=placeholder
+# Ace emits workspace:* for @atasoif/shared; Bun cannot resolve that in the
+# standalone build/ tree. Vendor the built package outside node_modules —
+# file:./node_modules/... confuses Bun 1.4 ("Could not find folder file:…").
 RUN node ace build --package-manager=bun \
-  && mkdir -p build/node_modules/@atasoif \
-  && cp -a /app/packages/shared build/node_modules/@atasoif/shared \
+  && mkdir -p build/vendor \
+  && cp -a /app/packages/shared build/vendor/shared \
   && node --input-type=module -e "\
 import { readFileSync, writeFileSync } from 'node:fs';\
 const p = JSON.parse(readFileSync('build/package.json', 'utf8'));\
 if (p.dependencies?.['@atasoif/shared']) {\
-  p.dependencies['@atasoif/shared'] = 'file:./node_modules/@atasoif/shared';\
+  p.dependencies['@atasoif/shared'] = 'file:./vendor/shared';\
   writeFileSync('build/package.json', JSON.stringify(p, null, 2) + '\\n');\
 }\
 " \
