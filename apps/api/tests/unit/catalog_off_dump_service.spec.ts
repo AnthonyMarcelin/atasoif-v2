@@ -3,7 +3,6 @@ import { mkdtemp, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { Readable } from 'node:stream'
 import { isAlcoholicOffProduct } from '#services/catalog/off_alcohol_filter'
 import { mapOffProductToDraft } from '#services/catalog/off_product_mapper'
 import { cleanRetailName, normalizeIdentityKey } from '#services/catalog/clean_retail_name'
@@ -139,7 +138,7 @@ test.group('CatalogImageMirror', () => {
       userAgent: 'AtasoifTest/0.1',
       publicBaseUrl: 'https://api.example/media/catalog',
       fetchImpl: async () =>
-        new Response(Readable.toWeb(Readable.from(bytes)) as BodyInit, {
+        new Response(bytes, {
           status: 200,
           headers: { 'content-type': 'image/jpeg' },
         }),
