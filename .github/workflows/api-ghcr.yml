@@ -1,7 +1,8 @@
-# Build Adonis API image and push to GHCR for Dokploy Docker provider.
+# Build Adonis API image and push to GHCR for Dokploy Application (Docker pull).
 # Image: ghcr.io/anthonymarcelin/atasoif-api
-# Trigger: push/merge to main (prod) — aligned with historical site deploy preference.
-# After push: join Tailscale then POST Dokploy deploy webhook (secrets only — never commit URL).
+# Tags: latest (Dokploy pull) + sha-<short> (audit/rollback)
+# Trigger: push/merge to main (prod) or workflow_dispatch — deploy = merge dev→main.
+# After push: join Tailscale then POST Dokploy Application deploy webhook (secrets only).
 name: API GHCR
 
 on:
@@ -51,10 +52,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # latest → Dokploy Application pulls a stable tag
+          # sha-<short> → immutable audit / rollback pin
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=sha,prefix=,format=short
-            type=sha,prefix=sha-,format=long
+            type=sha,prefix=sha-,format=short
 
       - name: Build and push
         uses: docker/build-push-action@v6
