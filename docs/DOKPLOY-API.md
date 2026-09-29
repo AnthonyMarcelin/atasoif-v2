@@ -1,16 +1,25 @@
 # Dokploy — API Adonis (`atasoif-api`) · GHCR
 
-Déploiement **production** de l’API via image prébuildée GHCR + webhook Dokploy (même modèle que le site).
+Déploiement **production** de l’API via image prébuildée GHCR + webhook Dokploy.
 
 | Item | Value |
 |---|---|
 | Image | **`ghcr.io/anthonymarcelin/atasoif-api`** |
 | Dockerfile | `Dockerfile` (racine, target `production`, context `.`) |
 | Entrypoint | `apps/api/docker-entrypoint.sh` → `migration:run --force` puis `node bin/server.js` |
-| Tags | `latest` sur pushes **`main`** · aussi short/long `sha-*` |
+| Tags | **`latest`** (Dokploy pull) · **`sha-<short>`** (audit / rollback) |
 | Workflow | [`.github/workflows/api-ghcr.yml`](../.github/workflows/api-ghcr.yml) |
 | Trigger | **`push` / merge sur `main`** (path filters API / shared / Docker) + `workflow_dispatch` |
-| Dokploy provider | **Docker** (pull) — **pas** Nixpacks, **pas** build git |
+| Dokploy type | **Application** · provider **Docker** (pull) — **pas** Compose, **pas** Nixpacks, **pas** build git |
+| Domaine | **`api.atasoif.fr`** |
+
+## Décision produit — Application Docker (pas Compose)
+
+Le service Dokploy `api` doit être une **Application** avec provider **Docker** qui pull `ghcr.io/anthonymarcelin/atasoif-api:latest`.
+
+Ne pas utiliser un service **Compose** (chemin git + `docker-compose.yml`) : le CI pousse déjà une image prête ; Compose ajouterait un couplage git inutile et un webhook d’un autre type (voir § Webhook).
+
+---
 
 ## Branch trigger — `main` (prod), pas `dev`
 
@@ -19,10 +28,23 @@ Déploiement **production** de l’API via image prébuildée GHCR + webhook Dok
 | **API** (ce doc) | `api-ghcr.yml` | **`main`** |
 | Site (landing) | `site-ghcr.yml` | actuellement **`dev`** (voir [`docs/DOCKER.md`](./DOCKER.md)) |
 
-Préférence projet historique : merge → **`main`** = prod. L’API est alignée là-dessus.  
-Un merge PR → `dev` **ne déploie pas** l’API. Pour pousser une image + webhook Dokploy : merger `dev` → `main` (ou lancer **workflow_dispatch** sur `api-ghcr.yml` depuis `main`).
+**Deploy API = merge `dev` → `main`** (ou **workflow_dispatch** sur `api-ghcr.yml` depuis `main`).
 
-Ne lance **pas** `migrate:v1` depuis cet entrypoint — migration v1 = commande Ace one-shot **après** service up + seed catégories.
+Un merge PR → `dev` **ne déploie pas** l’API. Ne pas merger `dev` → `main` sans accord explicite.
+
+Ne lance **pas** `migrate:v1` depuis l’entrypoint — migration v1 = commande Ace one-shot **après** service up + seed catégories.
+
+---
+
+## Sécurité (résumé)
+
+| Règle | Détail |
+|---|---|
+| Pas de secrets dans le repo | Webhook, `APP_KEY`, DB, SMTP, Ally, Tailscale → GitHub Secrets / Dokploy env uniquement |
+| Webhook via Tailscale | Le runner GHA rejoint le tailnet puis `POST` l’URL privée ; ne jamais committer l’URL |
+| Push GHCR | Auth `GITHUB_TOKEN` (packages write) — pas de PAT dédié si Workflow permissions = Read and write |
+| Image runtime | Secrets runtime **hors** image (env Dokploy) ; package **Private** recommandé |
+| Logs CI | Ne pas echo l’URL webhook ni le body de réponse |
 
 ---
 
@@ -32,7 +54,7 @@ Settings → Secrets and variables → Actions.
 
 | Secret | Required | Purpose |
 |---|---|---|
-| `DOKPLOY_API_DEPLOY_WEBHOOK` | **Oui** (nouveau) | URL complète du webhook deploy Dokploy du service `api` (Tailscale, ex. `http://100.x.y.z:3000/api/deploy/...`). Ne jamais committer. |
+| `DOKPLOY_API_DEPLOY_WEBHOOK` | **Oui** | URL complète du webhook deploy Dokploy du service **Application** `api` (Tailscale, ex. `http://100.x.y.z:3000/api/deploy/<token>`). Ne jamais committer. |
 | `TS_OAUTH_CLIENT_ID` | Une des options Tailscale | Client OAuth Tailscale (`auth_keys`, tags `tag:ci`) — **déjà** utilisé pour le site |
 | `TS_OAUTH_SECRET` | Avec OAuth | Secret OAuth — **déjà** utilisé pour le site |
 | `TS_AUTHKEY` | **Ou** à la place d’OAuth | Auth key CI réutilisable + ephemeral + `tag:ci` — **déjà** utilisé pour le site |
@@ -43,21 +65,36 @@ Réutiliser les secrets Tailscale du site. Seul secret **nouveau** typiquement :
 
 ---
 
-## 2. Créer le service Dokploy `api`
+## 2. Créer le service Dokploy `api` (Application Docker)
 
-Projet **À ta soif** (pas Spawnzone) → Create Service / Application :
+Projet **À ta soif** → Create Service → **Application** (pas Compose) :
 
 | Field | Value |
 |---|---|
 | Name | `api` |
+| Type | **Application** |
 | Provider | **Docker** (pull) |
 | Docker image | `ghcr.io/anthonymarcelin/atasoif-api:latest` |
 | Port | **3000** |
-| Registry | Si package **Private** : registry GHCR Dokploy existant (même que Spawnzone / site). Si **Public** : pull anonyme OK |
+| Registry | Si package **Private** : registry GHCR Dokploy existant (même que site / Spawnzone). Si **Public** : pull anonyme OK |
 | Network | Même réseau Docker que PostGIS Dokploy (voir §3) |
+| Domain | `api.atasoif.fr` → HTTPS → port conteneur **3000** |
 | Healthcheck (UI) | `GET /health` · path `/health` · port `3000` (l’image a aussi un `HEALTHCHECK` Docker) |
 
-Activer le **Deploy webhook** Dokploy → copier l’URL complète → secret GitHub `DOKPLOY_API_DEPLOY_WEBHOOK`.
+Activer le **Deploy webhook** (onglet Deployments) → copier l’URL complète → secret GitHub `DOKPLOY_API_DEPLOY_WEBHOOK`.
+
+### Webhook Application vs Compose
+
+Le workflow CI est identique pour les deux (`POST` JSON vide `{}` après Tailscale). **Seul le chemin d’URL change** — copier depuis l’UI du service concerné :
+
+| Type Dokploy | Forme typique de l’URL webhook |
+|---|---|
+| **Application** (cible API) | `…/api/deploy/<token>` |
+| **Compose** (à éviter ici) | `…/api/deploy/compose/<token>` |
+
+Si le service a été créé en Compose par erreur : le recréer en **Application Docker**, reconfigurer env + réseau + domaine, puis **mettre à jour** le secret `DOKPLOY_API_DEPLOY_WEBHOOK` (nouveau token).
+
+Préférer l’URL **Tailscale** (`http://100.x.y.z:…`) pour le secret CI, pas l’URL publique Dokploy.
 
 ---
 
@@ -89,7 +126,7 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 | `LOG_LEVEL` | `info` |
 | `APP_KEY` | secret Adonis (32+ chars) |
 | `APP_URL` | `https://api.atasoif.fr` (origine publique HTTPS de l’API) |
-| `FRONTEND_URL` | origine Angular / deep links mail (ex. `https://app.atasoif.fr` ou URL Capacitor) |
+| `FRONTEND_URL` | origine Angular / deep links mail (ex. `https://www.atasoif.fr` ou URL Capacitor) |
 | `SESSION_DRIVER` | `cookie` |
 | `DB_HOST` | `infra-postgis-rfekdz` |
 | `DB_PORT` | `5432` |
@@ -131,38 +168,52 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 
 ## 5. Domaine + TLS
 
-1. Domaine API (ex. `api.atasoif.fr`) → VPS / Dokploy.
+1. Domaine **`api.atasoif.fr`** → VPS / Dokploy.
 2. HTTPS Let’s Encrypt (même pattern que le site).
 3. Proxy → conteneur port **3000**.
-4. `APP_URL` = URL HTTPS canonique (Ally + mails).
+4. `APP_URL` = `https://api.atasoif.fr` (Ally + mails).
 
 ---
 
-## 6. Après le premier push GHCR (checklist Anthony)
+## 6. Tags image (GHCR)
 
-1. Merger vers **`main`** (ou `workflow_dispatch` sur le workflow API) pour déclencher **API GHCR**.
-2. Repo → Settings → Actions → General → Workflow permissions → **Read and write**.
-3. Package **`atasoif-api`** → lié à `AnthonyMarcelin/atasoif-v2`. Visibilité : **Private** recommandé (secrets runtime hors image, mais image = code + deps). Si Private → registry GHCR Dokploy existant.
-4. Dokploy → service `api` → image `…/atasoif-api:latest` → réseau PostGIS → env §4 → Deploy.
-5. Créer le webhook deploy → secret `DOKPLOY_API_DEPLOY_WEBHOOK`.
-6. Smoke : `curl -s https://api.atasoif.fr/health` → `database":"up"`.
-7. **Ensuite seulement** : seed catalogue / `migrate:v1` (hors de ce doc).
+Sur chaque run réussi depuis `main` :
+
+| Tag | Usage |
+|---|---|
+| `latest` | Tag que Dokploy Application pinne pour le pull simple |
+| `sha-<short>` | Pin immutable (ex. `sha-a1b2c3d`) pour audit / rollback manuel |
+
+Rollback : dans Dokploy, pointer temporairement l’image vers `ghcr.io/anthonymarcelin/atasoif-api:sha-<short>` puis redéployer ; ou re-tagger / re-run depuis un commit connu.
 
 ---
 
-## 7. Flux auto-deploy
+## 7. Après le premier push GHCR (checklist Anthony)
 
-1. Merge feature → `dev` (CI vert) → plus tard merge `dev` → **`main`**.
-2. Actions **API GHCR** : build → push `ghcr.io/anthonymarcelin/atasoif-api:latest` (+ sha).
-3. Job **Notify Dokploy (Tailscale)** : `POST` `DOKPLOY_API_DEPLOY_WEBHOOK`.
-4. Dokploy pull + restart · entrypoint migrate + boot.
+1. Recréer le service `api` en **Application Docker** si c’était un Compose (sinon webhook `/api/deploy/compose/…` ≠ Application).
+2. Configurer image `…/atasoif-api:latest`, réseau PostGIS, env §4, domaine `api.atasoif.fr`.
+3. Créer / recopier le webhook deploy **Application** → secret GitHub `DOKPLOY_API_DEPLOY_WEBHOOK` (URL Tailscale).
+4. Repo → Settings → Actions → General → Workflow permissions → **Read and write**.
+5. Package **`atasoif-api`** → lié à `AnthonyMarcelin/atasoif-v2`. Visibilité : **Private** recommandé. Si Private → registry GHCR Dokploy existant.
+6. **Accord explicite** puis merger `dev` → **`main`** (ou `workflow_dispatch` sur le workflow API) pour déclencher **API GHCR**.
+7. Smoke : `curl -s https://api.atasoif.fr/health` → `database":"up"`.
+8. **Ensuite seulement** : seed catalogue / `migrate:v1` (hors de ce doc).
+
+---
+
+## 8. Flux auto-deploy
+
+1. Merge feature → `dev` (CI vert) → plus tard merge `dev` → **`main`** (accord explicite).
+2. Actions **API GHCR** : build → push `…/atasoif-api:latest` + `…/atasoif-api:sha-<short>`.
+3. Job **Notify Dokploy (Tailscale)** : `POST` `DOKPLOY_API_DEPLOY_WEBHOOK` (body `{}`).
+4. Dokploy pull `latest` + restart · entrypoint migrate + boot.
 5. Vérifier `/health`.
 
 `continue-on-error: false` — webhook / Tailscale en échec = workflow rouge.
 
 ---
 
-## 8. Build local (debug)
+## 9. Build local (debug)
 
 ```bash
 # Context = racine monorepo

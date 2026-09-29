@@ -12,11 +12,12 @@ API Adonis en prod : image **`ghcr.io/anthonymarcelin/atasoif-api`**, trigger **
 |---|---|
 | Dockerfile | `Dockerfile` (racine, target `production`) |
 | GHCR image | **`ghcr.io/anthonymarcelin/atasoif-api`** |
-| Tags | `latest` on pushes to **`main`** · also short/long `sha-*` |
+| Tags | `latest` + `sha-<short>` on pushes to **`main`** |
 | Workflow | [`.github/workflows/api-ghcr.yml`](../.github/workflows/api-ghcr.yml) |
+| Dokploy | **Application** Docker (pull) — pas Compose |
 | Secret webhook | `DOKPLOY_API_DEPLOY_WEBHOOK` (+ Tailscale secrets partagés avec le site) |
 
-`dev` merges do **not** deploy the API. Site workflow still triggers on **`dev`** (below); API is intentionally on **`main`** for prod.
+`dev` merges do **not** deploy the API. Deploy = merge **`dev` → `main`** (accord explicite) ou `workflow_dispatch`. Site workflow still triggers on **`dev`** (below); API is intentionally on **`main`** for prod.
 
 ## Marketing site (`apps/site`) → GHCR → Dokploy
 
