@@ -6,7 +6,7 @@ Déploiement **production** de l’API via image prébuildée GHCR + webhook Dok
 |---|---|
 | Image | **`ghcr.io/anthonymarcelin/atasoif-api`** |
 | Dockerfile | `Dockerfile` (racine, target `production`, context `.`) |
-| Entrypoint | `apps/api/docker-entrypoint.sh` → `migration:run --force` puis `node bin/server.js` |
+| Entrypoint | `apps/api/docker-entrypoint.sh` → boot `node bin/server.js` · Lucid migrate **opt-in** via `RUN_MIGRATIONS=1` |
 | Tags | **`latest`** (Dokploy pull) · **`sha-<short>`** (audit / rollback) |
 | Workflow | [`.github/workflows/api-ghcr.yml`](../.github/workflows/api-ghcr.yml) |
 | Trigger | **`push` / merge sur `main`** (path filters API / shared / Docker) + `workflow_dispatch` |
@@ -33,6 +33,15 @@ Ne pas utiliser un service **Compose** (chemin git + `docker-compose.yml`) : le 
 Un merge PR → `dev` **ne déploie pas** l’API. Ne pas merger `dev` → `main` sans accord explicite.
 
 Ne lance **pas** `migrate:v1` depuis l’entrypoint — migration v1 = commande Ace one-shot **après** service up + seed catégories.
+
+**Prod data protection:** leave `RUN_MIGRATIONS` unset or `0` on Dokploy so redeploys do **not** run `migration:run`. Apply schema deliberately when needed:
+
+```bash
+# Inside the API container (ops only)
+RUN_MIGRATIONS=1 node ace migration:run --force
+# or:
+node ace migration:run --force
+```
 
 ---
 
@@ -133,6 +142,7 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 | `DB_USER` | `atasoif` |
 | `DB_PASSWORD` | mot de passe Postgres |
 | `DB_DATABASE` | `atasoif_v2` |
+| `RUN_MIGRATIONS` | **`0` or omit** (protect live DB). Set `1` only when you intentionally want boot-time Lucid migrate |
 | `MAIL_MAILER` | `smtp` |
 | `MAIL_FROM_NAME` | `À ta soif` |
 | `MAIL_FROM_ADDRESS` | adresse réelle (ex. `hello@atasoif.fr`) |
@@ -206,7 +216,7 @@ Rollback : dans Dokploy, pointer temporairement l’image vers `ghcr.io/anthonym
 1. Merge feature → `dev` (CI vert) → plus tard merge `dev` → **`main`** (accord explicite).
 2. Actions **API GHCR** : build → push `…/atasoif-api:latest` + `…/atasoif-api:sha-<short>`.
 3. Job **Notify Dokploy (Tailscale)** : `POST` `DOKPLOY_API_DEPLOY_WEBHOOK` (body `{}`).
-4. Dokploy pull `latest` + restart · entrypoint migrate + boot.
+4. Dokploy pull `latest` + restart · entrypoint boot (migrate only if `RUN_MIGRATIONS=1`) + Adonis.
 5. Vérifier `/health`.
 
 `continue-on-error: false` — webhook / Tailscale en échec = workflow rouge.
