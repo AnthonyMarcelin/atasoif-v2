@@ -16,7 +16,7 @@ Related: [`EPICS.md`](./EPICS.md) (E2 · **E3**) · [`SPRINTS.md`](./SPRINTS.md)
 |---|---|
 | Database | Empty app DB for `atasoif` (name TBD in ops, e.g. `atasoif`) |
 | Role | Dedicated app user with rights on that DB only (no superuser) |
-| Schema apply | Adonis Lucid migrations via `node ace migration:run` / Compose entrypoint — **not** hand-written DDL in prod |
+| Schema apply | Adonis Lucid migrations via `node ace migration:run` (manual / opt-in `RUN_MIGRATIONS=1` on Docker entrypoint) — **not** hand-written DDL in prod; Dokploy leaves auto-migrate **off** |
 | Seed at create time | **None** — empty DB only (~5 minutes ops). Categories / catalog seed come later via Ace seeders + E3 scripts |
 | Local vs VPS | Local remains Compose Postgres (`docs/DOCKER.md`, host `:5432`). VPS DB is the production target once E0.7 / deploy path is ready |
 
