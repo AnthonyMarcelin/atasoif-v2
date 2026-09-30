@@ -103,7 +103,7 @@ Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`,
 | `apps/site/Dockerfile` | Astro static → nginx (built in CI → GHCR) |
 | `.github/workflows/api-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-api` on **`main`** + Tailscale → Dokploy webhook |
 | `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` on **`dev`** + Tailscale → Dokploy webhook |
-| `apps/api/docker-entrypoint.sh` | `node ace migration:run --force` then `node bin/server.js` |
+| `apps/api/docker-entrypoint.sh` | Opt-in Lucid migrate (`RUN_MIGRATIONS=1`) then `node bin/server.js` |
 | `docs/DOKPLOY-API.md` | Dokploy service `api` (GHCR, PostGIS, env, secrets) |
 | `docker-compose.yml` | Shared `postgres` + `api` |
 | `docker-compose.dev.yml` | Local overrides |
@@ -132,7 +132,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env 
 | `bun install --frozen-lockfile --filter @atasoif/api` | Bun (build stage) |
 | `node ace build --package-manager=bun` | Node |
 | `bun install --production` inside `build/` | Bun (build stage) |
-| Entrypoint migrations + `node bin/server.js` | Node (`node:24-alpine`) |
+| Entrypoint (optional migrate) + `node bin/server.js` | Node (`node:24-alpine`) |
 | Postgres | unchanged (`postgres:16-alpine`) |
 
 Details: [`docs/BUN.md`](./BUN.md).
@@ -177,7 +177,7 @@ curl -s http://localhost:3000/health
 # {"app":"atasoif-api",…,"database":"up","status":"ok"}
 ```
 
-On API start, the entrypoint applies pending Lucid migrations, then boots Adonis.
+On API start, the entrypoint boots Adonis. Lucid migrations run **only** when `RUN_MIGRATIONS=1` (enabled in `docker-compose.dev.yml`; off by default for Dokploy / prod-like Compose to protect live data).
 
 ## Out of scope (for now)
 

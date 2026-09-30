@@ -21,6 +21,8 @@ services:
   api:
     environment:
       NODE_ENV: development
+      # Local Docker expects schema on boot; prod/Dokploy leave RUN_MIGRATIONS unset/0.
+      RUN_MIGRATIONS: "1"
       APP_URL: http://localhost:3000
       FRONTEND_URL: http://localhost:4200
       DB_HOST: postgres
