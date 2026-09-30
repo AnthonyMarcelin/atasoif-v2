@@ -3,7 +3,7 @@ import { mkdtemp, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { isAlcoholicOffProduct } from '#services/catalog/off_alcohol_filter'
+import { isAlcoholicOffProduct, normalizeOffTagList } from '#services/catalog/off_alcohol_filter'
 import { mapOffProductToDraft } from '#services/catalog/off_product_mapper'
 import { cleanRetailName, normalizeIdentityKey } from '#services/catalog/clean_retail_name'
 import { CatalogDedupeBuffer, scoreCatalogDraft } from '#services/catalog/catalog_dedupe'
@@ -12,6 +12,19 @@ import CatalogOffDumpService from '#services/catalog/catalog_off_dump_service'
 import type CatalogLookupService from '#services/catalog/catalog_lookup_service'
 import type { CatalogProductDraft } from '#services/catalog/catalog_types'
 
+test.group('normalizeOffTagList', () => {
+  test('handles array, CSV string, and JSON-array string', ({ assert }) => {
+    assert.deepEqual(normalizeOffTagList(['en:Beers', ' en:lagers ']), ['en:beers', 'en:lagers'])
+    assert.deepEqual(normalizeOffTagList('en:whiskies,en:scotch-whiskies'), [
+      'en:whiskies',
+      'en:scotch-whiskies',
+    ])
+    assert.deepEqual(normalizeOffTagList('["en:rums","en:spirits"]'), ['en:rums', 'en:spirits'])
+    assert.deepEqual(normalizeOffTagList(null), [])
+    assert.deepEqual(normalizeOffTagList(''), [])
+  })
+})
+
 test.group('isAlcoholicOffProduct', () => {
   test('curated accepts whiskies / rums / gins / vodkas / beers', ({ assert }) => {
     assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:beers'] }, 'curated'))
@@ -19,6 +32,18 @@ test.group('isAlcoholicOffProduct', () => {
     assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:rums'] }, 'curated'))
     assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:gins'] }, 'curated'))
     assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:vodkas'] }, 'curated'))
+  })
+
+  test('curated accepts DuckDB/CSV string categories_tags', ({ assert }) => {
+    assert.isTrue(
+      isAlcoholicOffProduct({ categories_tags: 'en:whiskies,en:scotch-whiskies' }, 'curated')
+    )
+    assert.isTrue(
+      isAlcoholicOffProduct(
+        { categories_tags: '["en:beers","en:lagers"]', alcohol_100g: 5 },
+        'curated'
+      )
+    )
   })
 
   test('curated rejects wine-only tags; full accepts them', ({ assert }) => {
@@ -206,7 +231,38 @@ test.group('CatalogOffDumpService', () => {
     assert.equal(summary.upserted, 0)
     assert.equal(summary.nonAlcohol, 3)
     assert.equal(summary.jsonErrors, 1)
+    assert.equal(summary.byCategory.whisky, 1)
     assert.equal(persistCalls, 0)
+  })
+
+  test('accepts CSV categories_tags from DuckDB-style JSONL', async ({ assert }) => {
+    const dir = await mkdtemp(join(tmpdir(), 'off-dump-csv-tags-'))
+    const filePath = join(dir, 'sample.jsonl')
+    await writeFile(
+      filePath,
+      `${JSON.stringify({
+        code: '5000267024202',
+        product_name: 'Black Label',
+        brands: 'Johnnie Walker',
+        categories_tags: 'en:whiskies,en:scotch-whiskies',
+        alcohol_100g: 40,
+        quantity: '70 cl',
+      })}\n`,
+      'utf8'
+    )
+
+    const service = new CatalogOffDumpService()
+    const summary = await service.importFile({
+      filePath,
+      dryRun: true,
+      dedupe: false,
+      lookup: {
+        persistDraft: async () => ({}) as never,
+      } as unknown as CatalogLookupService,
+    })
+
+    assert.equal(summary.drafted, 1)
+    assert.equal(summary.byCategory.whisky, 1)
   })
 
   test('dedupes brand+name volume variants', async ({ assert }) => {

@@ -209,6 +209,8 @@ Rollback : dans Dokploy, pointer temporairement l’image vers `ghcr.io/anthonym
 7. Smoke : `curl -s https://api.atasoif.fr/health` → `database":"up"`.
 8. **Ensuite seulement** : seed catalogue / `migrate:v1` (hors de ce doc).
 
+**Catalogue OFF dump (volume):** once the API is healthy, follow the **Prod / Dokploy runbook** in [`CATALOG-SEED.md`](./CATALOG-SEED.md) — host DuckDB filter → dry-run Ace `catalog:off-dump` in the API container → persist. Independent of `RUN_MIGRATIONS`. Do **not** wipe the DB.
+
 ---
 
 ## 8. Flux auto-deploy
