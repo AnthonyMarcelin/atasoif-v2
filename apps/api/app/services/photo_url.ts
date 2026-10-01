@@ -3,6 +3,12 @@ import { overridePhotoPath } from '#services/cellar_photo_storage'
 const CATALOG_MEDIA_PATH =
   /^\/api\/v1\/media\/catalog\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/i
 
+/** Mirrored OFF dump fronts served from CATALOG_IMAGE_STORAGE_PATH. */
+const OFF_CATALOG_MEDIA_PATH =
+  /^\/api\/v1\/media\/off\/[0-9A-Za-z_-]{8,32}\.(jpg|jpeg|png|webp|gif)$/i
+
+export const OFF_CATALOG_MEDIA_PREFIX = '/api/v1/media/off/'
+
 /**
  * Client-supplied photo URLs are rendered in other people's cellars and, for
  * `/api/...` paths, fetched with the viewer's bearer token. Only plain http(s)
@@ -24,8 +30,12 @@ export function isHttpPhotoUrl(value: string): boolean {
   return url.hostname.length > 0
 }
 
+export function isOffCatalogPhotoUrl(value: string): boolean {
+  return OFF_CATALOG_MEDIA_PATH.test(value)
+}
+
 export function isCatalogPhotoUrl(value: string): boolean {
-  return isHttpPhotoUrl(value) || CATALOG_MEDIA_PATH.test(value)
+  return isHttpPhotoUrl(value) || CATALOG_MEDIA_PATH.test(value) || isOffCatalogPhotoUrl(value)
 }
 
 /** Shelf override may point at this row's own upload route, not another API path. */

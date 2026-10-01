@@ -172,7 +172,14 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 
 ### Optionnels catalogue / ops
 
-`UPCITEMDB_USER_KEY`, `UPCITEMDB_KEY_TYPE`, `CATALOG_NURSE_DAILY_LIMIT`, `CATALOG_IMAGE_STORAGE_PATH`, `CATALOG_IMAGE_PUBLIC_BASE_URL`, `CELLAR_PHOTO_MAX_BYTES`.
+`UPCITEMDB_USER_KEY`, `UPCITEMDB_KEY_TYPE`, `CATALOG_NURSE_DAILY_LIMIT`, `CELLAR_PHOTO_MAX_BYTES`.
+
+| Variable | Notes |
+|---|---|
+| `CATALOG_IMAGE_STORAGE_PATH` | Absolute path for OFF front mirrors, e.g. `/var/lib/atasoif/catalog-images`. Mount a **persistent** volume here before `catalog:mirror-images`. |
+| `CATALOG_IMAGE_PUBLIC_BASE_URL` | Optional. Empty → `/api/v1/media/off` (served by API, auth required). |
+
+See [`CATALOG-SEED.md`](./CATALOG-SEED.md) § Image mirror / § 4b.
 
 ---
 
