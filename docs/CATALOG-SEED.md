@@ -199,6 +199,118 @@ bun run catalog:off-dump -- --file=/var/lib/atasoif/off/alcohol.jsonl --dry-run 
 
 Idempotent: re-run upserts by barcode / `(source, external_id)`. Use `--skip-lines` only as a coarse resume aid after an interrupted read; prefer re-run for correctness.
 
+Dry-run and persist both log `byCategory` (counts per AlcoholCategory slug after dedupe) so you can sanity-check the mix before writing.
+
+---
+
+## Prod / Dokploy runbook (Anthony)
+
+**Status (2026-09-30):** code E3.1–E3.2 is in the API image path (`catalog:off-dump` already ran nurse live on prod). Dump **not** executed yet — catalogue still ~64. This section is the safe ops path. **Do not** wipe the DB. Leave `RUN_MIGRATIONS` unset/`0`. Ask before multi-GB downloads if VPS disk is tight.
+
+### Disk & layout (host VPS)
+
+| Path | Role | Approx size |
+|---|---|---|
+| `/var/lib/atasoif/off/` | Parquet / filtered JSONL (host) | Parquet ~800MB · curated `alcohol.jsonl` usually tens–hundreds of MB |
+| Full `openfoodfacts-products.jsonl.gz` | Fallback only | **multi-GB** — prefer Parquet+DuckDB |
+| `/var/lib/atasoif/catalog-images/` | Optional `--mirror-images` | grows with SKU count |
+
+```bash
+# On the VPS host (SSH), not inside the API container
+sudo mkdir -p /var/lib/atasoif/off /var/lib/atasoif/catalog-images
+df -h /var/lib/atasoif
+```
+
+Install DuckDB CLI on the **host** if missing (`https://duckdb.org/` — not shipped in the API image).
+
+### 1) Download + filter on the host
+
+Use the Parquet + DuckDB block above → `/var/lib/atasoif/off/alcohol.jsonl`.
+
+Prefer curated tags only. Spot-check:
+
+```bash
+wc -l /var/lib/atasoif/off/alcohol.jsonl
+head -n 1 /var/lib/atasoif/off/alcohol.jsonl | python3 -m json.tool | head
+```
+
+### 2) Make the file visible to the API container
+
+Dokploy Application `api` (container name pattern like `ta-soif-api-…`):
+
+**Option A — volume mount (preferred):** Advanced / mounts → host `/var/lib/atasoif/off` → container `/var/lib/atasoif/off` (read-only OK for import). Redeploy once so the mount sticks.
+
+**Option B — one-shot copy:**
+
+```bash
+# From VPS host — replace CONTAINER with current api container id/name from Dokploy Docker UI
+docker cp /var/lib/atasoif/off/alcohol.jsonl CONTAINER:/tmp/alcohol.jsonl
+```
+
+### 3) Dry-run first (Dokploy terminal)
+
+Same path as live nurse: Dokploy → Docker → Containers → `ta-soif-api-…` → Terminal (`/bin/sh`, cwd `/app`).
+
+```sh
+# Smoke parse/filter (no DB writes)
+node ace catalog:off-dump \
+  --file=/var/lib/atasoif/off/alcohol.jsonl \
+  --dry-run --limit=50
+
+# Full dry-run (still no upserts) — watch drafted + byCategory
+node ace catalog:off-dump \
+  --file=/var/lib/atasoif/off/alcohol.jsonl \
+  --profile=curated \
+  --dry-run
+```
+
+If using Option B: `--file=/tmp/alcohol.jsonl`.
+
+Expect: `upserted=0`, non-zero `drafted`, sensible `byCategory` (whisky / rhum / beer / gin / vodka…). Re-run is safe once you persist (idempotent upsert).
+
+### 4) Persist (after dry-run looks good)
+
+```sh
+# Without image mirror first (photos stay remote OFF URLs — OK for MVP volume)
+node ace catalog:off-dump \
+  --file=/var/lib/atasoif/off/alcohol.jsonl \
+  --profile=curated
+```
+
+Optional later (needs writable `CATALOG_IMAGE_STORAGE_PATH` + mount):
+
+```sh
+# Only if env + volume are set on Dokploy
+node ace catalog:off-dump \
+  --file=/var/lib/atasoif/off/alcohol.jsonl \
+  --profile=curated \
+  --mirror-images
+```
+
+### 5) Verify
+
+```sh
+node -e 'const { Client }=require("pg");(async()=>{const c=new Client({host:process.env.DB_HOST,port:process.env.DB_PORT,user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_DATABASE});await c.connect();const r=await c.query("select count(*)::int as n from bottles");console.log("bottles",r.rows[0].n);const s=await c.query("select source, count(*)::int as n from bottle_sources group by 1 order by 1");console.log(s.rows);await c.end();})().catch(e=>{console.error(e.message);process.exit(1)})'
+```
+
+Then spot-check `GET /api/v1/catalog/bottles?q=heineken` (auth) / typeahead in `/cave/ajouter`.
+
+### Safety checklist
+
+- [ ] `RUN_MIGRATIONS` still unset/`0` — dump does **not** need migrate
+- [ ] No `migration:fresh` / DB reset
+- [ ] Dry-run before persist
+- [ ] Prefer curated profile (not `full`) for first prod seed
+- [ ] Skip `--mirror-images` until disk + volume ready
+- [ ] Confirm free disk before Parquet or full JSONL.gz download
+- [ ] Nurse daily budget already used today → wait until next UTC day for more nurse; dump is independent
+
+### Ask Anthony before
+
+- Downloading full JSONL.gz (multi-GB) instead of Parquet+DuckDB
+- Enabling `--mirror-images` on prod without a sized volume
+- Any destructive DB ops
+
 ---
 
 ## B. Curated EAN nurse (spirits gaps)

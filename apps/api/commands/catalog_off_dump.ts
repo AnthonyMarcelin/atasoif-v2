@@ -153,6 +153,13 @@ export default class CatalogOffDump extends BaseCommand {
       ].join(' · ')
     )
 
+    const categoryParts = Object.entries(summary.byCategory)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([slug, count]) => `${slug}=${count}`)
+    if (categoryParts.length > 0) {
+      this.logger.info(`byCategory ${categoryParts.join(' · ')}`)
+    }
+
     if (summary.stoppedForLimit) {
       this.logger.warning(`Stopped early: --limit=${this.limit} unique alcohol products reached.`)
     }
