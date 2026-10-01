@@ -1,7 +1,10 @@
+import { access } from 'node:fs/promises'
 import type { HttpContext } from '@adonisjs/core/http'
+import env from '#start/env'
 import CollectionService from '#services/collection/collection_service'
 import { CollectionError } from '#services/collection/collection_error'
 import CellarPhotoStorage, { overridePhotoPath } from '#services/cellar_photo_storage'
+import CatalogImageMirror from '#services/catalog/catalog_image_mirror'
 import UserBottleTransformer from '#transformers/user_bottle_transformer'
 
 const PHOTO_EXTNAMES = ['jpg', 'jpeg', 'png', 'webp']
@@ -76,6 +79,44 @@ export default class CollectionPhotosController {
         message: 'Photo introuvable',
       })
     }
+    this.streamImage(response, storage, absolutePath)
+  }
+
+  /**
+   * Mirrored OFF dump front images (barcode filename). Auth required.
+   * GET /api/v1/media/off/:name
+   */
+  async showOffCatalog({ params, response }: HttpContext) {
+    const storageRoot = env.get('CATALOG_IMAGE_STORAGE_PATH')?.trim()
+    if (!storageRoot) {
+      return response.serviceUnavailable({
+        code: 'E_PHOTO_STORAGE',
+        message: 'Le stockage photo catalogue n’est pas configuré',
+      })
+    }
+
+    const mirror = new CatalogImageMirror({
+      storageRoot,
+      userAgent: env.get('OFF_USER_AGENT'),
+    })
+    const absolutePath = mirror.resolveOffCatalogFile(String(params.name ?? ''))
+    if (!absolutePath) {
+      return response.notFound({
+        code: 'E_PHOTO_NOT_FOUND',
+        message: 'Photo introuvable',
+      })
+    }
+
+    try {
+      await access(absolutePath)
+    } catch {
+      return response.notFound({
+        code: 'E_PHOTO_NOT_FOUND',
+        message: 'Photo introuvable',
+      })
+    }
+
+    const storage = new CellarPhotoStorage()
     this.streamImage(response, storage, absolutePath)
   }
 

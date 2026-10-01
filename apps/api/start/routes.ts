@@ -22,6 +22,10 @@ router
   .get('/api/v1/media/catalog/:name', [CollectionPhotosController, 'showCatalog'])
   .use([middleware.auth(), middleware.emailVerified()])
 
+router
+  .get('/api/v1/media/off/:name', [CollectionPhotosController, 'showOffCatalog'])
+  .use([middleware.auth(), middleware.emailVerified()])
+
 router.get('/', () => {
   return { hello: 'world', app: 'atasoif-api' }
 })
