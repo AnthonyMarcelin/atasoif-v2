@@ -41,6 +41,8 @@ export type OffDumpImportSummary = {
   mirrored: number
   mirrorErrors: number
   upserted: number
+  /** Count of drafted products per AlcoholCategory slug (after dedupe). */
+  byCategory: Record<string, number>
   dryRun: boolean
   profile: OffDumpFilterProfile
   dedupe: boolean
@@ -73,6 +75,7 @@ export default class CatalogOffDumpService {
       mirrored: 0,
       mirrorErrors: 0,
       upserted: 0,
+      byCategory: {},
       dryRun: options.dryRun,
       profile,
       dedupe,
@@ -147,8 +150,10 @@ export default class CatalogOffDumpService {
 
     const drafts = buffer ? buffer.values() : immediateDrafts
     summary.drafted = drafts.length
+    summary.byCategory = countByCategory(drafts)
 
-    for (const draft of drafts) {
+    for (let index = 0; index < drafts.length; index++) {
+      const draft = drafts[index]!
       if (mirrorImages && options.imageMirror && draft.photoUrl) {
         try {
           const mirrored = await options.imageMirror.mirrorFrontImage(draft.photoUrl, draft.barcode)
@@ -172,6 +177,10 @@ export default class CatalogOffDumpService {
         await lookup.persistDraft(draft)
         summary.upserted += 1
       }
+
+      if (options.onProgress && (index + 1) % batchLogEvery === 0) {
+        options.onProgress({ ...summary })
+      }
     }
 
     return summary
@@ -183,4 +192,13 @@ export default class CatalogOffDumpService {
     const input = lower.endsWith('.gz') ? fileStream.pipe(createGunzip()) : fileStream
     return createInterface({ input, crlfDelay: Number.POSITIVE_INFINITY })
   }
+}
+
+function countByCategory(drafts: CatalogProductDraft[]): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const draft of drafts) {
+    const slug = draft.categorySlug || 'other'
+    counts[slug] = (counts[slug] ?? 0) + 1
+  }
+  return counts
 }

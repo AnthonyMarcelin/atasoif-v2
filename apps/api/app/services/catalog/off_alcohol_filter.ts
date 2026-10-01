@@ -79,12 +79,14 @@ export type OffDumpProductLike = {
   generic_name?: string | null
   brands?: string | null
   countries?: string | null
-  countries_tags?: string[] | null
+  /** Array from OFF JSONL; string / CSV / JSON-array string from DuckDB CSV exports. */
+  countries_tags?: string[] | string | null
   origins?: string | null
   quantity?: string | null
   image_url?: string | null
   image_front_url?: string | null
-  categories_tags?: string[] | null
+  /** Array from OFF JSONL; string / CSV / JSON-array string from DuckDB CSV exports. */
+  categories_tags?: string[] | string | null
   categories?: string | null
   nutriments?: Record<string, unknown> | null
   alcohol_100g?: number | string | null
@@ -95,6 +97,50 @@ function tagMatchesPrefixes(tag: string, prefixes: readonly string[]): boolean {
 }
 
 /**
+ * Normalize OFF tag fields to a lowercase string[].
+ * DuckDB JSON export and CSV dumps often emit a comma-separated string instead of an array —
+ * without this, `.map` on a string would iterate characters and drop all alcohol matches.
+ */
+export function normalizeOffTagList(raw: unknown): string[] {
+  if (raw == null) {
+    return []
+  }
+
+  if (Array.isArray(raw)) {
+    const tags: string[] = []
+    for (const item of raw) {
+      tags.push(...normalizeOffTagList(item))
+    }
+    return tags
+  }
+
+  if (typeof raw !== 'string') {
+    return []
+  }
+
+  const trimmed = raw.trim()
+  if (!trimmed) {
+    return []
+  }
+
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown
+      if (Array.isArray(parsed)) {
+        return normalizeOffTagList(parsed)
+      }
+    } catch {
+      // Fall through to delimiter split.
+    }
+  }
+
+  return trimmed
+    .split(/[,;|]/)
+    .map((tag) => tag.trim().toLowerCase().replace(/^["']|["']$/g, ''))
+    .filter(Boolean)
+}
+
+/**
  * True when OFF category tags (or ABV signal) indicate an alcoholic beverage
  * matching the selected import profile.
  */
@@ -102,7 +148,7 @@ export function isAlcoholicOffProduct(
   product: OffDumpProductLike,
   profile: OffDumpFilterProfile = 'curated'
 ): boolean {
-  const tags = (product.categories_tags ?? []).map((tag) => tag.trim().toLowerCase())
+  const tags = normalizeOffTagList(product.categories_tags)
   if (tags.some((tag) => EXCLUDE_TAGS.has(tag))) {
     return false
   }
@@ -132,7 +178,7 @@ function matchesCuratedProfile(product: OffDumpProductLike, tags: string[]): boo
       product.product_name,
       product.brands,
       product.categories,
-      ...(product.categories_tags ?? []),
+      ...tags,
     ]
       .filter(Boolean)
       .join(' ')
