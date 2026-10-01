@@ -7,7 +7,7 @@ import BottleSource from '#models/bottle_source'
 import OpenFoodFactsClient from '#services/catalog/open_food_facts_client'
 import UpcItemDbClient from '#services/catalog/upcitemdb_client'
 import type { CatalogLookupOrigin, CatalogProductDraft } from '#services/catalog/catalog_types'
-import { isHttpPhotoUrl } from '#services/photo_url'
+import { isCatalogPhotoUrl } from '#services/photo_url'
 import { readPostgresUniqueViolation } from '#services/postgres_error'
 
 export type CatalogBarcodeResult = {
@@ -155,13 +155,16 @@ export function normalizeBarcode(raw: string): string | null {
   return digits
 }
 
-/** Remote nurse photos are shown to every signed-in user — http(s) only. */
+/**
+ * Bottle photoUrl allowlist: plain http(s) (OFF CDN / remote) or local catalog
+ * media paths (`/api/v1/media/catalog/…` UUID packshots, `/api/v1/media/off/…` mirrors).
+ */
 export function sanitizeRemotePhotoUrl(value: string | null | undefined): string | null {
   if (!value) {
     return null
   }
   const trimmed = value.trim()
-  return isHttpPhotoUrl(trimmed) ? trimmed : null
+  return isCatalogPhotoUrl(trimmed) ? trimmed : null
 }
 
 function hashRaw(raw: unknown): string {

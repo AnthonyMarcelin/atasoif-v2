@@ -1,16 +1,22 @@
 import { createWriteStream } from 'node:fs'
 import { mkdir, access } from 'node:fs/promises'
-import { dirname, extname, join } from 'node:path'
+import { basename, dirname, extname, join, resolve, sep } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
+import { OFF_CATALOG_MEDIA_PREFIX } from '#services/photo_url'
 
 export type CatalogImageMirrorOptions = {
   storageRoot: string
   userAgent: string
-  /** Optional public URL prefix, e.g. https://api.example/media/catalog */
+  /**
+   * Public URL prefix for photoUrl. Defaults to `/api/v1/media/off` (auth media route).
+   * Absolute https base also allowed once a CDN/static front exists.
+   */
   publicBaseUrl?: string | null
   fetchImpl?: typeof fetch
 }
+
+const OFF_FILE_NAME = /^[0-9A-Za-z_-]{8,32}\.(jpg|jpeg|png|webp|gif)$/i
 
 export type CatalogImageMirrorResult = {
   localPath: string
@@ -60,9 +66,11 @@ export default class CatalogImageMirror {
     const nodeStream = Readable.fromWeb(response.body as import('node:stream/web').ReadableStream)
     await pipeline(nodeStream, createWriteStream(localPath))
 
-    const photoUrl = this.options.publicBaseUrl
-      ? `${trimTrailingSlash(this.options.publicBaseUrl)}/${relativeName}`
-      : localPath
+    const base = trimTrailingSlash(
+      (this.options.publicBaseUrl && this.options.publicBaseUrl.trim()) ||
+        trimTrailingSlash(OFF_CATALOG_MEDIA_PREFIX)
+    )
+    const photoUrl = `${base}/${relativeName}`
 
     return { localPath, photoUrl }
   }
@@ -70,6 +78,23 @@ export default class CatalogImageMirror {
   async assertStorageWritable(): Promise<void> {
     await mkdir(this.options.storageRoot, { recursive: true })
     await access(this.options.storageRoot)
+  }
+
+  /**
+   * Resolve a mirrored OFF filename under storageRoot (path-traversal safe).
+   * `name` is the `:name` route param (e.g. `5000267024202.jpg`).
+   */
+  resolveOffCatalogFile(name: string): string | null {
+    if (!name || name !== basename(name) || !OFF_FILE_NAME.test(name)) {
+      return null
+    }
+    const root = resolve(this.options.storageRoot)
+    const target = resolve(join(root, name))
+    const prefix = root.endsWith(sep) ? root : `${root}${sep}`
+    if (target !== root && !target.startsWith(prefix)) {
+      return null
+    }
+    return target
   }
 }
 

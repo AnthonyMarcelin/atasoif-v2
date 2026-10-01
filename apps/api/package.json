@@ -20,6 +20,7 @@
     "db:seed": "node ace db:seed",
     "catalog:nurse": "node ace catalog:nurse",
     "catalog:off-dump": "node ace catalog:off-dump",
+    "catalog:mirror-images": "node ace catalog:mirror-images",
     "migrate:v1": "node ace migrate:v1"
   },
   "engines": {

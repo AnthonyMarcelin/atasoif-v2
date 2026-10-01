@@ -148,28 +148,42 @@ Ace will stream and filter; slower, same result for curated tags.
 - Dedupe on normalized **brand + name** so 70cl / 1L / multipacks collapse to the best-presented SKU (prefers photo + preferred volume: 70cl spirits, 33cl beer)
 - Disable with `--no-dedupe` if you need every barcode SKU
 
-### Image mirror (scaffold)
+### Image mirror (local disk + auth media route)
 
-Storage for personal uploads (E2-T04) is not the catalog path. Catalog seed uses a dedicated local directory:
+Storage for personal uploads (E2-T04 / `CELLAR_PHOTO_DIR`) is **not** the catalog OFF path. Catalog seed uses a dedicated directory:
 
 | Env | Role |
 |---|---|
-| `CATALOG_IMAGE_STORAGE_PATH` | Local root, e.g. `/var/lib/atasoif/catalog-images` |
-| `CATALOG_IMAGE_PUBLIC_BASE_URL` | Optional public prefix once static serving exists |
+| `CATALOG_IMAGE_STORAGE_PATH` | Local root, e.g. `/var/lib/atasoif/catalog-images` (persistent volume) |
+| `CATALOG_IMAGE_PUBLIC_BASE_URL` | Optional. Default when empty: `/api/v1/media/off` |
+
+Served at **`GET /api/v1/media/off/:name`** (auth + email verified), filename = `{barcode}.jpg` (etc.). Frontend already fetches `/api/…` with the bearer token.
 
 ```bash
 sudo mkdir -p /var/lib/atasoif/catalog-images
-# in apps/api/.env
+# Dokploy env:
 CATALOG_IMAGE_STORAGE_PATH=/var/lib/atasoif/catalog-images
-# optional later:
-# CATALOG_IMAGE_PUBLIC_BASE_URL=https://api.atasoif.fr/media/catalog
-
-node ace catalog:off-dump --file=/var/lib/atasoif/off/alcohol.jsonl --mirror-images
+# optional override:
+# CATALOG_IMAGE_PUBLIC_BASE_URL=/api/v1/media/off
 ```
 
-Without `--mirror-images` (or without the env path), `photoUrl` stays the OFF remote URL. Prefer mirroring before launch so the app does not hotlink the OFF CDN. Original OFF URL is kept in `attrs.offImageUrl` for attribution.
+**Prefer mirror-from-DB** when bottles are already imported (no JSONL needed):
 
-Static HTTP serving of mirrored files is a follow-up (wire when Drive/R2 or Adonis static route lands).
+```bash
+cd apps/api
+# Pilot batch
+node ace catalog:mirror-images --limit=100
+# Resume / full (skips already mirrored photoUrl under /api/v1/media/off/)
+node ace catalog:mirror-images
+```
+
+During a fresh dump you can still combine:
+
+```bash
+node ace catalog:off-dump --file=…/alcohol.jsonl --profile=curated --mirror-images
+```
+
+Without mirror env/path, `photoUrl` stays the OFF remote URL. Original OFF URL is kept in `attrs.offImageUrl` for attribution. Disk ballpark for ~11.5k curated fronts: often **~0.5–2 GB** (varies by JPEG size) — check `df -h` before a full run; use `--limit` for pilots.
 
 ### Import commands
 
@@ -277,15 +291,26 @@ node ace catalog:off-dump \
   --profile=curated
 ```
 
-Optional later (needs writable `CATALOG_IMAGE_STORAGE_PATH` + mount):
+### 4b) Mirror images (after bottles exist)
+
+Needs **persistent** volume + env (not `/tmp`):
+
+| Dokploy | Value |
+|---|---|
+| Mount | host `/var/lib/atasoif/catalog-images` → container `/var/lib/atasoif/catalog-images` |
+| Env | `CATALOG_IMAGE_STORAGE_PATH=/var/lib/atasoif/catalog-images` |
+
+Redeploy **once** after adding the mount/env (accepts clearing container `/tmp` dump files — mirror-from-DB does not need JSONL).
 
 ```sh
-# Only if env + volume are set on Dokploy
-node ace catalog:off-dump \
-  --file=/var/lib/atasoif/off/alcohol.jsonl \
-  --profile=curated \
-  --mirror-images
+df -h /var/lib/atasoif/catalog-images /tmp
+# Pilot
+node ace catalog:mirror-images --limit=100
+# Full resume-safe
+node ace catalog:mirror-images
 ```
+
+Verify a few `photoUrl` start with `/api/v1/media/off/` and users/user_bottles counts unchanged.
 
 ### 5) Verify
 
@@ -362,4 +387,5 @@ UPCitemdb trial base URL needs **no key**. Our throttle mirrors ~100 req/day.
 |---|---|
 | Nurse unit tests | `cd apps/api && node ace test --files=tests/unit/catalog_nurse_service.spec.ts` |
 | OFF dump filter / mapper / dedupe / mirror | `cd apps/api && node ace test --files=tests/unit/catalog_off_dump_service.spec.ts` |
+| Mirror-from-DB helpers | `cd apps/api && node ace test --files=tests/unit/catalog_mirror_service.spec.ts` |
 | Parsers | `cd apps/api && node ace test --files=tests/unit/catalog_parsers.spec.ts` |

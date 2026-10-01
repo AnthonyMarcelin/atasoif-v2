@@ -6,6 +6,7 @@ import env from '#start/env'
 import { OFF_ATTRIBUTION_EN } from '#services/catalog/catalog_attribution'
 import CatalogImageMirror from '#services/catalog/catalog_image_mirror'
 import CatalogOffDumpService from '#services/catalog/catalog_off_dump_service'
+import { defaultOffPublicBaseUrl } from '#services/catalog/catalog_mirror_service'
 import type { OffDumpFilterProfile } from '#services/catalog/off_alcohol_filter'
 
 /**
@@ -86,8 +87,8 @@ export default class CatalogOffDump extends BaseCommand {
     await this.assertReadable(filePath)
 
     const profile = this.resolveProfile(this.profile)
-    const storageRoot = env.get('CATALOG_IMAGE_STORAGE_PATH')
-    const publicBaseUrl = env.get('CATALOG_IMAGE_PUBLIC_BASE_URL')
+    const storageRoot = env.get('CATALOG_IMAGE_STORAGE_PATH')?.trim()
+    const publicBaseUrl = defaultOffPublicBaseUrl(env.get('CATALOG_IMAGE_PUBLIC_BASE_URL'))
     const userAgent = env.get('OFF_USER_AGENT')
 
     if (this.mirrorImages && !storageRoot) {
@@ -103,10 +104,11 @@ export default class CatalogOffDump extends BaseCommand {
       imageMirror = new CatalogImageMirror({
         storageRoot,
         userAgent,
-        publicBaseUrl: publicBaseUrl || null,
+        publicBaseUrl,
       })
       await imageMirror.assertStorageWritable()
       this.logger.info(`Image mirror root: ${storageRoot}`)
+      this.logger.info(`Public base: ${publicBaseUrl}`)
     }
 
     this.logger.info(`OFF dump file: ${filePath}`)
