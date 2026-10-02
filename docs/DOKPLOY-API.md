@@ -176,7 +176,7 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 
 | Variable | Notes |
 |---|---|
-| `CATALOG_IMAGE_STORAGE_PATH` | Absolute path for OFF front mirrors, e.g. `/var/lib/atasoif/catalog-images`. Mount a **persistent** volume here before `catalog:mirror-images`. |
+| `CATALOG_IMAGE_STORAGE_PATH` | Absolute path for OFF front mirrors, e.g. `/var/lib/atasoif/catalog-images`. Mount a **persistent** volume here before `catalog:mirror-images`. Host dir ownership must match the container user (`USER atasoif`) or Ace fails with `EACCES`. |
 | `CATALOG_IMAGE_PUBLIC_BASE_URL` | Optional. Empty → `/api/v1/media/off` (served by API, auth required). |
 
 See [`CATALOG-SEED.md`](./CATALOG-SEED.md) § Image mirror / § 4b.

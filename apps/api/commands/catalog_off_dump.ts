@@ -106,7 +106,14 @@ export default class CatalogOffDump extends BaseCommand {
         userAgent,
         publicBaseUrl,
       })
-      await imageMirror.assertStorageWritable()
+      try {
+        await imageMirror.assertStorageWritable()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        this.logger.error(message)
+        this.exitCode = 1
+        return
+      }
       this.logger.info(`Image mirror root: ${storageRoot}`)
       this.logger.info(`Public base: ${publicBaseUrl}`)
     }
@@ -154,6 +161,10 @@ export default class CatalogOffDump extends BaseCommand {
         `jsonErrors=${summary.jsonErrors}`,
       ].join(' · ')
     )
+
+    if (summary.firstMirrorError) {
+      this.logger.warning(`First mirror error: ${summary.firstMirrorError}`)
+    }
 
     const categoryParts = Object.entries(summary.byCategory)
       .sort(([a], [b]) => a.localeCompare(b))

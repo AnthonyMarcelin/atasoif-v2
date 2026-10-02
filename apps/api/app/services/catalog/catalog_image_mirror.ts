@@ -1,8 +1,5 @@
-import { createWriteStream } from 'node:fs'
-import { mkdir, access } from 'node:fs/promises'
+import { mkdir, access, writeFile, unlink } from 'node:fs/promises'
 import { basename, dirname, extname, join, resolve, sep } from 'node:path'
-import { pipeline } from 'node:stream/promises'
-import { Readable } from 'node:stream'
 import { OFF_CATALOG_MEDIA_PREFIX } from '#services/photo_url'
 
 export type CatalogImageMirrorOptions = {
@@ -17,6 +14,7 @@ export type CatalogImageMirrorOptions = {
 }
 
 const OFF_FILE_NAME = /^[0-9A-Za-z_-]{8,32}\.(jpg|jpeg|png|webp|gif)$/i
+const WRITE_PROBE_NAME = '.atasoif-write-probe'
 
 export type CatalogImageMirrorResult = {
   localPath: string
@@ -26,6 +24,10 @@ export type CatalogImageMirrorResult = {
 /**
  * Download an OFF front image onto local VPS disk (no CDN hotlink).
  * Scaffold until a shared Drive/R2 layer exists — see docs/CATALOG-SEED.md.
+ *
+ * Uses arrayBuffer → writeFile (not Readable.fromWeb). Prod failures are more
+ * often bind-mount ownership (EACCES) than stream bridging — assertStorageWritable
+ * probes a real write before Ace mirrors hundreds of bottles.
  */
 export default class CatalogImageMirror {
   constructor(private readonly options: CatalogImageMirrorOptions) {}
@@ -54,17 +56,25 @@ export default class CatalogImageMirror {
       redirect: 'follow',
     })
 
-    if (!response.ok || !response.body) {
-      return null
+    if (!response.ok) {
+      throw new Error(`OFF image HTTP ${response.status} for ${url}`)
     }
 
     const contentType = response.headers.get('content-type') ?? ''
     if (contentType && !contentType.startsWith('image/') && !contentType.includes('octet-stream')) {
-      return null
+      throw new Error(`OFF image unexpected content-type "${contentType}" for ${url}`)
     }
 
-    const nodeStream = Readable.fromWeb(response.body as import('node:stream/web').ReadableStream)
-    await pipeline(nodeStream, createWriteStream(localPath))
+    const buf = Buffer.from(await response.arrayBuffer())
+    if (buf.length === 0) {
+      throw new Error(`OFF image empty body for ${url}`)
+    }
+
+    try {
+      await writeFile(localPath, buf)
+    } catch (error) {
+      throw wrapStorageWriteError(error, localPath)
+    }
 
     const base = trimTrailingSlash(
       (this.options.publicBaseUrl && this.options.publicBaseUrl.trim()) ||
@@ -75,9 +85,21 @@ export default class CatalogImageMirror {
     return { localPath, photoUrl }
   }
 
+  /**
+   * Ensure storageRoot exists and the process uid can create a file there.
+   * Catches host bind-mount ownership mismatches (EACCES) before a full Ace run.
+   */
   async assertStorageWritable(): Promise<void> {
     await mkdir(this.options.storageRoot, { recursive: true })
     await access(this.options.storageRoot)
+
+    const probePath = join(this.options.storageRoot, WRITE_PROBE_NAME)
+    try {
+      await writeFile(probePath, Buffer.from('ok'))
+      await unlink(probePath)
+    } catch (error) {
+      throw wrapStorageWriteError(error, this.options.storageRoot)
+    }
   }
 
   /**
@@ -96,6 +118,22 @@ export default class CatalogImageMirror {
     }
     return target
   }
+}
+
+function wrapStorageWriteError(error: unknown, path: string): Error {
+  const code =
+    error && typeof error === 'object' && 'code' in error
+      ? String((error as { code?: unknown }).code ?? '')
+      : ''
+  const detail = error instanceof Error ? error.message : String(error)
+  if (code === 'EACCES' || code === 'EPERM') {
+    return new Error(
+      `Catalog image storage not writable (${code}) at ${path}. ` +
+        `On the Docker host, chown the bind mount to the container user ` +
+        `(image USER atasoif — alpine adduser -S, typically uid/gid from \`id\` in the API container).`
+    )
+  }
+  return new Error(`Catalog image storage write failed at ${path}: ${detail}`)
 }
 
 function sanitizeBarcode(barcode: string): string {
