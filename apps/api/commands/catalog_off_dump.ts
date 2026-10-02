@@ -106,7 +106,14 @@ export default class CatalogOffDump extends BaseCommand {
         userAgent,
         publicBaseUrl,
       })
-      await imageMirror.assertStorageWritable()
+      try {
+        await imageMirror.assertStorageWritable()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        this.logger.error(message)
+        this.exitCode = 1
+        return
+      }
       this.logger.info(`Image mirror root: ${storageRoot}`)
       this.logger.info(`Public base: ${publicBaseUrl}`)
     }

@@ -86,6 +86,18 @@ test.group('CatalogImageMirror defaults', () => {
       /unexpected content-type/
     )
   })
+
+  test('assertStorageWritable probes a real write then removes the probe', async ({ assert }) => {
+    const dir = await mkdtemp(join(tmpdir(), 'off-mirror-probe-'))
+    const mirror = new CatalogImageMirror({
+      storageRoot: dir,
+      userAgent: 'AtasoifTest/0.1',
+    })
+    await mirror.assertStorageWritable()
+    const { readdir } = await import('node:fs/promises')
+    const names = await readdir(dir)
+    assert.notInclude(names, '.atasoif-write-probe')
+  })
 })
 
 test.group('catalog mirror helpers', () => {

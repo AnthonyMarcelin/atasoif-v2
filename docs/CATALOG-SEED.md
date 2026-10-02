@@ -161,6 +161,9 @@ Served at **`GET /api/v1/media/off/:name`** (auth + email verified), filename = 
 
 ```bash
 sudo mkdir -p /var/lib/atasoif/catalog-images
+# Bind-mount ownership must match the API container user (`USER atasoif` in the image).
+# After mount: docker exec "$CID" id   then on host:
+#   sudo chown -R <uid>:<gid> /var/lib/atasoif/catalog-images
 # Dokploy env:
 CATALOG_IMAGE_STORAGE_PATH=/var/lib/atasoif/catalog-images
 # optional override:
