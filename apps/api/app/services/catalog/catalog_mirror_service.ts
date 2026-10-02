@@ -11,6 +11,13 @@ export type CatalogMirrorRunOptions = {
   imageMirror: CatalogImageMirror
   onProgress?: (summary: CatalogMirrorSummary) => void
   progressEvery?: number
+  /**
+   * Called for the first few mirror failures (rate-limited) so Ace/ops can see
+   * the real cause instead of only mirrorErrors=N.
+   */
+  onMirrorError?: (message: string, context: { barcode: string; remoteUrl: string }) => void
+  /** Max onMirrorError invocations per run (default 3). */
+  maxLoggedErrors?: number
 }
 
 export type CatalogMirrorSummary = {
@@ -23,6 +30,8 @@ export type CatalogMirrorSummary = {
   updated: number
   dryRun: boolean
   stoppedForLimit: boolean
+  /** First mirror failure message (if any), for final Ace log line. */
+  firstMirrorError: string | null
 }
 
 type BottleAttrs = Record<string, unknown> & {
@@ -38,6 +47,8 @@ export default class CatalogMirrorService {
   async run(options: CatalogMirrorRunOptions): Promise<CatalogMirrorSummary> {
     const skipMirrored = options.skipMirrored ?? true
     const progressEvery = options.progressEvery ?? 50
+    const maxLoggedErrors = options.maxLoggedErrors ?? 3
+    const logState = { count: 0 }
     const summary: CatalogMirrorSummary = {
       scanned: 0,
       eligible: 0,
@@ -48,6 +59,7 @@ export default class CatalogMirrorService {
       updated: 0,
       dryRun: options.dryRun,
       stoppedForLimit: false,
+      firstMirrorError: null,
     }
 
     const query = Bottle.query().whereNull('deleted_at').orderBy('id', 'asc')
@@ -83,7 +95,11 @@ export default class CatalogMirrorService {
       try {
         const result = await options.imageMirror.mirrorFrontImage(remoteUrl, bottle.barcode)
         if (!result) {
-          summary.mirrorErrors += 1
+          recordMirrorError(summary, options, logState, maxLoggedErrors, {
+            message: `mirror returned null for ${remoteUrl}`,
+            barcode: bottle.barcode,
+            remoteUrl,
+          })
         } else {
           summary.mirrored += 1
           if (!options.dryRun) {
@@ -96,8 +112,13 @@ export default class CatalogMirrorService {
             summary.updated += 1
           }
         }
-      } catch {
-        summary.mirrorErrors += 1
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        recordMirrorError(summary, options, logState, maxLoggedErrors, {
+          message,
+          barcode: bottle.barcode,
+          remoteUrl,
+        })
       }
 
       if (options.onProgress && summary.eligible % progressEvery === 0) {
@@ -106,6 +127,26 @@ export default class CatalogMirrorService {
     }
 
     return summary
+  }
+}
+
+function recordMirrorError(
+  summary: CatalogMirrorSummary,
+  options: CatalogMirrorRunOptions,
+  logState: { count: number },
+  maxLoggedErrors: number,
+  detail: { message: string; barcode: string; remoteUrl: string }
+): void {
+  summary.mirrorErrors += 1
+  if (!summary.firstMirrorError) {
+    summary.firstMirrorError = detail.message
+  }
+  if (options.onMirrorError && logState.count < maxLoggedErrors) {
+    options.onMirrorError(detail.message, {
+      barcode: detail.barcode,
+      remoteUrl: detail.remoteUrl,
+    })
+    logState.count += 1
   }
 }
 

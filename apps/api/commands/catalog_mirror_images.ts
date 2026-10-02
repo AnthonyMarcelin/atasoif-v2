@@ -66,7 +66,14 @@ export default class CatalogMirrorImages extends BaseCommand {
       userAgent,
       publicBaseUrl,
     })
-    await imageMirror.assertStorageWritable()
+    try {
+      await imageMirror.assertStorageWritable()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this.logger.error(message)
+      this.exitCode = 1
+      return
+    }
 
     this.logger.info(`Image mirror root: ${storageRoot}`)
     this.logger.info(`Public base: ${publicBaseUrl}`)
@@ -86,6 +93,11 @@ export default class CatalogMirrorImages extends BaseCommand {
           `progress scanned=${progress.scanned} eligible=${progress.eligible} mirrored=${progress.mirrored} errors=${progress.mirrorErrors} updated=${progress.updated}`
         )
       },
+      onMirrorError: (message, context) => {
+        this.logger.warning(
+          `mirror error barcode=${context.barcode}: ${message} (url=${context.remoteUrl})`
+        )
+      },
     })
 
     this.logger.info(
@@ -99,6 +111,10 @@ export default class CatalogMirrorImages extends BaseCommand {
         `updated=${summary.updated}`,
       ].join(' · ')
     )
+
+    if (summary.firstMirrorError) {
+      this.logger.warning(`First mirror error: ${summary.firstMirrorError}`)
+    }
 
     if (summary.stoppedForLimit) {
       this.logger.warning(`Stopped early: --limit=${this.limit} eligible bottles reached.`)
