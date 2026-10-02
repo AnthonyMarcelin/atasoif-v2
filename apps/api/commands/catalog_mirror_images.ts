@@ -86,6 +86,11 @@ export default class CatalogMirrorImages extends BaseCommand {
           `progress scanned=${progress.scanned} eligible=${progress.eligible} mirrored=${progress.mirrored} errors=${progress.mirrorErrors} updated=${progress.updated}`
         )
       },
+      onMirrorError: (message, context) => {
+        this.logger.warning(
+          `mirror error barcode=${context.barcode}: ${message} (url=${context.remoteUrl})`
+        )
+      },
     })
 
     this.logger.info(
@@ -99,6 +104,10 @@ export default class CatalogMirrorImages extends BaseCommand {
         `updated=${summary.updated}`,
       ].join(' · ')
     )
+
+    if (summary.firstMirrorError) {
+      this.logger.warning(`First mirror error: ${summary.firstMirrorError}`)
+    }
 
     if (summary.stoppedForLimit) {
       this.logger.warning(`Stopped early: --limit=${this.limit} eligible bottles reached.`)

@@ -32,6 +32,60 @@ test.group('CatalogImageMirror defaults', () => {
     assert.equal(mirror.resolveOffCatalogFile('5000267024202.jpg'), result!.localPath)
     assert.isNull(mirror.resolveOffCatalogFile('../etc/passwd'))
   })
+
+  test('writes via arrayBuffer without Readable.fromWeb', async ({ assert }) => {
+    const dir = await mkdtemp(join(tmpdir(), 'off-mirror-abuf-'))
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const mirror = new CatalogImageMirror({
+      storageRoot: dir,
+      userAgent: 'AtasoifTest/0.1',
+      fetchImpl: async () =>
+        new Response(bytes, {
+          status: 200,
+          headers: { 'content-type': 'image/png' },
+        }),
+    })
+
+    const result = await mirror.mirrorFrontImage(
+      'https://images.openfoodfacts.org/front.png',
+      '3010000000001'
+    )
+    assert.isNotNull(result)
+    assert.equal(result!.photoUrl, '/api/v1/media/off/3010000000001.png')
+    assert.deepEqual(await readFile(result!.localPath), bytes)
+  })
+
+  test('throws on non-OK HTTP so callers can log the status', async ({ assert }) => {
+    const dir = await mkdtemp(join(tmpdir(), 'off-mirror-http-'))
+    const mirror = new CatalogImageMirror({
+      storageRoot: dir,
+      userAgent: 'AtasoifTest/0.1',
+      fetchImpl: async () => new Response(null, { status: 403 }),
+    })
+
+    await assert.rejects(
+      () => mirror.mirrorFrontImage('https://images.example/missing.jpg', '5000267024202'),
+      /OFF image HTTP 403/
+    )
+  })
+
+  test('throws on unexpected content-type', async ({ assert }) => {
+    const dir = await mkdtemp(join(tmpdir(), 'off-mirror-ct-'))
+    const mirror = new CatalogImageMirror({
+      storageRoot: dir,
+      userAgent: 'AtasoifTest/0.1',
+      fetchImpl: async () =>
+        new Response('<html>nope</html>', {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+        }),
+    })
+
+    await assert.rejects(
+      () => mirror.mirrorFrontImage('https://images.example/front.jpg', '5000267024202'),
+      /unexpected content-type/
+    )
+  })
 })
 
 test.group('catalog mirror helpers', () => {

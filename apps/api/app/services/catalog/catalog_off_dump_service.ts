@@ -40,6 +40,8 @@ export type OffDumpImportSummary = {
   dedupedAway: number
   mirrored: number
   mirrorErrors: number
+  /** First mirror failure message (if any). */
+  firstMirrorError: string | null
   upserted: number
   /** Count of drafted products per AlcoholCategory slug (after dedupe). */
   byCategory: Record<string, number>
@@ -74,6 +76,7 @@ export default class CatalogOffDumpService {
       dedupedAway: 0,
       mirrored: 0,
       mirrorErrors: 0,
+      firstMirrorError: null,
       upserted: 0,
       byCategory: {},
       dryRun: options.dryRun,
@@ -167,9 +170,16 @@ export default class CatalogOffDumpService {
             summary.mirrored += 1
           } else {
             summary.mirrorErrors += 1
+            if (!summary.firstMirrorError) {
+              summary.firstMirrorError = `mirror returned null for ${draft.photoUrl}`
+            }
           }
-        } catch {
+        } catch (error) {
           summary.mirrorErrors += 1
+          if (!summary.firstMirrorError) {
+            summary.firstMirrorError =
+              error instanceof Error ? error.message : String(error)
+          }
         }
       }
 

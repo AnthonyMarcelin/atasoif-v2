@@ -155,6 +155,10 @@ export default class CatalogOffDump extends BaseCommand {
       ].join(' · ')
     )
 
+    if (summary.firstMirrorError) {
+      this.logger.warning(`First mirror error: ${summary.firstMirrorError}`)
+    }
+
     const categoryParts = Object.entries(summary.byCategory)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([slug, count]) => `${slug}=${count}`)
