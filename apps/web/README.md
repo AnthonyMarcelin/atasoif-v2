@@ -29,15 +29,33 @@ For a complete list of available schematics (such as `components`, `directives`,
 ng generate --help
 ```
 
+## API base URL
+
+| Configuration | File | `apiBaseUrl` |
+|---|---|---|
+| Production (`ng build` / default) | `src/environments/environment.ts` | `https://api.atasoif.fr` |
+| Development (`ng serve`) | `src/environments/environment.development.ts` | `http://localhost:3000` |
+
+`angular.json` swaps the development file via `fileReplacements`. Relative media paths (`/api/v1/media/off/…`) are resolved against `apiBaseUrl` in `BottlePhoto`.
+
+Prod hosting (Dokploy) is **not** wired yet — see [`docs/DOKPLOY-WEB.md`](../../docs/DOKPLOY-WEB.md).
+
 ## Building
 
-To build the project run:
+From monorepo root (preferred):
 
 ```bash
-ng build
+bun run build:shared && bun run build:web
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Or inside this package:
+
+```bash
+bun run build
+```
+
+Artifacts land under `dist/web`. The production build embeds `https://api.atasoif.fr` as the API origin.
+
 
 ## Running unit tests
 

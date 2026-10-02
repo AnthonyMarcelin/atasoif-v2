@@ -19,7 +19,16 @@ API Adonis en prod : image **`ghcr.io/anthonymarcelin/atasoif-api`**, trigger **
 
 `dev` merges do **not** deploy the API or the site. Deploy = merge **`dev` → `main`** (accord explicite) ou `workflow_dispatch`. Site and API both trigger on **`main`** for prod.
 
+## Angular cave app (`apps/web`) — not deployed yet
+
+Production builds already target API **`https://api.atasoif.fr`**. There is **no** GHCR image / Dokploy service for `apps/web` yet.
+
+**Proposal (Anthony must confirm before creating anything):** [`docs/DOKPLOY-WEB.md`](./DOKPLOY-WEB.md) — same pattern as site (`nginx` static → `ghcr.io/…/atasoif-web` → Dokploy Application under **À ta soif**). Until then, local/CI smoke = `bun run build:web`.
+
+When the cave app has a public origin, add it to API `CORS_ORIGIN` (and set `FRONTEND_URL` for mail/OAuth deep links).
+
 ## Marketing site (`apps/site`) → GHCR → Dokploy
+
 
 La landing Astro static a son **propre** image nginx. CI builds and pushes it; **Dokploy does not build from git**.
 

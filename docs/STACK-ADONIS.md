@@ -134,7 +134,8 @@ Apple stays deferred until E1-T09.
 1. `AuthService` keeps the token in memory (signals) and persists it in `localStorage` (`atasoif.auth.access_token`) for web MVP refreshes.
 2. Functional `authInterceptor` attaches the header to API calls and, on **401** (except login/signup/forgot/reset), clears the session and redirects to `/auth/login`.
 3. `authGuard` + `emailVerifiedGuard` protect `/me` and `/cellar`. Unverified sessions land on `/auth/verify-email` (resend + deep-link confirm).
-4. API base URL: `environment.apiBaseUrl` (dev default `http://localhost:3000`).
+4. API base URL: `environment.apiBaseUrl` — **prod** `https://api.atasoif.fr` (`environment.ts`); **dev** `http://localhost:3000` (`environment.development.ts` via Angular `fileReplacements`). Hosting the SPA: see [`docs/DOKPLOY-WEB.md`](./DOKPLOY-WEB.md) (proposal — Anthony confirm before creating Dokploy `web`).
+
 
 **Storage note:** `localStorage` is XSS-readable. Acceptable for web MVP; Capacitor Secure Storage is planned for native builds (E5). Never log the raw token. Do not store passwords.
 

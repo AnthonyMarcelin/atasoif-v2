@@ -157,7 +157,8 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 
 | Variable | Notes |
 |---|---|
-| `CORS_ORIGIN` | origines front autorisées (CSV) |
+| `CORS_ORIGIN` | origines front autorisées (CSV) — include marketing (`https://www.atasoif.fr`, `https://atasoif.fr`) **and** the Angular cave origin once hosted (see [`DOKPLOY-WEB.md`](./DOKPLOY-WEB.md)) |
+
 | `OPS_ADMIN_TOKEN` | long secret aléatoire pour `GET /api/v1/ops/kpis` (`X-Ops-Token`). Vide = route fermée |
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | si le SMTP le demande |
 | `CELLAR_PHOTO_DIR` | chemin absolu volume persistant (photos cave) hors release |
