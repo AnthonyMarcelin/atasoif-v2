@@ -15,4 +15,12 @@ describe('photo url auth', () => {
       `${apiBase}/api/v1/collection/bottles/4/photo`,
     );
   });
+
+  it('resolves relative OFF media paths against the API origin', () => {
+    const prodBase = 'https://api.atasoif.fr';
+    const relative = '/api/v1/media/off/5000267024202.jpg';
+    expect(photoNeedsBearer(relative, prodBase)).toBeTrue();
+    expect(absoluteApiUrl(relative, prodBase)).toBe(`${prodBase}${relative}`);
+  });
 });
+
