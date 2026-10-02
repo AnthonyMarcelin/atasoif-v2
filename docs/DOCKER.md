@@ -107,6 +107,7 @@ Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`,
 |---|---|
 | `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime; `@atasoif/shared` vendored) |
 | `apps/site/Dockerfile` | Astro static → nginx (built in CI → GHCR) |
+| `docs/DOKPLOY-WEB.md` | Proposal: Angular cave SPA → GHCR → Dokploy (Anthony confirm before create) |
 | `.github/workflows/api-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-api` on **`main`** + Tailscale → Dokploy webhook |
 | `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` on **`main`** + HTTPS Dokploy webhook (no Tailscale) |
 | `apps/api/docker-entrypoint.sh` | Opt-in Lucid migrate (`RUN_MIGRATIONS=1`) then `node bin/server.js` |
