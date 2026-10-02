@@ -26,7 +26,7 @@ Ne pas utiliser un service **Compose** (chemin git + `docker-compose.yml`) : le 
 | App | Workflow | Branch qui déploie |
 |---|---|---|
 | **API** (ce doc) | `api-ghcr.yml` | **`main`** |
-| Site (landing) | `site-ghcr.yml` | actuellement **`dev`** (voir [`docs/DOCKER.md`](./DOCKER.md)) |
+| Site (landing) | `site-ghcr.yml` | **`main`** (HTTPS webhook, pas Tailscale — voir [`docs/DOCKER.md`](./DOCKER.md)) |
 
 **Deploy API = merge `dev` → `main`** (ou **workflow_dispatch** sur `api-ghcr.yml` depuis `main`).
 
@@ -64,11 +64,11 @@ Settings → Secrets and variables → Actions.
 | Secret | Required | Purpose |
 |---|---|---|
 | `DOKPLOY_API_DEPLOY_WEBHOOK` | **Oui** | URL complète du webhook deploy Dokploy du service **Application** `api` (Tailscale, ex. `http://100.x.y.z:3000/api/deploy/<token>`). Ne jamais committer. |
-| `TS_OAUTH_CLIENT_ID` | Une des options Tailscale | Client OAuth Tailscale (`auth_keys`, tags `tag:ci`) — **déjà** utilisé pour le site |
-| `TS_OAUTH_SECRET` | Avec OAuth | Secret OAuth — **déjà** utilisé pour le site |
-| `TS_AUTHKEY` | **Ou** à la place d’OAuth | Auth key CI réutilisable + ephemeral + `tag:ci` — **déjà** utilisé pour le site |
+| `TS_OAUTH_CLIENT_ID` | Une des options Tailscale | Client OAuth Tailscale (`auth_keys`, tags `tag:ci`) — **API notify** (le site n’utilise plus Tailscale) |
+| `TS_OAUTH_SECRET` | Avec OAuth | Secret OAuth — **API notify** |
+| `TS_AUTHKEY` | **Ou** à la place d’OAuth | Auth key CI réutilisable + ephemeral + `tag:ci` — **API notify** |
 
-Réutiliser les secrets Tailscale du site. Seul secret **nouveau** typiquement : `DOKPLOY_API_DEPLOY_WEBHOOK`.
+Les secrets Tailscale restent pour l’**API** uniquement. Le site préfère un webhook **HTTPS** public (`DOKPLOY_SITE_DEPLOY_WEBHOOK`) sans join Tailscale — voir [`DOCKER.md`](./DOCKER.md).
 
 `GITHUB_TOKEN` (permissions packages write) suffit pour push GHCR — pas de PAT dédié si Workflow permissions = Read and write.
 

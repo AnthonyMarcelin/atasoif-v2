@@ -15,9 +15,9 @@ API Adonis en prod : image **`ghcr.io/anthonymarcelin/atasoif-api`**, trigger **
 | Tags | `latest` + `sha-<short>` on pushes to **`main`** |
 | Workflow | [`.github/workflows/api-ghcr.yml`](../.github/workflows/api-ghcr.yml) |
 | Dokploy | **Application** Docker (pull) — pas Compose |
-| Secret webhook | `DOKPLOY_API_DEPLOY_WEBHOOK` (+ Tailscale secrets partagés avec le site) |
+| Secret webhook | `DOKPLOY_API_DEPLOY_WEBHOOK` (+ Tailscale secrets — **API only**; site uses HTTPS webhook) |
 
-`dev` merges do **not** deploy the API. Deploy = merge **`dev` → `main`** (accord explicite) ou `workflow_dispatch`. Site workflow still triggers on **`dev`** (below); API is intentionally on **`main`** for prod.
+`dev` merges do **not** deploy the API or the site. Deploy = merge **`dev` → `main`** (accord explicite) ou `workflow_dispatch`. Site and API both trigger on **`main`** for prod.
 
 ## Marketing site (`apps/site`) → GHCR → Dokploy
 
@@ -27,8 +27,9 @@ La landing Astro static a son **propre** image nginx. CI builds and pushes it; *
 |---|---|
 | Dockerfile | `apps/site/Dockerfile` (context = monorepo **root** `.`) |
 | GHCR image | **`ghcr.io/anthonymarcelin/atasoif-site`** |
-| Tags | `latest` on pushes to `dev` · also short/long `sha-*` |
+| Tags | `latest` on pushes to **`main`** · also short/long `sha-*` |
 | Workflow | [`.github/workflows/site-ghcr.yml`](../.github/workflows/site-ghcr.yml) |
+| Trigger | **`push` / merge sur `main`** (path filters) + `workflow_dispatch` |
 | Dokploy provider | **Docker** (pull prebuilt image) — **not** Nixpacks, **not** Dockerfile-from-git |
 
 ### Local build (debug)
@@ -56,32 +57,28 @@ GitHub App is already installed on Dokploy **and** on `AnthonyMarcelin/atasoif-v
 | Registry | Prefer **Public** package `atasoif-site` → anonymous pull, no extra registry form. If **Private**, select the **existing Dokploy GHCR** registry (same `ghcr.io` creds already used for Spawnzone pulls) — do **not** invent a new PAT unless that registry is missing |
 | Auto-deploy | optional (watch image tag / Dokploy pull) |
 
-Do **not** configure Build type Dockerfile / Nixpacks / monorepo context in Dokploy for this service. Rebuilds happen in GitHub Actions on `dev` (path filters) or via **workflow_dispatch** (override `PUBLIC_*` inputs).
+Do **not** configure Build type Dockerfile / Nixpacks / monorepo context in Dokploy for this service. Rebuilds happen in GitHub Actions on **`main`** (path filters) or via **workflow_dispatch** (override `PUBLIC_*` inputs). Merges to `dev` do **not** deploy the site.
 
-### Auto-deploy after GHCR push (Tailscale → Dokploy webhook)
+### Auto-deploy after GHCR push (HTTPS Dokploy webhook)
 
-GitHub-hosted runners are **not** on the Tailscale mesh (VPS + Mac are). After a successful `atasoif-site` push, job **`notify-dokploy`** in [`.github/workflows/site-ghcr.yml`](../.github/workflows/site-ghcr.yml):
+After a successful `atasoif-site` push, job **`notify-dokploy`** in [`.github/workflows/site-ghcr.yml`](../.github/workflows/site-ghcr.yml) `POST`s `{}` to the Dokploy deploy webhook URL stored in secrets (never commit the URL or token). **No Tailscale join** for the site workflow.
 
-1. Joins the tailnet via [`tailscale/github-action`](https://github.com/tailscale/github-action) `@v4`
-2. `POST`s the Dokploy deploy webhook URL stored in secrets (never commit the URL or token)
+**Set the secret:** GitHub Actions → `DOKPLOY_SITE_DEPLOY_WEBHOOK` = the **HTTPS Application deploy webhook** from Dokploy service **`site`** (copy from Dokploy UI). Prefer the public HTTPS URL, not a Tailscale `http://100.x…` URL. Never commit or paste the full URL/token into the repo, PRs, or docs.
 
-`continue-on-error: false` — if Tailscale comes up and the webhook fails, the workflow **fails loudly**.
+Site notify does **not** join Tailscale. A Tailscale-only URL would only work if the runner could already reach that host. (API notify may still use Tailscale — see [`DOKPLOY-API.md`](./DOKPLOY-API.md).)
 
-#### Required GitHub Actions secrets
+`continue-on-error: false` — missing secret or non-2xx webhook response **fails loudly**.
+
+#### Required GitHub Actions secrets (site)
 
 Settings → Secrets and variables → Actions → **New repository secret**.
 
 | Secret | Required | Purpose |
 |---|---|---|
-| `DOKPLOY_SITE_DEPLOY_WEBHOOK` | **Yes** | Full Dokploy deploy webhook URL (Tailscale IP, e.g. `http://100.x.y.z:3000/api/deploy/...`). Copy from Dokploy service `site` — do **not** put it in the repo. |
-| `DOKPLOY_API_DEPLOY_WEBHOOK` | For API deploys | Same pattern for service `api` — see [`DOKPLOY-API.md`](./DOKPLOY-API.md). |
-| `TS_OAUTH_CLIENT_ID` | One of the Tailscale auth options | Tailscale OAuth client ID (`auth_keys` scope, tags include `tag:ci`) |
-| `TS_OAUTH_SECRET` | With OAuth | Tailscale OAuth client secret |
-| `TS_AUTHKEY` | **Or** instead of OAuth | Reusable auth key tagged for CI (`tag:ci`), **ephemeral** (and pre-approved if the tailnet uses device approval) |
+| `DOKPLOY_SITE_DEPLOY_WEBHOOK` | **Yes** | HTTPS Application deploy webhook from Dokploy service `site` — do **not** put it in the repo. |
+| `DOKPLOY_API_DEPLOY_WEBHOOK` | For API deploys | API webhook (+ Tailscale secrets) — see [`DOKPLOY-API.md`](./DOKPLOY-API.md). |
 
-**Prefer** OAuth (`TS_OAUTH_CLIENT_ID` + `TS_OAUTH_SECRET`) so CI nodes stay ephemeral without a long-lived key. If you use `TS_AUTHKEY` instead, leave the OAuth secrets unset.
-
-Tailscale ACL / tag owners must allow `tag:ci` (and that tag must reach Dokploy on the VPS over Tailscale).
+Site notify does **not** need `TS_*` secrets. Those remain for the **API** workflow only.
 
 #### After the first GHCR push (Anthony)
 
@@ -102,7 +99,7 @@ Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`,
 | `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime; `@atasoif/shared` vendored) |
 | `apps/site/Dockerfile` | Astro static → nginx (built in CI → GHCR) |
 | `.github/workflows/api-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-api` on **`main`** + Tailscale → Dokploy webhook |
-| `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` on **`dev`** + Tailscale → Dokploy webhook |
+| `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` on **`main`** + HTTPS Dokploy webhook (no Tailscale) |
 | `apps/api/docker-entrypoint.sh` | Opt-in Lucid migrate (`RUN_MIGRATIONS=1`) then `node bin/server.js` |
 | `docs/DOKPLOY-API.md` | Dokploy service `api` (GHCR, PostGIS, env, secrets) |
 | `docker-compose.yml` | Shared `postgres` + `api` |
