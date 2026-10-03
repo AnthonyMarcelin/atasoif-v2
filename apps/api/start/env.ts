@@ -31,11 +31,25 @@ export default await Env.create(new URL('../', import.meta.url), {
   FACEBOOK_CLIENT_SECRET: Env.schema.string.optional(),
   APPLE_CLIENT_ID: Env.schema.string.optional(),
   APPLE_CLIENT_SECRET: Env.schema.string.optional(),
+  /** iOS bundle id (Sign in with Apple / Capacitor). Optional until native OAuth ticket. */
+  APPLE_BUNDLE_ID: Env.schema.string.optional(),
+  /** Apple Developer Team ID — optional until native Sign in with Apple is wired. */
+  APPLE_TEAM_ID: Env.schema.string.optional(),
+  /** Apple Sign in key id — optional until native Sign in with Apple is wired. */
+  APPLE_KEY_ID: Env.schema.string.optional(),
+  /** Apple .p8 private key (PEM). Optional until native Sign in with Apple is wired. */
+  APPLE_PRIVATE_KEY: Env.schema.string.optional(),
 
   /**
    * Angular / Capacitor origin used in mail deep links (verify + reset).
    */
   FRONTEND_URL: Env.schema.string({ format: 'url', tld: false }),
+
+  /**
+   * Capacitor deep-link return after Ally OAuth (e.g. fr.atasoif.app://auth/callback).
+   * Declared optional for boot; Ally native handoff is a follow-up ticket.
+   */
+  NATIVE_OAUTH_RETURN_URL: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------
