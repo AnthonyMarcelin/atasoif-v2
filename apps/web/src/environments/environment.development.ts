@@ -2,4 +2,6 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'http://localhost:3000',
+  /** Facebook Ally login — UI standby (API routes kept optional). Flip to re-enable. */
+  showFacebookLogin: false,
 };

@@ -152,6 +152,11 @@ describe('AuthService', () => {
     );
   });
 
+  it('exposes Facebook login as hidden (UI standby)', () => {
+    expect(service.showFacebookLogin).toBe(environment.showFacebookLogin);
+    expect(service.showFacebookLogin).toBeFalse();
+  });
+
   it('completeOAuthLogin stores the token then loads the profile', () => {
     service.completeOAuthLogin('oauth-tok').subscribe();
 

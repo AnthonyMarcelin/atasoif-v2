@@ -41,6 +41,7 @@ export class LoginPage implements OnInit {
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly showFacebookLogin = this.auth.showFacebookLogin;
 
   readonly form = this.fb.group({
     email: ['', emailValidators],
