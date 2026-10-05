@@ -31,13 +31,13 @@ cd apps/site && bun run start
 
 ## Resend (site only)
 
-Transactional mail for the **landing waitlist** goes through [Resend](https://resend.com). The Adonis API keeps OVH SMTP (`noreply@`) — do **not** mix providers.
+Transactional mail for the **landing waitlist** goes through [Resend](https://resend.com). The Adonis API keeps OVH SMTP (`noreply@`). Do **not** mix providers.
 
 | Variable | Role |
 | --- | --- |
 | `RESEND_API_KEY` | Runtime secret (Dokploy env) |
-| `RESEND_FROM` | Default `À ta soif <noreply@atasoif.fr>` (verified domain) |
-| `RESEND_REPLY_TO` | Default `contact@atasoif.fr` |
+| `RESEND_FROM` | Default `À ta soif <noreply@atasoif.fr>` (verified domain; inbox unread) |
+| `RESEND_REPLY_TO` | Default `contact@atasoif.fr` (required so replies are read) |
 | `WAITLIST_NOTIFY_TO` | Internal copy; empty string disables |
 
 DNS: verify `atasoif.fr` in Resend Domains (SPF + DKIM TXT). See `.env.example`.
