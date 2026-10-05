@@ -100,12 +100,14 @@ export class CategorySchema extends BaseModel {
 }
 
 export class FriendshipSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'status', 'updatedAt', 'userAId', 'userBId'] as const
+  static $columns = ['createdAt', 'id', 'requesterId', 'status', 'updatedAt', 'userAId', 'userBId'] as const
   $columns = FriendshipSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare requesterId: number | null
   @column()
   declare status: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
@@ -131,6 +133,64 @@ export class MessageSchema extends BaseModel {
   declare receiverId: number
   @column()
   declare senderId: number
+}
+
+export class QueueJobSchema extends BaseModel {
+  static $columns = ['acquiredAt', 'data', 'error', 'executeAt', 'finishedAt', 'id', 'queue', 'score', 'status', 'workerId'] as const
+  $columns = QueueJobSchema.$columns
+  @column()
+  declare acquiredAt: bigint | number | null
+  @column()
+  declare data: string
+  @column()
+  declare error: string | null
+  @column()
+  declare executeAt: bigint | number | null
+  @column()
+  declare finishedAt: bigint | number | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare queue: string
+  @column()
+  declare score: bigint | number | null
+  @column()
+  declare status: string
+  @column()
+  declare workerId: string | null
+}
+
+export class QueueScheduleSchema extends BaseModel {
+  static $columns = ['createdAt', 'cronExpression', 'everyMs', 'fromDate', 'id', 'lastRunAt', 'name', 'nextRunAt', 'payload', 'runCount', 'runLimit', 'status', 'timezone', 'toDate'] as const
+  $columns = QueueScheduleSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare cronExpression: string | null
+  @column()
+  declare everyMs: bigint | number | null
+  @column.dateTime()
+  declare fromDate: DateTime | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime()
+  declare lastRunAt: DateTime | null
+  @column()
+  declare name: string
+  @column.dateTime()
+  declare nextRunAt: DateTime | null
+  @column()
+  declare payload: string
+  @column()
+  declare runCount: number
+  @column()
+  declare runLimit: number | null
+  @column()
+  declare status: string
+  @column()
+  declare timezone: string
+  @column.dateTime()
+  declare toDate: DateTime | null
 }
 
 export class ReportSchema extends BaseModel {
@@ -219,7 +279,7 @@ export class UserBottleSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['bottlesCreatedCount', 'createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'isPublic', 'password', 'passwordResetVersion', 'pseudo', 'updatedAt'] as const
+  static $columns = ['bottlesCreatedCount', 'createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'inviteCode', 'isPublic', 'magicLinkVersion', 'password', 'passwordResetVersion', 'pseudo', 'shareCellarWithFriends', 'shareNotes', 'sharePrices', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column()
   declare bottlesCreatedCount: number
@@ -236,13 +296,23 @@ export class UserSchema extends BaseModel {
   @column()
   declare image: string | null
   @column()
+  declare inviteCode: string | null
+  @column()
   declare isPublic: boolean
+  @column()
+  declare magicLinkVersion: number
   @column({ serializeAs: null })
   declare password: string
   @column()
   declare passwordResetVersion: number
   @column()
   declare pseudo: string | null
+  @column()
+  declare shareCellarWithFriends: boolean
+  @column()
+  declare shareNotes: boolean
+  @column()
+  declare sharePrices: boolean
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

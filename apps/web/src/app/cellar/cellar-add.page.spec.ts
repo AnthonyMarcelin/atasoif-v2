@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { BarcodeScanService } from './barcode-scan.service';
@@ -14,14 +14,16 @@ describe('CellarAddPage wine fields', () => {
   let fixture: ComponentFixture<CellarAddPage>;
   let page: CellarAddPage;
   let create: jasmine.Spy;
+  let getById: jasmine.Spy;
+  let queryParams: Record<string, string>;
 
   function wineBottle(): CatalogBottle {
     return {
       id: 9,
       name: 'Château Example',
       brand: 'Example',
-      origin: null,
-      abv: null,
+      origin: 'Bordeaux',
+      abv: 13.5,
       volumeMl: null,
       barcode: null,
       photoUrl: null,
@@ -32,12 +34,14 @@ describe('CellarAddPage wine fields', () => {
   }
 
   beforeEach(async () => {
+    queryParams = {};
     create = jasmine.createSpy('create').and.returnValue(
       of({
         data: { id: 1 },
         meta: { freemium: { count: 1, limit: 10, remaining: 9, entitlement: false } },
       }),
     );
+    getById = jasmine.createSpy('getById').and.returnValue(of(wineBottle()));
 
     await TestBed.configureTestingModule({
       imports: [CellarAddPage],
@@ -45,6 +49,14 @@ describe('CellarAddPage wine fields', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              queryParamMap: convertToParamMap(queryParams),
+            },
+          },
+        },
         {
           provide: CatalogService,
           useValue: {
@@ -55,6 +67,7 @@ describe('CellarAddPage wine fields', () => {
               ]),
             search: () => of({ data: [] }),
             lookupBarcode: () => of(wineBottle()),
+            getById,
           },
         },
         {
@@ -132,11 +145,34 @@ describe('CellarAddPage wine fields', () => {
   it('shows a photo entry on the confirm step for free plans', () => {
     page.pickHit(wineBottle());
     fixture.detectChanges();
-    const photoBlock = fixture.nativeElement.querySelector('.cellar-add__photo-block') as HTMLElement | null;
+    const photoBlock = fixture.nativeElement.querySelector(
+      '.cellar-add__photo-block',
+    ) as HTMLElement | null;
     expect(photoBlock).not.toBeNull();
     expect(photoBlock?.textContent ?? '').toContain('Photo perso');
     expect(photoBlock?.textContent ?? '').toContain('premium');
     expect(fixture.nativeElement.querySelector('.cellar-photo-fab')).toBeNull();
+  });
+
+  it('prefills confirm step from bottleId query param', async () => {
+    queryParams['bottleId'] = '9';
+    const route = TestBed.inject(ActivatedRoute) as {
+      snapshot: { queryParamMap: ReturnType<typeof convertToParamMap> };
+    };
+    route.snapshot.queryParamMap = convertToParamMap(queryParams);
+
+    const hydrated = TestBed.createComponent(CellarAddPage);
+    hydrated.detectChanges();
+    await hydrated.whenStable();
+    hydrated.detectChanges();
+
+    expect(getById).toHaveBeenCalledWith(9);
+    expect(hydrated.componentInstance.step()).toBe('confirm');
+    expect(hydrated.componentInstance.form.controls.origin.value).toBe('Bordeaux');
+    expect(hydrated.componentInstance.form.controls.abv.value).toBe('13.5');
+    expect(
+      hydrated.nativeElement.querySelector('.cellar-add__prefill-badge')?.textContent,
+    ).toContain('Pré-rempli');
   });
 
   it('puts wine keys on the catalog bottle for a manual miss', () => {

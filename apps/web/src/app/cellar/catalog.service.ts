@@ -55,6 +55,12 @@ export class CatalogService {
       .pipe(map((body) => body.data));
   }
 
+  getById(id: number): Observable<CatalogBottle> {
+    return this.http
+      .get<ApiDataEnvelope<CatalogBottle>>(`${this.apiBase}/api/v1/catalog/bottles/${id}`)
+      .pipe(map((body) => body.data));
+  }
+
   categories(): Observable<CatalogCategory[]> {
     return this.http
       .get<ApiDataEnvelope<CatalogCategory[]>>(`${this.apiBase}/api/v1/catalog/categories`)
