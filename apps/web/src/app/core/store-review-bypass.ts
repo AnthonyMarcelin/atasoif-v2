@@ -1,11 +1,16 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
+import { finalize } from 'rxjs';
+
+import { apiErrorMessage } from './auth/api-error';
+import { AuthService } from './auth/auth.service';
 
 const TAP_WINDOW_MS = 5000;
 const TAP_TARGET = 7;
 
 /**
- * Store-review secret gate: 7 taps on the logo within 5s reveals a secret field.
- * Secret comes from environment (baked at build from `.env` / CI) — never hardcode.
+ * Store-review gate: 7 taps on the logo within 5s reveals a secret field.
+ * Validation is server-side only (`POST /api/v1/auth/store-review`).
+ * Never bake `STORE_REVIEW_SECRET` into the web / Capacitor build.
  */
 @Component({
   selector: 'app-store-review-bypass',
@@ -37,6 +42,7 @@ const TAP_TARGET = 7;
             spellcheck="false"
             [value]="secretInput()"
             (input)="secretInput.set($any($event.target).value)"
+            [disabled]="submitting()"
           />
           @if (error(); as message) {
             <p class="auth-field__error" role="alert">{{ message }}</p>
@@ -45,7 +51,7 @@ const TAP_TARGET = 7;
             type="button"
             class="auth-btn auth-btn--secondary"
             (click)="validate()"
-            [disabled]="!secretInput().trim()"
+            [disabled]="!secretInput().trim() || submitting()"
           >
             Valider
           </button>
@@ -120,12 +126,14 @@ const TAP_TARGET = 7;
   ],
 })
 export class StoreReviewBypass {
-  @Input({ required: true }) expectedSecret!: string;
+  private readonly auth = inject(AuthService);
+
   @Output() readonly unlockedOk = new EventEmitter<void>();
 
   readonly unlocked = signal(false);
   readonly secretInput = signal('');
   readonly error = signal<string | null>(null);
+  readonly submitting = signal(false);
 
   private taps: number[] = [];
 
@@ -146,16 +154,20 @@ export class StoreReviewBypass {
 
   validate(): void {
     this.error.set(null);
-    const expected = (this.expectedSecret ?? '').trim();
     const given = this.secretInput().trim();
-    if (!expected) {
-      this.error.set('Code revue non configuré sur ce build.');
+    if (!given || this.submitting()) {
       return;
     }
-    if (given !== expected) {
-      this.error.set('Code incorrect.');
-      return;
-    }
-    this.unlockedOk.emit();
+
+    this.submitting.set(true);
+    this.auth
+      .validateStoreReview(given)
+      .pipe(finalize(() => this.submitting.set(false)))
+      .subscribe({
+        next: () => this.unlockedOk.emit(),
+        error: (err: unknown) => {
+          this.error.set(apiErrorMessage(err, 'Code incorrect.'));
+        },
+      });
   }
 }

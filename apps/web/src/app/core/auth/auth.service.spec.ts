@@ -50,6 +50,15 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBeTrue();
   });
 
+  it('posts store review secret to the API', () => {
+    service.validateStoreReview('revue-code').subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/auth/store-review`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ secret: 'revue-code' });
+    req.flush({ ok: true });
+  });
+
   it('clears session on logout', () => {
     service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
     httpMock

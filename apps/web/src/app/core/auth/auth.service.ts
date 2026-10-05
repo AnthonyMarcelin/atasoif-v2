@@ -128,6 +128,14 @@ export class AuthService {
     });
   }
 
+  /**
+   * Validates the App Store review secret against the API (`STORE_REVIEW_SECRET`).
+   * The secret must never live in the web / Capacitor build.
+   */
+  validateStoreReview(secret: string): Observable<{ ok: true }> {
+    return this.http.post<{ ok: true }>(`${this.apiBase}/api/v1/auth/store-review`, { secret });
+  }
+
   consumeMagicLink(token: string): Observable<AuthTokenResponse> {
     return this.http
       .post<ApiDataEnvelope<AuthTokenResponse>>(`${this.apiBase}/api/v1/auth/magic-link/consume`, {

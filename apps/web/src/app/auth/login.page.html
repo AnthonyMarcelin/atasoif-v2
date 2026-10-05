@@ -1,9 +1,6 @@
 <section class="auth-page">
   <div class="auth-page__inner">
-    <app-store-review-bypass
-      [expectedSecret]="storeReviewSecret"
-      (unlockedOk)="onStoreReviewUnlocked()"
-    />
+    <app-store-review-bypass (unlockedOk)="onStoreReviewUnlocked()" />
 
     <h1 class="auth-title">Retrouve<br />ta cave</h1>
 

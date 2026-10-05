@@ -113,4 +113,11 @@ export default await Env.create(new URL('../', import.meta.url), {
    * Empty or unset keeps the route closed. Not a user access token.
    */
   OPS_ADMIN_TOKEN: Env.schema.secret.optional(),
+
+  /**
+   * App Store / TestFlight review bypass (POST /api/v1/auth/store-review).
+   * Set only on the API (Dokploy). Never bake into the web / Capacitor build.
+   * Empty or unset rejects all attempts.
+   */
+  STORE_REVIEW_SECRET: Env.schema.secret.optional(),
 })

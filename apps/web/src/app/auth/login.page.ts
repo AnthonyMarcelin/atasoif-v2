@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
-import { environment } from '../../environments/environment';
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
 import { BiometricAuthService } from '../core/auth/biometric-auth.service';
@@ -57,7 +56,6 @@ export class LoginPage implements OnInit {
   readonly storeReviewOk = signal(false);
   readonly showFacebookLogin = this.auth.showFacebookLogin;
   readonly showAppleLogin = this.auth.showAppleLogin;
-  readonly storeReviewSecret = environment.storeReviewSecret;
 
   readonly form = this.fb.group({
     email: ['', emailValidators],

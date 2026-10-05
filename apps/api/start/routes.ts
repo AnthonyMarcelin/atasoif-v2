@@ -17,6 +17,7 @@ const CollectionBottlesController = () => import('#controllers/collection_bottle
 const CollectionPhotosController = () => import('#controllers/collection_photos_controller')
 const FriendsController = () => import('#controllers/friends_controller')
 const MagicLinksController = () => import('#controllers/magic_links_controller')
+const StoreReviewController = () => import('#controllers/store_review_controller')
 const OpsKpisController = () => import('#controllers/ops_kpis_controller')
 
 router.get('/health', [HealthController, 'handle'])
@@ -44,6 +45,15 @@ router
         router.post('reset-password', [controllers.PasswordResets, 'update'])
         router.post('magic-link', [MagicLinksController, 'store'])
         router.post('magic-link/consume', [MagicLinksController, 'update'])
+        router
+          .post('store-review', [StoreReviewController, 'store'])
+          .use(
+            middleware.throttle({
+              maxAttempts: 10,
+              windowMs: 15 * 60 * 1000,
+              bucket: 'store-review',
+            })
+          )
         router.get('google/redirect', [GoogleAuthController, 'redirect'])
         router.get('google/callback', [GoogleAuthController, 'callback'])
         router.get('facebook/redirect', [FacebookAuthController, 'redirect'])
