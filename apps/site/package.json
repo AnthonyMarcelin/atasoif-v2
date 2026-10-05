@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "À ta soif ! · marketing landing (Astro static)",
+  "description": "À ta soif ! · marketing landing (Astro + Resend waitlist)",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -11,11 +11,15 @@
     "dev": "astro dev --port 4321",
     "build": "astro build",
     "preview": "astro preview --port 4321",
+    "start": "HOST=0.0.0.0 node ./dist/server/entry.mjs",
+    "test": "bun test",
     "astro": "astro",
     "lint": "echo \"lint: not configured yet\""
   },
   "dependencies": {
+    "@astrojs/node": "^11.1.6",
     "astro": "^7.3.3",
+    "resend": "^6.32.0",
     "sharp": "^0.35.4"
   },
   "devDependencies": {

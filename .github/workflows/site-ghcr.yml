@@ -1,4 +1,4 @@
-# Build apps/site (Astro static → nginx) and push to GHCR for Dokploy Docker provider.
+# Build apps/site (Astro prerender + Node standalone) and push to GHCR for Dokploy Docker provider.
 # Image: ghcr.io/anthonymarcelin/atasoif-site
 # After push: POST Dokploy deploy webhook over HTTPS (secrets only — never commit URL).
 # Prod deploy only on main (same as API). Tailscale is not required for site notify.
