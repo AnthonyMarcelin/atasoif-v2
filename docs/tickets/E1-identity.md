@@ -256,7 +256,7 @@ Facebook OAuth **login** via Ally (accelerator). Friends stay in-app (E6) — do
 - [x] Redirect + callback for Facebook
 - [x] Env `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET`
 - [x] Login creates/links user + issues Bearer token
-- [x] Angular “Continuer avec Facebook”
+- [x] Angular “Continuer avec Facebook” *(UI standby 2026-10 via `environment.showFacebookLogin`; Ally API kept)*
 - [x] Explicitly no friends-list sync
 
 ### Out of scope

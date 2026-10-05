@@ -22,3 +22,24 @@ export function imageExtForHeader(header: Buffer): ImageExt | null {
   }
   return null
 }
+
+/**
+ * HEIC/HEIF brands live in the ISO BMFF `ftyp` box (bytes 4–8 = 'ftyp').
+ * Common brands: heic, heix, hevc, hevx, mif1, msf1, heim, heis.
+ */
+export function isHeicHeader(header: Buffer): boolean {
+  if (header.length < 12) {
+    return false
+  }
+  if (header.toString('ascii', 4, 8) !== 'ftyp') {
+    return false
+  }
+  const brand = header.toString('ascii', 8, 12).toLowerCase()
+  return (
+    brand.startsWith('hei') ||
+    brand === 'mif1' ||
+    brand === 'msf1' ||
+    brand === 'hevc' ||
+    brand === 'hevx'
+  )
+}

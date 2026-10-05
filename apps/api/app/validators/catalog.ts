@@ -5,6 +5,8 @@ import vine from '@vinejs/vine'
  */
 export const catalogSearchValidator = vine.create({
   q: vine.string().trim().maxLength(120).optional(),
+  category: vine.string().trim().maxLength(64).optional(),
+  recentDays: vine.number().withoutDecimals().min(1).max(30).optional(),
   limit: vine.number().withoutDecimals().min(1).max(30).optional(),
   page: vine.number().withoutDecimals().min(1).max(100).optional(),
 })

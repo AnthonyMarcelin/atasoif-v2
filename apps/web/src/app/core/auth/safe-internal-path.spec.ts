@@ -7,10 +7,10 @@ describe('safeInternalPath', () => {
   });
 
   it('rejects open-redirect shapes', () => {
-    expect(safeInternalPath('https://evil.example')).toBe('/me');
-    expect(safeInternalPath('//evil.example')).toBe('/me');
-    expect(safeInternalPath('/\\evil.example')).toBe('/me');
-    expect(safeInternalPath('evil')).toBe('/me');
+    expect(safeInternalPath('https://evil.example')).toBe('/cave');
+    expect(safeInternalPath('//evil.example')).toBe('/cave');
+    expect(safeInternalPath('/\\evil.example')).toBe('/cave');
+    expect(safeInternalPath('evil')).toBe('/cave');
   });
 
   it('uses the provided fallback', () => {

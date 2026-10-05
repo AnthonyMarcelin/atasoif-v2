@@ -2,7 +2,7 @@
  * Allow only same-app relative paths for post-auth redirects.
  * Rejects protocol-relative (`//…`), absolute URLs, and non-path values.
  */
-export function safeInternalPath(raw: string | null | undefined, fallback = '/me'): string {
+export function safeInternalPath(raw: string | null | undefined, fallback = '/cave'): string {
   if (!raw) {
     return fallback;
   }

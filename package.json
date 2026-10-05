@@ -17,6 +17,8 @@
     "build:shared": "bun --bun --filter @atasoif/shared build",
     "build:api": "bun --filter @atasoif/api build",
     "build:web": "bun --bun --filter @atasoif/web build",
+    "ios:sync": "bun run build:shared && bun --bun --filter @atasoif/web ios:sync",
+    "ios:open": "bun --bun --filter @atasoif/web ios:open",
     "build:site": "bun --filter @atasoif/site build",
     "lint": "bun --filter '@atasoif/*' --parallel --if-present --no-exit-on-error lint",
     "test": "bun --filter '@atasoif/*' --parallel --if-present --no-exit-on-error test",

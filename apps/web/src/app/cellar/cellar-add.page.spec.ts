@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
+import { BarcodeScanService } from './barcode-scan.service';
 import { CatalogService } from './catalog.service';
 import { CellarAddPage } from './cellar-add.page';
 import type { CatalogBottle, CreateUserBottlePayload } from './cellar.types';
@@ -62,6 +63,10 @@ describe('CellarAddPage wine fields', () => {
             freemium: () => of({ count: 0, limit: 10, remaining: 10, entitlement: false }),
             create,
           },
+        },
+        {
+          provide: BarcodeScanService,
+          useValue: { scan: () => Promise.resolve({ ok: false, reason: 'unavailable' }) },
         },
       ],
     }).compileComponents();

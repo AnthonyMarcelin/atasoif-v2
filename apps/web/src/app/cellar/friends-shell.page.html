@@ -1,0 +1,86 @@
+<app-cellar-shell title="Amis" [freemium]="freemium()">
+  <div class="friends-page">
+    <div class="friends-page__head">
+      <h1 class="friends-page__title">Amis</h1>
+      @if (data(); as payload) {
+        <span class="friends-page__count">{{ payload.friends.length.toString().padStart(2, '0') }}</span>
+      }
+    </div>
+
+    <form class="friends-search" [formGroup]="form" (ngSubmit)="invite()">
+      <input
+        class="friends-search__input"
+        type="text"
+        formControlName="target"
+        placeholder="Pseudo, email ou code"
+        aria-label="Inviter un ami"
+        autocomplete="off"
+      />
+      <button class="auth-btn auth-btn--primary friends-search__btn" type="submit" [disabled]="inviting()">
+        {{ inviting() ? '…' : 'Inviter' }}
+      </button>
+    </form>
+
+    @if (error(); as message) {
+      <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+    }
+    @if (ok(); as message) {
+      <p class="auth-status auth-status--ok" role="status">{{ message }}</p>
+    }
+
+    @if (loading()) {
+      <p class="auth-status" role="status">Chargement…</p>
+    } @else if (data(); as payload) {
+      @if (payload.pending.length > 0) {
+        <p class="friends-section-label">Demandes</p>
+        <ul class="friends-list">
+          @for (row of payload.pending; track row.id) {
+            <li class="friends-card friends-card--pending">
+              <span class="friends-card__avatar" aria-hidden="true">{{ initial(row) }}</span>
+              <div class="friends-card__body">
+                <p class="friends-card__name">{{ label(row) }}</p>
+                <p class="friends-card__meta">Via invitation</p>
+              </div>
+              <div class="friends-card__actions">
+                <button type="button" class="friends-card__yes" (click)="respond(row, true)">Oui</button>
+                <button type="button" class="friends-card__no" (click)="respond(row, false)" aria-label="Refuser">
+                  ×
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      <p class="friends-section-label">Mes amis</p>
+      @if (payload.friends.length === 0) {
+        <p class="auth-status" role="status">Pas encore d’amis · envoie ton lien.</p>
+      }
+      <ul class="friends-list">
+        @for (row of payload.friends; track row.id) {
+          <li class="friends-card">
+            <span class="friends-card__avatar" aria-hidden="true">{{ initial(row) }}</span>
+            <div class="friends-card__body">
+              <p class="friends-card__name">{{ label(row) }}</p>
+              <p class="friends-card__meta friends-card__meta--ok">
+                {{ row.bottleCount }} bouteilles
+                ·
+                {{ row.cellarShared ? 'Cave partagée' : 'Cave privée' }}
+              </p>
+            </div>
+          </li>
+        }
+      </ul>
+
+      <div class="friends-invite-box">
+        <p>
+          Ta cave est plus drôle à plusieurs. Envoie ton lien, il expire dans 7 jours.
+        </p>
+        <button type="button" class="auth-btn auth-btn--secondary" (click)="copyInvite()">
+          Copier mon lien
+        </button>
+        <a class="auth-link" routerLink="/cave/partage">Réglages de partage</a>
+      </div>
+    }
+  </div>
+</app-cellar-shell>

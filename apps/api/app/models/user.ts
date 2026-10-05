@@ -36,6 +36,23 @@ export default class User extends compose(UserSchema, withAuthFinder(passwordHas
   @column()
   declare passwordResetVersion: number
 
+  /** Short invite code for friend links (`/i/XXXXXX`). */
+  @column()
+  declare inviteCode: string | null
+
+  @column()
+  declare shareCellarWithFriends: boolean
+
+  @column()
+  declare sharePrices: boolean
+
+  @column()
+  declare shareNotes: boolean
+
+  /** Bumped when a magic link is consumed (single-use). */
+  @column()
+  declare magicLinkVersion: number
+
   @hasMany(() => UserBottle)
   declare bottles: HasMany<typeof UserBottle>
 

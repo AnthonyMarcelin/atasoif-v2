@@ -122,12 +122,29 @@ export class AuthService {
       );
   }
 
+  requestMagicLink(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiBase}/api/v1/auth/magic-link`, {
+      email,
+    });
+  }
+
   /**
    * Validates the App Store review secret against the API (`STORE_REVIEW_SECRET`).
    * The secret must never live in the web / Capacitor build.
    */
   validateStoreReview(secret: string): Observable<{ ok: true }> {
     return this.http.post<{ ok: true }>(`${this.apiBase}/api/v1/auth/store-review`, { secret });
+  }
+
+  consumeMagicLink(token: string): Observable<AuthTokenResponse> {
+    return this.http
+      .post<ApiDataEnvelope<AuthTokenResponse>>(`${this.apiBase}/api/v1/auth/magic-link/consume`, {
+        token,
+      })
+      .pipe(
+        map((body) => body.data),
+        tap((data) => this.persistSession(data.token, data.user)),
+      );
   }
 
   forgotPassword(email: string): Observable<{ message: string }> {
