@@ -4,8 +4,10 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import { environment } from '../../environments/environment';
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
+import { StoreReviewBypass } from '../core/store-review-bypass';
 import { AuthTabs } from './auth-tabs';
 import {
   controlErrorMessage,
@@ -18,7 +20,7 @@ import { evaluatePasswordStrength } from './password-strength';
 
 @Component({
   selector: 'app-register-page',
-  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs],
+  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs, StoreReviewBypass],
   templateUrl: './register.page.html',
 })
 export class RegisterPage {
@@ -31,8 +33,10 @@ export class RegisterPage {
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly storeReviewOk = signal(false);
   readonly showFacebookLogin = this.auth.showFacebookLogin;
   readonly showAppleLogin = this.auth.showAppleLogin;
+  readonly storeReviewSecret = environment.storeReviewSecret;
 
   readonly form = this.fb.group(
     {
@@ -82,7 +86,7 @@ export class RegisterPage {
       .subscribe({
         next: () => {
           this.submittedOk.set(true);
-          void this.router.navigateByUrl(this.auth.postAuthPath('/me'));
+          void this.router.navigateByUrl(this.auth.postAuthPath('/cave'));
         },
         error: (err: unknown) => {
           this.formError.set(
@@ -90,6 +94,11 @@ export class RegisterPage {
           );
         },
       });
+  }
+
+  onStoreReviewUnlocked(): void {
+    this.storeReviewOk.set(true);
+    this.formError.set(null);
   }
 
   continueWithGoogle(): void {

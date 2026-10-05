@@ -1,16 +1,38 @@
 <section class="welcome">
   <div class="welcome__inner">
-    <div class="welcome__mark" aria-hidden="true">
-      <div class="welcome__gauge"><span></span></div>
-    </div>
-    <p class="welcome__brand">À ta soif !</p>
-    <h1 class="welcome__title">Ta cave.<br />Tes bouteilles.<br />Zéro prise de tête.</h1>
+    <p class="welcome__brand">À ta soif · cave numérique</p>
+    <h1 class="welcome__title">Note<br />ce que<br />tu bois</h1>
+    <div class="welcome__rule" aria-hidden="true"></div>
     <p class="welcome__lead">
-      Note où tu as acheté, combien tu as payé, et si c'était bon. Avant d'oublier.
+      Le prix, l’endroit, ce que tu en as pensé. Six mois plus tard, tu sauras encore.
     </p>
+
+    <div class="welcome__samples" aria-hidden="true">
+      <div class="welcome__sample">
+        <div class="welcome__sample-photo"></div>
+        <div class="welcome__sample-body">
+          <span class="welcome__sample-name">Lagavulin 16</span>
+          <div class="welcome__sample-gauge">
+            <span class="welcome__sample-fill welcome__sample-fill--62"></span>
+          </div>
+          <span class="welcome__sample-meta">62€ · NICOLAS · 03.26</span>
+        </div>
+      </div>
+      <div class="welcome__sample welcome__sample--offset">
+        <div class="welcome__sample-photo"></div>
+        <div class="welcome__sample-body">
+          <span class="welcome__sample-name">Orval</span>
+          <div class="welcome__sample-gauge">
+            <span class="welcome__sample-fill welcome__sample-fill--22 welcome__sample-fill--beer"></span>
+          </div>
+          <span class="welcome__sample-meta">4,20€ · BRUXELLES</span>
+        </div>
+      </div>
+    </div>
+
     <div class="welcome__actions">
       <a class="auth-btn auth-btn--primary" routerLink="/auth/register">Ouvrir ma cave</a>
-      <a class="auth-btn auth-btn--secondary" routerLink="/auth/login">J'ai déjà un compte</a>
+      <a class="auth-btn auth-btn--secondary" routerLink="/auth/login">J’ai déjà un compte</a>
     </div>
     <p class="welcome__note">10 bouteilles offertes · sans carte</p>
   </div>

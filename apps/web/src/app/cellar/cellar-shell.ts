@@ -1,56 +1,132 @@
-import { Component, Input } from '@angular/core';
+import { Component, HostBinding, Input, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import type { FreemiumMeta } from './cellar.types';
-import { FreemiumCounter } from './freemium-counter';
+import { FreemiumCounter, freemiumSlots } from './freemium-counter';
 
 @Component({
   selector: 'app-cellar-shell',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, FreemiumCounter],
   template: `
-    <div class="cellar-shell">
-      <header class="cellar-shell__header">
-        <div class="cellar-shell__titles">
-          <p class="cellar-shell__brand">À ta soif !</p>
-          <h1 class="cellar-shell__title">{{ title }}</h1>
-          @if (lead) {
-            <p class="cellar-shell__lead">{{ lead }}</p>
+    <div
+      class="cellar-shell"
+      [class.cellar-shell--no-nav]="hideNav"
+      [class.cellar-shell--keyboard]="keyboardOpen"
+    >
+      @if (!hideHeader) {
+        <header class="cellar-shell__header">
+          <div class="cellar-shell__row">
+            <div class="cellar-shell__titles">
+              @if (showBrand) {
+                <p class="cellar-shell__brand">À ta soif !</p>
+              }
+              <h1 class="cellar-shell__title">{{ title }}</h1>
+              @if (lead) {
+                <p class="cellar-shell__lead">{{ lead }}</p>
+              }
+            </div>
+            @if (freemium) {
+              <app-freemium-counter [freemium]="freemium" />
+            }
+          </div>
+          @if (freemium && showSlots && !freemium.entitlement) {
+            <div class="cellar-shell__slots" aria-hidden="true">
+              @for (filled of slots; track $index) {
+                <span class="cellar-shell__slot" [class.is-filled]="filled"></span>
+              }
+            </div>
           }
-        </div>
-        @if (freemium) {
-          <app-freemium-counter [freemium]="freemium" />
-        }
-      </header>
+        </header>
+      }
 
       <div class="cellar-shell__body">
         <ng-content />
       </div>
 
-      <nav class="cellar-nav" aria-label="Navigation principale">
-        <a
-          class="cellar-nav__item"
-          routerLink="/cave"
-          routerLinkActive="is-active"
-          [routerLinkActiveOptions]="{ exact: true }"
+      @if (!hideNav) {
+        <nav
+          class="cellar-nav"
+          aria-label="Navigation principale"
+          [class.is-hidden-keyboard]="keyboardOpen"
         >
-          Ma cave
-        </a>
-        <a
-          class="cellar-nav__add"
-          routerLink="/cave/ajouter"
-          routerLinkActive="is-active"
-          aria-label="Ajouter une bouteille"
-        >
-          +
-        </a>
-        <a class="cellar-nav__item" routerLink="/me" routerLinkActive="is-active">Moi</a>
-      </nav>
+          <a
+            class="cellar-nav__item"
+            routerLink="/cave"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <span class="cellar-nav__icon cellar-nav__icon--cave" aria-hidden="true"></span>
+            <span class="cellar-nav__label">Ma cave</span>
+          </a>
+          <a class="cellar-nav__item" routerLink="/cave/catalogue" routerLinkActive="is-active">
+            <span class="cellar-nav__icon cellar-nav__icon--catalog" aria-hidden="true"></span>
+            <span class="cellar-nav__label">Catalogue</span>
+          </a>
+          <a
+            class="cellar-nav__add"
+            routerLink="/cave/ajouter"
+            routerLinkActive="is-active"
+            aria-label="Ajouter une bouteille"
+          >
+            <span class="cellar-nav__add-mark" aria-hidden="true">+</span>
+            <span class="cellar-nav__label cellar-nav__label--on-accent">Ajouter</span>
+          </a>
+          <a class="cellar-nav__item" routerLink="/cave/amis" routerLinkActive="is-active">
+            <span class="cellar-nav__icon cellar-nav__icon--friends" aria-hidden="true"></span>
+            <span class="cellar-nav__label">Amis</span>
+          </a>
+          <a class="cellar-nav__item" routerLink="/me" routerLinkActive="is-active">
+            <span class="cellar-nav__icon cellar-nav__icon--profile" aria-hidden="true"></span>
+            <span class="cellar-nav__label">Mon profil</span>
+          </a>
+        </nav>
+      }
     </div>
   `,
 })
-export class CellarShell {
+export class CellarShell implements OnInit, OnDestroy {
   @Input() title = 'Ma cave';
   @Input() lead: string | null = null;
   @Input() freemium: FreemiumMeta | null = null;
+  /** Show brand eyebrow above the title (list legacy). Off for maquette-aligned cave. */
+  @Input() showBrand = false;
+  /** Freemium case gauge under the header (maquette 03). */
+  @Input() showSlots = false;
+  /** Hide the 5-tab bar (add flow uses its own footer). */
+  @Input() hideNav = false;
+  /** Hide the default header (add search has a custom chrome). */
+  @Input() hideHeader = false;
+
+  @HostBinding('class.cellar-shell-host') readonly hostClass = true;
+
+  keyboardOpen = false;
+
+  private viewportHandler: (() => void) | null = null;
+
+  get slots(): boolean[] {
+    return freemiumSlots(this.freemium);
+  }
+
+  ngOnInit(): void {
+    if (typeof window === 'undefined' || !window.visualViewport) {
+      return;
+    }
+    const vv = window.visualViewport;
+    this.viewportHandler = () => {
+      // iOS keyboard shrinks visualViewport vs layout viewport.
+      const gap = window.innerHeight - vv.height - vv.offsetTop;
+      this.keyboardOpen = gap > 120;
+    };
+    vv.addEventListener('resize', this.viewportHandler);
+    vv.addEventListener('scroll', this.viewportHandler);
+  }
+
+  ngOnDestroy(): void {
+    if (!this.viewportHandler || typeof window === 'undefined' || !window.visualViewport) {
+      return;
+    }
+    window.visualViewport.removeEventListener('resize', this.viewportHandler);
+    window.visualViewport.removeEventListener('scroll', this.viewportHandler);
+  }
 }

@@ -4,9 +4,11 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
+import { environment } from '../../environments/environment';
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
 import { safeInternalPath } from '../core/auth/safe-internal-path';
+import { StoreReviewBypass } from '../core/store-review-bypass';
 import { AuthTabs } from './auth-tabs';
 import { controlErrorMessage, emailValidators, passwordValidators } from './auth-validators';
 
@@ -33,7 +35,7 @@ const OAUTH_ERROR_COPY: Record<string, string> = {
 
 @Component({
   selector: 'app-login-page',
-  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs],
+  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs, StoreReviewBypass],
   templateUrl: './login.page.html',
 })
 export class LoginPage implements OnInit {
@@ -47,8 +49,10 @@ export class LoginPage implements OnInit {
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly storeReviewOk = signal(false);
   readonly showFacebookLogin = this.auth.showFacebookLogin;
   readonly showAppleLogin = this.auth.showAppleLogin;
+  readonly storeReviewSecret = environment.storeReviewSecret;
 
   readonly form = this.fb.group({
     email: ['', emailValidators],
@@ -97,6 +101,11 @@ export class LoginPage implements OnInit {
           );
         },
       });
+  }
+
+  onStoreReviewUnlocked(): void {
+    this.storeReviewOk.set(true);
+    this.formError.set(null);
   }
 
   continueWithGoogle(): void {

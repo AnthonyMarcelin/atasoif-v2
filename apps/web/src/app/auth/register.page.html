@@ -1,5 +1,10 @@
 <section class="auth-page">
   <div class="auth-page__inner">
+    <app-store-review-bypass
+      [expectedSecret]="storeReviewSecret"
+      (unlockedOk)="onStoreReviewUnlocked()"
+    />
+
     <h1 class="auth-title">Ouvre ta<br />cave</h1>
 
     <app-auth-tabs mode="register" />
@@ -138,11 +143,16 @@
       @if (submittedOk()) {
         <p class="auth-status auth-status--ok" role="status">Compte créé · bienvenue dans ta cave.</p>
       }
+
+      @if (storeReviewOk()) {
+        <p class="auth-status auth-status--ok" role="status">
+          Code revue accepté · connecte-toi avec le compte de test.
+        </p>
+      }
     </form>
 
     <p class="auth-meta">
       <a class="auth-link" routerLink="/auth/forgot-password">Mot de passe oublié ?</a>
-      <a class="auth-link" routerLink="/me">Voir mon compte</a>
     </p>
 
     <p class="auth-footer">

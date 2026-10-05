@@ -18,6 +18,7 @@ import {
   displayBrand,
   displayName,
   displayPhotoUrl,
+  NOTE_MAX,
   type FreemiumMeta,
   type UserBottle,
 } from './cellar.types';
@@ -142,9 +143,13 @@ export class CellarDetailPage implements OnInit {
     }
 
     const pricePaid = this.parseOptionalNumber(raw.pricePaid);
-    const note = this.parseOptionalNumber(raw.note);
-    if (pricePaid === 'invalid' || note === 'invalid') {
-      this.formError.set('Prix ou note invalide.');
+    const note = this.parseOptionalNote(raw.note);
+    if (pricePaid === 'invalid') {
+      this.formError.set('Prix invalide.');
+      return;
+    }
+    if (note === 'invalid') {
+      this.formError.set('La note doit rester entre 0 et 10.');
       return;
     }
 
@@ -380,6 +385,17 @@ export class CellarDetailPage implements OnInit {
     }
     const n = Number(trimmed);
     if (Number.isNaN(n) || n < 0) {
+      return 'invalid';
+    }
+    return n;
+  }
+
+  private parseOptionalNote(value: string): number | null | 'invalid' {
+    const n = this.parseOptionalNumber(value);
+    if (n === null || n === 'invalid') {
+      return n;
+    }
+    if (n > NOTE_MAX) {
       return 'invalid';
     }
     return n;

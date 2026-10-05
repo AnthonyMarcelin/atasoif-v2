@@ -18,6 +18,16 @@ export const CELLAR_ROUTES: Routes = [
         loadComponent: () => import('./cellar-add.page').then((m) => m.CellarAddPage),
       },
       {
+        path: 'catalogue',
+        loadComponent: () =>
+          import('./catalog-shell.page').then((m) => m.CatalogShellPage),
+      },
+      {
+        path: 'amis',
+        loadComponent: () =>
+          import('./friends-shell.page').then((m) => m.FriendsShellPage),
+      },
+      {
         path: 'premium',
         loadComponent: () =>
           import('./cellar-paywall.page').then((m) => m.CellarPaywallPage),
