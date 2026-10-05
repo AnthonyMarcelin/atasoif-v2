@@ -14,4 +14,10 @@ export default defineConfig({
   build: {
     inlineStylesheets: 'auto',
   },
+  vite: {
+    ssr: {
+      // Keep Resend inside the server bundle (avoids Bun symlink node_modules in Docker).
+      noExternal: ['resend'],
+    },
+  },
 });

@@ -36,7 +36,7 @@ La landing Astro (pages prerender + endpoint waitlist Resend) a son **propre** i
 |---|---|
 | Dockerfile | `apps/site/Dockerfile` (context = monorepo **root** `.`) |
 | GHCR image | **`ghcr.io/anthonymarcelin/atasoif-site`** |
-| Runtime | Node 22 · `node ./dist/server/entry.mjs` + production `node_modules` · port **80** |
+| Runtime | Node 22 · `node ./dist/server/entry.mjs` + `npm install --omit=dev` · port **80** |
 | Tags | `latest` on pushes to **`main`** · also short/long `sha-*` |
 | Workflow | [`.github/workflows/site-ghcr.yml`](../.github/workflows/site-ghcr.yml) |
 | Trigger | **`push` / merge sur `main`** (path filters) + `workflow_dispatch` |
