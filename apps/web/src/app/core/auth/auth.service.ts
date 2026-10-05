@@ -54,12 +54,21 @@ export class AuthService {
     window.location.assign(this.googleAuthUrl());
   }
 
+  /**
+   * When false, login/register hide the Facebook CTA (standby).
+   * Ally redirect/callback stay available on the API.
+   */
+  readonly showFacebookLogin = environment.showFacebookLogin;
+
   /** Browser navigation into Ally Facebook OAuth (full-page redirect). */
   facebookAuthUrl(): string {
     return `${this.apiBase}/api/v1/auth/facebook/redirect`;
   }
 
   startFacebookLogin(): void {
+    if (!this.showFacebookLogin) {
+      return;
+    }
     window.location.assign(this.facebookAuthUrl());
   }
 
