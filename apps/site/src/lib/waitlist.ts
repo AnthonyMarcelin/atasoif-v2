@@ -24,7 +24,7 @@ export function isValidEmail(email: string): boolean {
 }
 
 export function buildUserAckEmail(): { subject: string; html: string; text: string } {
-  const subject = 'C’est noté — on te prévient à la sortie';
+  const subject = 'C’est noté, on te prévient à la sortie';
   const text = [
     'À ta soif',
     '',
@@ -35,12 +35,12 @@ export function buildUserAckEmail(): { subject: string; html: string; text: stri
     '',
     'Pas de newsletter. Pas de spam.',
     '',
-    '— L’équipe À ta soif',
+    'L’équipe À ta soif',
     BRAND.siteUrl,
   ].join('\n');
 
   const html = wrapEmailHtml({
-    preheader: 'Ton email est enregistré — un seul message à la sortie.',
+    preheader: 'Ton email est enregistré. Un seul message à la sortie.',
     eyebrow: 'Liste d’attente',
     title: 'C’est noté.',
     bodyHtml: [
