@@ -112,18 +112,54 @@ const {
 
 <script>
   document.querySelectorAll<HTMLFormElement>('[data-waitlist]').forEach((form) => {
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const note = form.querySelector<HTMLElement>('[data-waitlist-note]');
       const input = form.querySelector<HTMLInputElement>('[data-waitlist-input]');
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
       if (!input?.checkValidity()) {
         input?.reportValidity();
         return;
       }
-      if (note) {
-        note.textContent = 'C’EST NOTÉ · ON TE PRÉVIENT À LA SORTIE';
+
+      const email = input.value.trim();
+      const previousNote = note?.textContent ?? '';
+      if (button) button.disabled = true;
+      if (note) note.textContent = 'ENVOI EN COURS…';
+
+      try {
+        const response = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
+        const body = (await response.json().catch(() => ({}))) as {
+          message?: string;
+        };
+
+        if (!response.ok) {
+          if (note) {
+            note.textContent =
+              typeof body.message === 'string' && body.message
+                ? body.message.toUpperCase()
+                : 'OUPS · RÉESSAIE DANS UN INSTANT';
+          }
+          return;
+        }
+
+        if (note) note.textContent = 'C’EST NOTÉ · ON TE PRÉVIENT À LA SORTIE';
+        form.reset();
+      } catch {
+        if (note) note.textContent = 'OUPS · RÉESSAIE DANS UN INSTANT';
+      } finally {
+        if (button) button.disabled = false;
+        if (note && note.textContent === 'ENVOI EN COURS…') {
+          note.textContent = previousNote;
+        }
       }
-      form.reset();
     });
   });
 </script>

@@ -30,12 +30,13 @@ When the cave app has a public origin, add it to API `CORS_ORIGIN` (and set `FRO
 ## Marketing site (`apps/site`) → GHCR → Dokploy
 
 
-La landing Astro static a son **propre** image nginx. CI builds and pushes it; **Dokploy does not build from git**.
+La landing Astro (pages prerender + endpoint waitlist Resend) a son **propre** image Node standalone. CI builds and pushes it; **Dokploy does not build from git**.
 
 | Item | Value |
 |---|---|
 | Dockerfile | `apps/site/Dockerfile` (context = monorepo **root** `.`) |
 | GHCR image | **`ghcr.io/anthonymarcelin/atasoif-site`** |
+| Runtime | Node 22 · `node ./dist/server/entry.mjs` · port **80** |
 | Tags | `latest` on pushes to **`main`** · also short/long `sha-*` |
 | Workflow | [`.github/workflows/site-ghcr.yml`](../.github/workflows/site-ghcr.yml) |
 | Trigger | **`push` / merge sur `main`** (path filters) + `workflow_dispatch` |
@@ -51,7 +52,7 @@ docker build -f apps/site/Dockerfile -t atasoif-site \
   .
 ```
 
-`PUBLIC_*` are **bake-time** build args (Astro static). Runtime ENV in Dokploy will **not** rewrite built HTML/JS.
+`PUBLIC_*` are **bake-time** build args (HTML/CTA). **Resend secrets are runtime** — set them in Dokploy env (not as Docker build-args).
 
 ### Dokploy service `site`
 
@@ -65,6 +66,19 @@ GitHub App is already installed on Dokploy **and** on `AnthonyMarcelin/atasoif-v
 | Port | **80** |
 | Registry | Prefer **Public** package `atasoif-site` → anonymous pull, no extra registry form. If **Private**, select the **existing Dokploy GHCR** registry (same `ghcr.io` creds already used for Spawnzone pulls) — do **not** invent a new PAT unless that registry is missing |
 | Auto-deploy | optional (watch image tag / Dokploy pull) |
+
+#### Runtime env (Dokploy → Environment)
+
+Paste into the `site` application (never commit values):
+
+| Variable | Required | Example / notes |
+|---|---|---|
+| `RESEND_API_KEY` | **Yes** (waitlist) | Resend dashboard API key |
+| `RESEND_FROM` | No | `À ta soif <noreply@atasoif.fr>` (domain must be verified in Resend) |
+| `RESEND_REPLY_TO` | No | `contact@atasoif.fr` |
+| `WAITLIST_NOTIFY_TO` | No | `contact@atasoif.fr` · empty string disables internal copy |
+
+DNS for Resend: verify `atasoif.fr` (SPF + DKIM TXT) in [Resend Domains](https://resend.com/domains). API mail stays on OVH SMTP — Resend is **site only**.
 
 Do **not** configure Build type Dockerfile / Nixpacks / monorepo context in Dokploy for this service. Rebuilds happen in GitHub Actions on **`main`** (path filters) or via **workflow_dispatch** (override `PUBLIC_*` inputs). Merges to `dev` do **not** deploy the site.
 
@@ -106,7 +120,7 @@ Optional repo **Actions variables** (Settings → Variables): `PUBLIC_SITE_URL`,
 | File | Role |
 |---|---|
 | `Dockerfile` | Multi-stage AdonisJS 7 API image (Bun install in build stages; Node 24 runtime; `@atasoif/shared` vendored) |
-| `apps/site/Dockerfile` | Astro static → nginx (built in CI → GHCR) |
+| `apps/site/Dockerfile` | Astro prerender + Node standalone waitlist API (CI → GHCR) |
 | `docs/DOKPLOY-WEB.md` | Proposal: Angular cave SPA → GHCR → Dokploy (Anthony confirm before create) |
 | `.github/workflows/api-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-api` on **`main`** + Tailscale → Dokploy webhook |
 | `.github/workflows/site-ghcr.yml` | Build/push `ghcr.io/anthonymarcelin/atasoif-site` on **`main`** + HTTPS Dokploy webhook (no Tailscale) |
