@@ -54,7 +54,7 @@ export class OauthCallbackPage implements OnInit {
             this.error.set('Impossible de récupérer ton profil. Réessaie.');
             return;
           }
-          void this.router.navigateByUrl(this.auth.postAuthPath('/me'), { replaceUrl: true });
+          void this.router.navigateByUrl(this.auth.postAuthPath('/cave'), { replaceUrl: true });
         },
         error: () => {
           this.error.set('Impossible de finaliser la connexion sociale. Réessaie.');

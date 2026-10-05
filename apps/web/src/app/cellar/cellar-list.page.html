@@ -1,8 +1,20 @@
-<app-cellar-shell
-  title="Ma cave"
-  lead="Tes souvenirs, pas une vitrine."
-  [freemium]="freemium()"
->
+<app-cellar-shell title="Ma cave" [freemium]="freemium()" [showSlots]="true">
+  <label class="cellar-search-field" for="cellar-local-search">
+    <span class="cellar-search-field__icon" aria-hidden="true"></span>
+    <input
+      id="cellar-local-search"
+      class="cellar-search-field__input"
+      type="search"
+      enterkeyhint="search"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="Chercher dans ma cave"
+      [value]="localQuery()"
+      (input)="onLocalQuery($any($event.target).value)"
+    />
+  </label>
+
   <div class="cellar-filters" role="tablist" aria-label="Filtrer par catégorie">
     @for (filter of filters; track filter.slug ?? 'all') {
       <button
@@ -14,6 +26,9 @@
         (click)="setCategory(filter.slug)"
       >
         {{ filter.label }}
+        @if (countFor(filter.slug); as n) {
+          <span class="cellar-chip__count">{{ n }}</span>
+        }
       </button>
     }
   </div>
@@ -22,8 +37,13 @@
     <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
   } @else if (loading()) {
     <p class="auth-status" role="status">Ouverture de ta cave…</p>
-  } @else if (bottles().length === 0) {
-    @if (emptyKind() === 'full') {
+  } @else if (visibleBottles().length === 0) {
+    @if (localQuery().trim()) {
+      <div class="cellar-empty" role="status">
+        <p class="cellar-empty__title">Rien pour « {{ localQuery().trim() }} »</p>
+        <p class="cellar-empty__lead">Essaie un autre nom, une marque, ou un lieu.</p>
+      </div>
+    } @else if (emptyKind() === 'full') {
       <div class="cellar-empty" role="status">
         <p class="cellar-empty__title">Cave pleine</p>
         <p class="cellar-empty__lead">
@@ -56,9 +76,13 @@
     }
   } @else {
     <ul class="cellar-list" aria-label="Bouteilles en cave">
-      @for (entry of bottles(); track entry.id) {
+      @for (entry of visibleBottles(); track entry.id) {
         <li class="cellar-list__item">
-          <a class="cellar-card" [routerLink]="['/cave', entry.id]">
+          <a
+            class="cellar-card"
+            [class.is-empty]="entry.fillLevel <= 0"
+            [routerLink]="['/cave', entry.id]"
+          >
             <app-bottle-photo
               class="cellar-card__photo"
               [src]="photoOf(entry)"
@@ -66,19 +90,31 @@
               variant="list"
             />
             <div class="cellar-card__body">
-              @if (categoryOf(entry); as cat) {
-                <span class="cellar-card__stamp">{{ cat.name }}</span>
-              }
-              <span class="cellar-card__name">{{ nameOf(entry) }}</span>
-              @if (brandOf(entry); as brand) {
-                <span class="cellar-card__brand">{{ brand }}</span>
-              }
-              <span class="cellar-card__place">
-                {{ entry.boughtAt || 'Lieu inconnu' }}
-                @if (entry.pricePaid !== null && entry.pricePaid !== undefined) {
-                  <span>· {{ entry.pricePaid }} €</span>
+              <div class="cellar-card__top">
+                <span class="cellar-card__name">{{ nameOf(entry) }}</span>
+                @if (categoryOf(entry); as cat) {
+                  <span
+                    class="cellar-card__stamp"
+                    [attr.data-cat]="cat.slug"
+                    >{{ cat.name }}</span
+                  >
                 }
-              </span>
+              </div>
+              @if (metaOf(entry); as meta) {
+                <span class="cellar-card__meta">{{ meta }}</span>
+              }
+              <div class="cellar-card__gauge" aria-hidden="true">
+                <div class="cellar-card__gauge-fill" [style.width.%]="entry.fillLevel"></div>
+              </div>
+              <div class="cellar-card__foot">
+                <span class="cellar-card__place">{{ memoryLine(entry) }}</span>
+                <span
+                  class="cellar-card__level"
+                  [class.is-sealed]="entry.fillLevel >= 100"
+                  [class.is-empty-label]="entry.fillLevel <= 0"
+                  >{{ levelOf(entry) }}</span
+                >
+              </div>
             </div>
           </a>
         </li>

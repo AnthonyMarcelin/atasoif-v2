@@ -97,10 +97,10 @@
             </dd>
           </div>
           <div>
-            <dt>Note</dt>
+            <dt>Note /10</dt>
             <dd>
               @if (bottle.note !== null && bottle.note !== undefined) {
-                {{ bottle.note }}
+                {{ bottle.note }}/10
               } @else {
                 Pas renseigné
               }
@@ -245,13 +245,14 @@
           </div>
 
           <div [ngClass]="fieldClass('note')">
-            <label class="auth-field__label" for="edit-note">Note</label>
+            <label class="auth-field__label" for="edit-note">Note /10</label>
             <input
               id="edit-note"
               class="auth-field__control"
               type="text"
               inputmode="decimal"
               formControlName="note"
+              placeholder="7,5"
               (focus)="setFocused('note')"
               (blur)="setFocused(null)"
             />

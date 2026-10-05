@@ -1,26 +1,50 @@
 <app-cellar-shell
+  [hideHeader]="step() === 'search'"
+  [hideNav]="true"
   title="Ajouter"
   lead="Cherche d’abord · moins de 30 secondes."
   [freemium]="freemium()"
 >
   @if (step() === 'search') {
-    <div class="cellar-add">
-      <div class="auth-field" [class.is-focused]="focusedField() === 'q'">
-        <label class="auth-field__label" for="cellar-search">Recherche</label>
-        <input
-          id="cellar-search"
-          class="auth-field__control"
-          type="search"
-          enterkeyhint="search"
-          autocomplete="off"
-          autocorrect="off"
-          spellcheck="false"
-          placeholder="Nom, marque ou code-barres"
-          [value]="searchControl.value"
-          (input)="onQueryInput($any($event.target).value)"
-          (focus)="setFocused('q')"
-          (blur)="setFocused(null)"
-        />
+    <div class="cellar-add cellar-add--search">
+      <div class="cellar-add__chrome">
+        <div class="cellar-add__step-row">
+          <p class="cellar-add__step">Étape 1/2</p>
+          <a class="cellar-add__cancel" routerLink="/cave">Annuler</a>
+        </div>
+        <h1 class="cellar-add__title">Quelle bouteille ?</h1>
+        <div class="cellar-add__search">
+          <span class="cellar-add__search-icon" aria-hidden="true"></span>
+          <input
+            id="cellar-search"
+            class="cellar-add__search-input"
+            type="search"
+            enterkeyhint="search"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="Nom, marque…"
+            aria-label="Recherche catalogue"
+            [value]="searchControl.value"
+            (input)="onQueryInput($any($event.target).value)"
+            (focus)="setFocused('q')"
+            (blur)="setFocused(null)"
+          />
+          <button
+            type="button"
+            class="cellar-add__scan"
+            disabled
+            title="Scan code-barres · bientôt"
+            aria-label="Scan code-barres, bientôt disponible"
+          >
+            SCAN
+          </button>
+        </div>
+        @if (results().length > 0 && !searching()) {
+          <p class="cellar-add__count">
+            {{ results().length }} résultat{{ results().length > 1 ? 's' : '' }} dans le catalogue
+          </p>
+        }
       </div>
 
       @if (searchError(); as message) {
@@ -39,19 +63,21 @@
             <li>
               <button type="button" class="cellar-search-hit" (click)="pickHit(bottle)">
                 <app-bottle-photo
+                  class="cellar-search-hit__photo"
                   [src]="bottle.photoUrl"
-                  [alt]="bottle.name"
+                  [alt]="titleOf(bottle)"
                   variant="list"
                 />
                 <span class="cellar-search-hit__body">
-                  <span class="cellar-search-hit__name">{{ bottle.name }}</span>
-                  @if (bottle.brand) {
-                    <span class="cellar-search-hit__brand">{{ bottle.brand }}</span>
+                  <span class="cellar-search-hit__name">{{ titleOf(bottle) }}</span>
+                  @if (brandOf(bottle); as brand) {
+                    <span class="cellar-search-hit__brand">{{ brand }}</span>
                   }
-                  @if (bottle.category) {
-                    <span class="cellar-search-hit__cat">{{ bottle.category.name }}</span>
+                  @if (metaOf(bottle); as meta) {
+                    <span class="cellar-search-hit__meta">{{ meta }}</span>
                   }
                 </span>
+                <span class="cellar-search-hit__plus" aria-hidden="true">+</span>
               </button>
             </li>
           }
@@ -59,22 +85,34 @@
       }
 
       @if (searchControl.value.trim().length >= 2 && !searching()) {
-        <button type="button" class="auth-btn auth-btn--secondary" (click)="startMiss()">
-          Pas trouvé ? Ajoute-la
-        </button>
+        <div class="cellar-miss-box">
+          <p class="cellar-miss-box__text">
+            Pas la bonne ? Écris-la toi-même, ça enrichit le catalogue.
+          </p>
+          <button type="button" class="auth-btn auth-btn--secondary" (click)="startMiss()">
+            Créer « {{ searchControl.value.trim() }} »
+          </button>
+        </div>
       }
-
-      <a class="auth-btn auth-btn--ghost" routerLink="/cave">Retour à la cave</a>
     </div>
+
+    @if (freemium(); as meta) {
+      <div class="cellar-add__footer">
+        <app-freemium-counter [freemium]="meta" variant="footer" />
+      </div>
+    }
   } @else {
     <form class="auth-form cellar-add" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-      <button type="button" class="cellar-back" (click)="backToSearch()">← Recherche</button>
+      <div class="cellar-add__step-row">
+        <p class="cellar-add__step">Étape 2/2</p>
+        <button type="button" class="cellar-back" (click)="backToSearch()">← Recherche</button>
+      </div>
 
       @if (selected(); as bottle) {
         <div class="cellar-prefill">
           <app-bottle-photo
             [src]="bottle.photoUrl"
-            [alt]="bottle.name"
+            [alt]="titleOf(bottle)"
             variant="detail"
           />
           <p class="cellar-prefill__hint">Photo catalogue · perso = premium</p>
@@ -204,14 +242,14 @@
       </div>
 
       <div [ngClass]="fieldClass('note')">
-        <label class="auth-field__label" for="add-note">Note</label>
+        <label class="auth-field__label" for="add-note">Note /10</label>
         <input
           id="add-note"
           class="auth-field__control"
           type="text"
           inputmode="decimal"
           formControlName="note"
-          placeholder="4,5"
+          placeholder="7,5"
           (focus)="setFocused('note')"
           (blur)="setFocused(null)"
         />

@@ -18,8 +18,17 @@ import { BottlePhoto } from './bottle-photo';
 import { CatalogService, looksLikeBarcode } from './catalog.service';
 import { cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
-import type { CatalogBottle, CatalogCategory, FreemiumMeta } from './cellar.types';
+import {
+  catalogBottleBrand,
+  catalogBottleMeta,
+  catalogBottleTitle,
+  NOTE_MAX,
+  type CatalogBottle,
+  type CatalogCategory,
+  type FreemiumMeta,
+} from './cellar.types';
 import { CollectionService } from './collection.service';
+import { FreemiumCounter } from './freemium-counter';
 import { wineCatalogAttrs, wineOverrideFromForm, wineOverrideHasValue } from './wine-attrs';
 
 type AddStep = 'search' | 'confirm';
@@ -27,7 +36,7 @@ type AddStep = 'search' | 'confirm';
 @Component({
   selector: 'app-cellar-add-page',
   standalone: true,
-  imports: [NgClass, ReactiveFormsModule, RouterLink, CellarShell, BottlePhoto],
+  imports: [NgClass, ReactiveFormsModule, RouterLink, CellarShell, BottlePhoto, FreemiumCounter],
   templateUrl: './cellar-add.page.html',
 })
 export class CellarAddPage implements OnInit, OnDestroy {
@@ -51,6 +60,9 @@ export class CellarAddPage implements OnInit, OnDestroy {
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
   readonly wineLimits = WINE_ATTR_LIMITS;
+  readonly titleOf = catalogBottleTitle;
+  readonly brandOf = catalogBottleBrand;
+  readonly metaOf = catalogBottleMeta;
 
   readonly searchControl = this.fb.control('');
 
@@ -155,8 +167,8 @@ export class CellarAddPage implements OnInit, OnDestroy {
     this.selected.set(bottle);
     this.isMiss.set(false);
     this.form.reset({
-      name: bottle.name,
-      brand: bottle.brand ?? '',
+      name: catalogBottleTitle(bottle),
+      brand: catalogBottleBrand(bottle) ?? '',
       categoryId: bottle.categoryId,
       appellation: readWineAttr(bottle.attrs, 'appellation'),
       grape: readWineAttr(bottle.attrs, 'grape'),
@@ -212,9 +224,13 @@ export class CellarAddPage implements OnInit, OnDestroy {
     }
 
     const pricePaid = this.parseOptionalNumber(raw.pricePaid);
-    const note = this.parseOptionalNumber(raw.note);
-    if (pricePaid === 'invalid' || note === 'invalid') {
-      this.formError.set('Prix ou note invalide.');
+    const note = this.parseOptionalNote(raw.note);
+    if (pricePaid === 'invalid') {
+      this.formError.set('Prix invalide.');
+      return;
+    }
+    if (note === 'invalid') {
+      this.formError.set('La note doit rester entre 0 et 10.');
       return;
     }
 
@@ -309,6 +325,17 @@ export class CellarAddPage implements OnInit, OnDestroy {
     }
     const n = Number(trimmed);
     if (Number.isNaN(n) || n < 0) {
+      return 'invalid';
+    }
+    return n;
+  }
+
+  private parseOptionalNote(value: string): number | null | 'invalid' {
+    const n = this.parseOptionalNumber(value);
+    if (n === null || n === 'invalid') {
+      return n;
+    }
+    if (n > NOTE_MAX) {
       return 'invalid';
     }
     return n;

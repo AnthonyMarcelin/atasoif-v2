@@ -12,8 +12,10 @@ Technical runbook for shipping `apps/web` (Angular cave) as a Capacitor iOS shel
 | Capacitor | `@capacitor/core` + `@capacitor/ios` + `@capacitor/cli` (aligned versions) |
 | `webDir` | `dist/web/browser` |
 | Xcode project | `apps/web/ios/App/App.xcodeproj` |
+| Marketing version | `1.0.2` (`MARKETING_VERSION`) |
+| Build number | `2` (`CURRENT_PROJECT_VERSION`) |
 
-Distribution preference: **native stores via Capacitor** — not a Dokploy `app.` / `cave.` subdomain (see Context prefs).
+Distribution preference: **native stores via Capacitor** — not a Dokploy `app.` / `cave.` subdomain (see Context prefs). Next Android AAB is later; do not bump Play versioning here.
 
 ## Prerequisites (Anthony)
 
