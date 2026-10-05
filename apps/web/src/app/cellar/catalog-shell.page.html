@@ -14,16 +14,16 @@
     </div>
 
     <div class="catalog-filters" role="tablist" aria-label="Filtres catégorie">
-      @for (slug of filterSlugs; track slug) {
+      @for (row of filters(); track row.slug ?? 'all') {
         <button
           type="button"
           class="catalog-filters__btn"
           role="tab"
-          [class.is-active]="filter() === slug"
-          [attr.aria-selected]="filter() === slug"
-          (click)="setFilter(slug)"
+          [class.is-active]="filter() === row.slug"
+          [attr.aria-selected]="filter() === row.slug"
+          (click)="setFilter(row.slug)"
         >
-          {{ filterLabel(slug) }}
+          {{ filterLabel(row.slug, row.label) }}
         </button>
       }
     </div>
