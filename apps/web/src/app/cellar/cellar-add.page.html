@@ -23,7 +23,7 @@
             autocomplete="off"
             autocorrect="off"
             spellcheck="false"
-            placeholder="Nom, marque…"
+            placeholder="Rechercher un nom ou une marque"
             aria-label="Recherche catalogue"
             [value]="searchControl.value"
             (input)="onQueryInput($any($event.target).value)"
@@ -106,12 +106,11 @@
     <form class="auth-form cellar-add cellar-add--confirm" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
       <div class="cellar-add__step-row">
         <p class="cellar-add__step">Étape 2/2</p>
-        @if (!isMiss()) {
-          <span class="cellar-add__prefill-badge">Pré-rempli</span>
-        } @else {
-          <button type="button" class="cellar-back" (click)="backToSearch()">← Recherche</button>
-        }
+        <button type="button" class="cellar-back" (click)="backToSearch()">← Recherche</button>
       </div>
+      @if (!isMiss() && selected()) {
+        <p class="cellar-add__prefill-badge">Pré-rempli depuis le catalogue</p>
+      }
 
       @if (selected(); as bottle) {
         <div class="cellar-prefill-card">
@@ -127,8 +126,13 @@
               <p class="cellar-prefill-card__meta">{{ meta }}</p>
             }
           </div>
-          <button type="button" class="cellar-prefill-card__change" (click)="backToSearch()">
-            Changer
+          <button
+            type="button"
+            class="cellar-prefill-card__change"
+            (click)="backToSearch()"
+            title="Choisir une autre bouteille du catalogue"
+          >
+            Autre bouteille
           </button>
         </div>
       }
@@ -144,7 +148,7 @@
             type="text"
             inputmode="decimal"
             formControlName="pricePaid"
-            placeholder="62"
+            placeholder="Ex. : 62"
             (focus)="setFocused('pricePaid')"
             (blur)="setFocused(null)"
           />
@@ -156,7 +160,7 @@
             class="auth-field__control"
             type="text"
             formControlName="boughtOn"
-            placeholder="12.03.26"
+            placeholder="Ex. : 12.03.26"
             autocomplete="off"
             (focus)="setFocused('boughtOn')"
             (blur)="setFocused(null)"
@@ -172,7 +176,7 @@
           type="text"
           formControlName="boughtAt"
           autocomplete="off"
-          placeholder="Nicolas Bastille"
+          placeholder="Ex. : caviste, supermarché…"
           [attr.aria-required]="true"
           (focus)="setFocused('boughtAt')"
           (blur)="setFocused(null)"
@@ -186,7 +190,7 @@
           class="auth-field__control auth-field__control--area"
           formControlName="review"
           rows="2"
-          placeholder="Tourbe franche, presque salée."
+          placeholder="Facultatif — un souvenir, une note de dégustation…"
           (focus)="setFocused('review')"
           (blur)="setFocused(null)"
         ></textarea>
@@ -200,7 +204,7 @@
           type="text"
           inputmode="decimal"
           formControlName="note"
-          placeholder="7,5"
+          placeholder="Ex. : 7,5"
           (focus)="setFocused('note')"
           (blur)="setFocused(null)"
         />
@@ -225,13 +229,107 @@
         }
       </div>
 
+      <div class="cellar-add__photo-block">
+        <p class="auth-field__label">Photo</p>
+        <div class="cellar-photo-slot cellar-photo-slot--add">
+          <app-bottle-photo
+            [src]="confirmPhotoSrc()"
+            [alt]="confirmPhotoAlt()"
+            variant="list"
+          />
+          @if (freemium()?.entitlement) {
+            @if (nativePhotoPick) {
+              <div class="cellar-photo-actions">
+                <button
+                  class="cellar-photo-fab"
+                  type="button"
+                  (click)="pickAddPhoto('camera')"
+                  [disabled]="saving()"
+                  aria-label="Ajouter une photo avec la caméra"
+                  title="Caméra"
+                >
+                  <span aria-hidden="true">＋</span>
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="pickAddPhoto('library')"
+                  [disabled]="saving()"
+                >
+                  Photothèque
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="pickAddPhoto('camera')"
+                  [disabled]="saving()"
+                >
+                  Caméra
+                </button>
+              </div>
+            } @else {
+              <div class="cellar-photo-actions">
+                <button
+                  class="cellar-photo-fab"
+                  type="button"
+                  (click)="addPhotoInput.click()"
+                  [disabled]="saving()"
+                  aria-label="Ajouter une photo"
+                  title="Ajouter une photo"
+                >
+                  <span aria-hidden="true">＋</span>
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="addPhotoInput.click()"
+                  [disabled]="saving()"
+                >
+                  {{ pendingPhoto() ? 'Changer la photo' : 'Ajouter une photo' }}
+                </button>
+              </div>
+              <input
+                #addPhotoInput
+                class="cellar-photo-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                tabindex="-1"
+                aria-hidden="true"
+                (change)="onAddPhotoSelected($event)"
+              />
+            }
+            @if (pendingPhoto()) {
+              <button
+                type="button"
+                class="auth-btn auth-btn--ghost"
+                (click)="clearPendingPhoto()"
+                [disabled]="saving()"
+              >
+                Retirer la photo
+              </button>
+            }
+          } @else {
+            <a
+              class="auth-btn auth-btn--secondary"
+              routerLink="/cave/premium"
+              [queryParams]="{ reason: 'photo' }"
+            >
+              Photo perso · premium
+            </a>
+          }
+          @if (photoError(); as message) {
+            <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+          }
+        </div>
+      </div>
+
       <button
         type="button"
         class="cellar-product-toggle"
         (click)="toggleProductOpen()"
         [attr.aria-expanded]="productOpen()"
       >
-        <span>Fiche produit : type, origine, degré</span>
+        <span>Infos supplémentaires</span>
         <span aria-hidden="true">{{ productOpen() ? '−' : '+' }}</span>
       </button>
 
@@ -292,6 +390,34 @@
                 <option [value]="type">{{ type }}</option>
               }
             </select>
+          </div>
+
+          <div [ngClass]="fieldClass('origin')">
+            <label class="auth-field__label" for="add-origin">Origine</label>
+            <input
+              id="add-origin"
+              class="auth-field__control"
+              type="text"
+              formControlName="origin"
+              autocomplete="off"
+              placeholder="Ex. : Islay, Bordeaux…"
+              (focus)="setFocused('origin')"
+              (blur)="setFocused(null)"
+            />
+          </div>
+
+          <div [ngClass]="fieldClass('abv')">
+            <label class="auth-field__label" for="add-abv">Degré (°)</label>
+            <input
+              id="add-abv"
+              class="auth-field__control"
+              type="text"
+              inputmode="decimal"
+              formControlName="abv"
+              placeholder="Ex. : 43"
+              (focus)="setFocused('abv')"
+              (blur)="setFocused(null)"
+            />
           </div>
 
           @if (showWineFields()) {

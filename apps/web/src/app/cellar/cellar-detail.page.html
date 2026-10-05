@@ -17,6 +17,16 @@
             @if (nativePhotoPick) {
               <div class="cellar-photo-actions">
                 <button
+                  class="cellar-photo-fab"
+                  type="button"
+                  (click)="pickShelfPhoto('camera')"
+                  [disabled]="uploadingPhoto()"
+                  aria-label="Ajouter une photo avec la caméra"
+                  title="Caméra"
+                >
+                  <span aria-hidden="true">＋</span>
+                </button>
+                <button
                   class="auth-btn auth-btn--secondary"
                   type="button"
                   (click)="pickShelfPhoto('library')"
@@ -34,14 +44,26 @@
                 </button>
               </div>
             } @else {
-              <button
-                class="auth-btn auth-btn--secondary"
-                type="button"
-                (click)="photoInput.click()"
-                [disabled]="uploadingPhoto()"
-              >
-                {{ uploadingPhoto() ? 'Envoi…' : 'Remplacer la photo' }}
-              </button>
+              <div class="cellar-photo-actions">
+                <button
+                  class="cellar-photo-fab"
+                  type="button"
+                  (click)="photoInput.click()"
+                  [disabled]="uploadingPhoto()"
+                  aria-label="Ajouter une photo"
+                  title="Ajouter une photo"
+                >
+                  <span aria-hidden="true">＋</span>
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="photoInput.click()"
+                  [disabled]="uploadingPhoto()"
+                >
+                  {{ uploadingPhoto() ? 'Envoi…' : 'Ajouter / remplacer la photo' }}
+                </button>
+              </div>
               <input
                 #photoInput
                 class="cellar-photo-input"

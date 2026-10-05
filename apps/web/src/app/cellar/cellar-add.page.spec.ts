@@ -62,11 +62,15 @@ describe('CellarAddPage wine fields', () => {
           useValue: {
             freemium: () => of({ count: 0, limit: 10, remaining: 10, entitlement: false }),
             create,
+            uploadPhoto: jasmine.createSpy('uploadPhoto'),
           },
         },
         {
           provide: BarcodeScanService,
-          useValue: { scan: () => Promise.resolve({ ok: false, reason: 'unavailable' }) },
+          useValue: {
+            isNative: false,
+            scan: () => Promise.resolve({ ok: false, reason: 'unavailable' }),
+          },
         },
       ],
     }).compileComponents();
@@ -92,6 +96,7 @@ describe('CellarAddPage wine fields', () => {
 
   it('sends a wine override on a catalog hit and hides the fields for whisky', () => {
     page.pickHit(wineBottle());
+    page.productOpen.set(true);
     fixture.detectChanges();
     expect(page.form.controls.appellation.value).toBe('Margaux');
     expect(fixture.nativeElement.querySelector('#add-appellation')).not.toBeNull();
@@ -114,6 +119,7 @@ describe('CellarAddPage wine fields', () => {
       categoryId: 1,
       category: { id: 1, slug: 'whisky', name: 'Whisky' },
     });
+    page.productOpen.set(true);
     fixture.detectChanges();
     page.form.controls.boughtAt.setValue('Nicolas');
     page.onSubmit();
@@ -121,6 +127,16 @@ describe('CellarAddPage wine fields', () => {
     const whisky = create.calls.mostRecent().args[0] as CreateUserBottlePayload;
     expect(whisky.attrsOverride).toBeUndefined();
     expect(fixture.nativeElement.querySelector('#add-appellation')).toBeNull();
+  });
+
+  it('shows a photo entry on the confirm step for free plans', () => {
+    page.pickHit(wineBottle());
+    fixture.detectChanges();
+    const photoBlock = fixture.nativeElement.querySelector('.cellar-add__photo-block') as HTMLElement | null;
+    expect(photoBlock).not.toBeNull();
+    expect(photoBlock?.textContent ?? '').toContain('Photo perso');
+    expect(photoBlock?.textContent ?? '').toContain('premium');
+    expect(fixture.nativeElement.querySelector('.cellar-photo-fab')).toBeNull();
   });
 
   it('puts wine keys on the catalog bottle for a manual miss', () => {

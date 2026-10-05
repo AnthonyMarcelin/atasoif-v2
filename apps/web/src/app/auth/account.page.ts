@@ -6,6 +6,7 @@ import { finalize } from 'rxjs';
 
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
+import { BiometricAuthService } from '../core/auth/biometric-auth.service';
 import { CellarShell } from '../cellar/cellar-shell';
 import type { FreemiumMeta } from '../cellar/cellar.types';
 import { CollectionService } from '../cellar/collection.service';
@@ -19,6 +20,7 @@ import { controlErrorMessage, pseudoValidators } from './auth-validators';
 export class AccountPage implements OnInit {
   private readonly fb = new FormBuilder().nonNullable;
   private readonly auth = inject(AuthService);
+  private readonly biometrics = inject(BiometricAuthService);
   private readonly collection = inject(CollectionService);
   private readonly router = inject(Router);
 
@@ -30,6 +32,12 @@ export class AccountPage implements OnInit {
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
   readonly freemium = signal<FreemiumMeta | null>(null);
+  readonly biometricNative = this.biometrics.isNative;
+  readonly biometricAvailable = signal(false);
+  readonly biometricEnabled = signal(false);
+  readonly biometricBusy = signal(false);
+  readonly biometricMessage = signal<string | null>(null);
+  readonly biometricError = signal(false);
 
   readonly form = this.fb.group({
     pseudo: ['', pseudoValidators],
@@ -38,10 +46,41 @@ export class AccountPage implements OnInit {
 
   ngOnInit(): void {
     this.reload();
+    this.biometricEnabled.set(this.biometrics.isEnabledPreference());
+    void this.biometrics.isAvailable().then((ok) => this.biometricAvailable.set(ok));
     this.collection.freemium().subscribe({
       next: (meta) => this.freemium.set(meta),
       error: () => this.freemium.set(null),
     });
+  }
+
+  async onBiometricToggle(enabled: boolean): Promise<void> {
+    if (this.biometricBusy()) {
+      return;
+    }
+    this.biometricBusy.set(true);
+    this.biometricMessage.set(null);
+    this.biometricError.set(false);
+    try {
+      if (!enabled) {
+        await this.biometrics.clear();
+        this.biometrics.setEnabledPreference(false);
+        this.biometricEnabled.set(false);
+        this.biometricMessage.set('Biométrie désactivée.');
+        return;
+      }
+      this.biometrics.setEnabledPreference(true);
+      this.biometricEnabled.set(true);
+      this.biometricMessage.set(
+        'Biométrie activée. Connecte-toi une fois avec e-mail / mot de passe pour enregistrer Face ID.',
+      );
+    } catch {
+      this.biometricError.set(true);
+      this.biometricMessage.set('Impossible de mettre à jour la biométrie.');
+      this.biometricEnabled.set(this.biometrics.isEnabledPreference());
+    } finally {
+      this.biometricBusy.set(false);
+    }
   }
 
   reload(): void {

@@ -26,7 +26,19 @@ import {
 } from './cellar.types';
 import { CollectionService } from './collection.service';
 
-const FILTER_SLUGS = ['whisky', 'rhum', 'beer', 'wine'] as const;
+/** Fallback order when /catalog/categories is slow or empty (matches API seeder). */
+const FALLBACK_FILTERS: Array<{ slug: string | null; label: string }> = [
+  { slug: null, label: 'Tout' },
+  { slug: 'whisky', label: 'Whisky' },
+  { slug: 'rhum', label: 'Rhum' },
+  { slug: 'beer', label: 'Bière' },
+  { slug: 'wine', label: 'Vin' },
+  { slug: 'gin', label: 'Gin' },
+  { slug: 'cognac', label: 'Cognac' },
+  { slug: 'vodka', label: 'Vodka' },
+  { slug: 'liqueur', label: 'Liqueur' },
+  { slug: 'other', label: 'Autre' },
+];
 
 @Component({
   selector: 'app-catalog-shell-page',
@@ -45,7 +57,8 @@ export class CatalogShellPage implements OnInit, OnDestroy {
 
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly categories = signal<CatalogCategory[]>([]);
-  readonly filter = signal<string>('whisky');
+  /** `null` = all categories (aligned with Ma cave). */
+  readonly filter = signal<string | null>(null);
   readonly searching = signal(false);
   readonly error = signal<string | null>(null);
   readonly inCellar = signal<CatalogBottle[]>([]);
@@ -55,7 +68,8 @@ export class CatalogShellPage implements OnInit, OnDestroy {
   readonly titleOf = catalogBottleTitle;
   readonly metaOf = catalogBottleMeta;
   readonly searchControl = this.fb.control('');
-  readonly filterSlugs = FILTER_SLUGS;
+
+  readonly filters = signal(FALLBACK_FILTERS);
 
   ngOnInit(): void {
     this.collection.freemium().subscribe({
@@ -64,7 +78,15 @@ export class CatalogShellPage implements OnInit, OnDestroy {
     });
 
     this.catalog.categories().subscribe({
-      next: (rows) => this.categories.set(rows),
+      next: (rows) => {
+        this.categories.set(rows);
+        if (rows.length > 0) {
+          this.filters.set([
+            { slug: null, label: 'Tout' },
+            ...rows.map((row) => ({ slug: row.slug, label: row.name })),
+          ]);
+        }
+      },
       error: () => this.categories.set([]),
     });
 
@@ -98,7 +120,8 @@ export class CatalogShellPage implements OnInit, OnDestroy {
             return of(null);
           }
           this.searching.set(true);
-          return this.catalog.search(q, 20, { category: this.filter() }).pipe(
+          const category = this.filter() ?? undefined;
+          return this.catalog.search(q, 20, { category }).pipe(
             catchError((err: unknown) => {
               this.error.set(cellarErrorMessage(err, 'Catalogue indisponible. Réessaie.'));
               return of({ data: [] as CatalogBottle[] });
@@ -127,7 +150,7 @@ export class CatalogShellPage implements OnInit, OnDestroy {
     this.query$.next(value);
   }
 
-  setFilter(slug: string): void {
+  setFilter(slug: string | null): void {
     this.filter.set(slug);
     if (this.searchControl.value.trim()) {
       this.query$.next(this.searchControl.value.trim());
@@ -136,9 +159,8 @@ export class CatalogShellPage implements OnInit, OnDestroy {
     }
   }
 
-  filterLabel(slug: string): string {
-    const found = this.categories().find((row) => row.slug === slug);
-    return (found?.name ?? slug).toUpperCase();
+  filterLabel(slug: string | null, label: string): string {
+    return label.toUpperCase();
   }
 
   isInCellar(bottleId: number): boolean {
@@ -151,8 +173,9 @@ export class CatalogShellPage implements OnInit, OnDestroy {
 
   private loadBrowse(): void {
     this.searching.set(true);
+    const category = this.filter() ?? undefined;
     this.catalog
-      .search('', 12, { category: this.filter(), recentDays: 7 })
+      .search('', 12, { category, recentDays: 7 })
       .pipe(
         catchError(() => of({ data: [] as CatalogBottle[] })),
         finalize(() => this.searching.set(false)),
