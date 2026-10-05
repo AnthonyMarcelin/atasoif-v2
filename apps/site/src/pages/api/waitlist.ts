@@ -42,6 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: false, message: 'Email invalide.' }, 400);
   }
 
+  // From = noreply (unread). Reply-To must stay contact@ so replies are read.
   const from = process.env.RESEND_FROM ?? 'À ta soif <noreply@atasoif.fr>';
   const replyTo = process.env.RESEND_REPLY_TO ?? 'contact@atasoif.fr';
   // Empty string disables the internal notify copy.
@@ -77,7 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
       tags: [{ name: 'type', value: 'waitlist-notify' }],
     });
     if (notifyError) {
-      // User already got the ack — log and continue.
+      // User already got the ack; log and continue.
       console.error('[waitlist] Resend notify failed', notifyError);
     }
   }

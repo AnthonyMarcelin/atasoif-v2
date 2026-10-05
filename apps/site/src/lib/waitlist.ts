@@ -11,6 +11,7 @@ const BRAND = {
   border: '#3E362C',
   markUrl: 'https://www.atasoif.fr/mark.svg',
   siteUrl: 'https://www.atasoif.fr',
+  contactEmail: 'contact@atasoif.fr',
 } as const;
 
 export function normalizeEmail(value: unknown): string {
@@ -35,6 +36,8 @@ export function buildUserAckEmail(): { subject: string; html: string; text: stri
     '',
     'Pas de newsletter. Pas de spam.',
     '',
+    `Pour nous écrire : ${BRAND.contactEmail}`,
+    '',
     'L’équipe À ta soif',
     BRAND.siteUrl,
   ].join('\n');
@@ -46,7 +49,8 @@ export function buildUserAckEmail(): { subject: string; html: string; text: stri
     bodyHtml: [
       '<p style="margin:0 0 14px;">Salut,</p>',
       '<p style="margin:0 0 14px;">Ton email est bien enregistré. On t’écrit <strong style="color:#F2EADC;font-weight:600;">une seule fois</strong>, quand l’app sort sur iOS et Android.</p>',
-      '<p style="margin:0;">Pas de newsletter. Pas de spam.</p>',
+      '<p style="margin:0 0 14px;">Pas de newsletter. Pas de spam.</p>',
+      `<p style="margin:0;">Pour nous écrire : <a href="mailto:${BRAND.contactEmail}" style="color:${BRAND.accent};text-decoration:none;">${BRAND.contactEmail}</a></p>`,
     ].join(''),
     footer: 'L’équipe À ta soif',
   });

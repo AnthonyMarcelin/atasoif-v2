@@ -65,11 +65,11 @@ Paste into the `site` application (never commit values):
 | Variable | Required | Example / notes |
 |---|---|---|
 | `RESEND_API_KEY` | **Yes** (waitlist) | Resend dashboard API key |
-| `RESEND_FROM` | No | `À ta soif <noreply@atasoif.fr>` (domain must be verified in Resend) |
-| `RESEND_REPLY_TO` | No | `contact@atasoif.fr` |
+| `RESEND_FROM` | No | `À ta soif <noreply@atasoif.fr>` (verified domain; noreply inbox unread) |
+| `RESEND_REPLY_TO` | No | `contact@atasoif.fr` (keep this; replies must not go to noreply) |
 | `WAITLIST_NOTIFY_TO` | No | `contact@atasoif.fr` · empty string disables internal copy |
 
-DNS for Resend: verify `atasoif.fr` (SPF + DKIM TXT) in [Resend Domains](https://resend.com/domains). API mail stays on OVH SMTP — Resend is **site only**.
+DNS for Resend: verify `atasoif.fr` (SPF + DKIM TXT) in [Resend Domains](https://resend.com/domains). API mail stays on OVH SMTP. Resend is **site only**.
 
 Do **not** configure Build type Dockerfile / Nixpacks / monorepo context in Dokploy for this service. Rebuilds happen in GitHub Actions on **`main`** (path filters) or via **workflow_dispatch** (override `PUBLIC_*` inputs). Merges to `dev` do **not** deploy the site.
 
