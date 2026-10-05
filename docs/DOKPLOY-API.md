@@ -160,6 +160,7 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 |---|---|
 | `CORS_ORIGIN` | CSV — marketing + Capacitor WebView: `https://www.atasoif.fr,https://atasoif.fr,capacitor://localhost,https://localhost` (add a hosted cave origin later if needed — [`DOKPLOY-WEB.md`](./DOKPLOY-WEB.md)) |
 | `OPS_ADMIN_TOKEN` | long secret aléatoire pour `GET /api/v1/ops/kpis` (`X-Ops-Token`). Vide = route fermée |
+| `STORE_REVIEW_SECRET` | secret App Store / TestFlight pour `POST /api/v1/auth/store-review`. Même valeur dans les notes de soumission. **Jamais** dans le build web / Capacitor. Vide = refus |
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | si le SMTP le demande |
 | `CELLAR_PHOTO_DIR` | chemin absolu volume persistant (photos cave) hors release |
 

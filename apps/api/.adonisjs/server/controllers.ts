@@ -18,4 +18,5 @@ export const controllers = {
   OpsKpis: () => import('#controllers/ops_kpis_controller'),
   PasswordResets: () => import('#controllers/password_resets_controller'),
   Profile: () => import('#controllers/profile_controller'),
+  StoreReview: () => import('#controllers/store_review_controller'),
 }

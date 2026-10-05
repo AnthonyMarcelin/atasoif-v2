@@ -15,6 +15,7 @@ const CatalogBottlesController = () => import('#controllers/catalog_bottles_cont
 const CatalogCategoriesController = () => import('#controllers/catalog_categories_controller')
 const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
 const CollectionPhotosController = () => import('#controllers/collection_photos_controller')
+const StoreReviewController = () => import('#controllers/store_review_controller')
 const OpsKpisController = () => import('#controllers/ops_kpis_controller')
 
 router.get('/health', [HealthController, 'handle'])
@@ -40,6 +41,15 @@ router
         router.post('email/verify', [controllers.EmailVerifications, 'store'])
         router.post('forgot-password', [controllers.PasswordResets, 'store'])
         router.post('reset-password', [controllers.PasswordResets, 'update'])
+        router
+          .post('store-review', [StoreReviewController, 'store'])
+          .use(
+            middleware.throttle({
+              maxAttempts: 10,
+              windowMs: 15 * 60 * 1000,
+              bucket: 'store-review',
+            })
+          )
         router.get('google/redirect', [GoogleAuthController, 'redirect'])
         router.get('google/callback', [GoogleAuthController, 'callback'])
         router.get('facebook/redirect', [FacebookAuthController, 'redirect'])

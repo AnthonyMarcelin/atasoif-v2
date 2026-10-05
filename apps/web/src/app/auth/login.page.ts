@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
 import { safeInternalPath } from '../core/auth/safe-internal-path';
+import { StoreReviewBypass } from '../core/store-review-bypass';
 import { AuthTabs } from './auth-tabs';
 import { controlErrorMessage, emailValidators, passwordValidators } from './auth-validators';
 
@@ -33,7 +34,7 @@ const OAUTH_ERROR_COPY: Record<string, string> = {
 
 @Component({
   selector: 'app-login-page',
-  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs],
+  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs, StoreReviewBypass],
   templateUrl: './login.page.html',
 })
 export class LoginPage implements OnInit {
@@ -47,6 +48,7 @@ export class LoginPage implements OnInit {
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly storeReviewOk = signal(false);
   readonly showFacebookLogin = this.auth.showFacebookLogin;
   readonly showAppleLogin = this.auth.showAppleLogin;
 
@@ -97,6 +99,11 @@ export class LoginPage implements OnInit {
           );
         },
       });
+  }
+
+  onStoreReviewUnlocked(): void {
+    this.storeReviewOk.set(true);
+    this.formError.set(null);
   }
 
   continueWithGoogle(): void {
