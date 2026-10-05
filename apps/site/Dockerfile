@@ -25,9 +25,14 @@ ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_ANDROID_URL=$PUBLIC_ANDROID_URL
 RUN bun run build
 
-FROM nginx:1.27-alpine AS runtime
-COPY apps/site/docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/apps/site/dist /usr/share/nginx/html
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=80
+# Standalone server serves prerendered pages + `/api/waitlist`.
+COPY --from=build /app/apps/site/dist ./dist
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget -qO- http://127.0.0.1/ >/dev/null || exit 1
+CMD ["node", "./dist/server/entry.mjs"]
