@@ -12,8 +12,14 @@ coverage
 .idea
 .vscode/*
 !.vscode/extensions.json
-apps/web/ios
+# Native shells: commit iOS Xcode project for TestFlight; regenerate web assets via `cap sync`.
+# Android stays local until Play closed-testing prep.
 apps/web/android
+# Cap secrets / signing — never commit
+**/*.p12
+**/*.mobileprovision
+**/AuthKey_*.p8
+**/Certificates.p12
 uploads
 tmp
 .pnpm-store/

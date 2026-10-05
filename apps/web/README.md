@@ -1,6 +1,28 @@
 # Web
 
-Angular 20 app for À ta soif. Prefer repo-root scripts (`bun run dev:web`). Package manager: **Bun** (see [`docs/BUN.md`](../../docs/BUN.md)).
+Angular 20 app for À ta soif (cave SPA → **Capacitor iOS/Android stores**, not a Dokploy `app.` subdomain). Prefer repo-root scripts (`bun run dev:web`). Package manager: **Bun** (see [`docs/BUN.md`](../../docs/BUN.md)).
+
+| | |
+| --- | --- |
+| Bundle ID | `fr.atasoif.app` |
+| Capacitor config | [`capacitor.config.ts`](./capacitor.config.ts) |
+| iOS project | [`ios/App/App.xcodeproj`](./ios/App/App.xcodeproj) |
+| Prod API | `https://api.atasoif.fr` (`src/environments/environment.ts`) |
+| TestFlight runbook | [`docs/CAPACITOR-IOS-TESTFLIGHT.md`](../../docs/CAPACITOR-IOS-TESTFLIGHT.md) |
+
+### Capacitor iOS (local)
+
+```bash
+# From monorepo root
+bun run ios:sync    # production web build + cap sync ios
+bun run ios:open    # open Xcode
+
+# From this package
+bun run ios:sync
+bun run ios:open
+```
+
+Archive / TestFlight upload is **manual in Xcode** (Anthony: Team `D3UKXNVT3D`, signing, App Store Connect). Do not commit certs or provisioning profiles.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.32.
 
