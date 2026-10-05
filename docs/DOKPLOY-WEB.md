@@ -2,7 +2,9 @@
 
 **Status:** documented proposal only. **Do not create** a Dokploy service until Anthony confirms (Anthony fence — no new Dokploy services outside À ta soif without approval).
 
-There is **no** `web` GHCR workflow and **no** `apps/web` Dockerfile yet. Production API URL is already baked into the Angular production environment (`https://api.atasoif.fr`). Hosting the SPA is the remaining ops step.
+**Preferred holiday distribution:** Capacitor → **TestFlight** (and later Play), not a public `app.` / `cave.` Dokploy SPA. See [`CAPACITOR-IOS-TESTFLIGHT.md`](./CAPACITOR-IOS-TESTFLIGHT.md).
+
+There is **no** `web` GHCR workflow and **no** `apps/web` Dockerfile yet. Production API URL is already baked into the Angular production environment (`https://api.atasoif.fr`). A Dokploy SPA host remains optional / deferred.
 
 | Item | Proposed value |
 |---|---|
