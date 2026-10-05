@@ -50,17 +50,22 @@ const FULL_TAG_PREFIXES = [
   'en:hard-ciders',
   'en:tequilas',
   'en:mezcal',
+  'en:mezcals',
   'en:pastis',
   'en:anise-flavoured-drinks',
   'en:aperitifs',
   'en:digestifs',
   'en:bitters',
+  'en:saké',
+  'en:sake',
+  'en:soju',
   'fr:vins',
   'fr:cognacs',
   'fr:liqueurs',
   'fr:champagnes',
   'fr:cidres',
   'fr:pastis',
+  'fr:tequilas',
 ] as const
 
 const EXCLUDE_TAGS = new Set([

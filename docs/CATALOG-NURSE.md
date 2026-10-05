@@ -4,7 +4,7 @@ Pre-launch ops tool: walk a **curated EAN list**, fill **spirits / gap** SKUs be
 
 **Lookup order** (same as live barcode API): local DB → Open Food Facts → UPCitemdb → upsert `Bottle` + `BottleSource`.
 
-**Complementary to OFF dump:** use [`CATALOG-SEED.md`](./CATALOG-SEED.md) for volume beer/wine via `catalog:off-dump`. Nurse is not a bulk scraper.
+**Complementary to OFF dump:** use [`CATALOG-SEED.md`](./CATALOG-SEED.md) for volume (fill-max = `--profile=full` before public store). Nurse is not a bulk scraper.
 
 See also: [`DATABASE.md`](./DATABASE.md) §3 · Ace command `catalog:nurse`.
 

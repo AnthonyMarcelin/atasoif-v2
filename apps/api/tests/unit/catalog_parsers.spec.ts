@@ -23,6 +23,10 @@ test.group('Catalog parsers', () => {
     assert.equal(mapCategorySlug(['en:whiskies']), 'whisky')
     assert.equal(mapCategorySlug(['en:beers']), 'beer')
     assert.equal(mapCategorySlug(['Hendrick’s Gin']), 'gin')
+    assert.equal(mapCategorySlug(['en:pastis', 'Pastis 51']), 'liqueur')
+    assert.equal(mapCategorySlug(['en:tequilas']), 'other')
+    assert.equal(mapCategorySlug(['en:cognacs']), 'cognac')
+    assert.equal(mapCategorySlug(['en:wines', 'en:red-wines']), 'wine')
     assert.equal(mapCategorySlug(['mystery juice']), 'other')
   })
 

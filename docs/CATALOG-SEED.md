@@ -2,7 +2,7 @@
 
 Concrete plan so **name search works at launch** without Bright Data, Whiskybase scrape, Apify, or Chin Chin.
 
-**Product stance:** curated thousands of well-presented refs (whisky, rum, gin, vodka, beer first), not an exhaustive whisky universe. No LLM-generated descriptions.
+**Product stance:** curated thousands of well-presented refs for smoke imports (`--profile=curated`); **fill-max before public store** uses `--profile=full` (all exposed alcohol categories). No LLM-generated descriptions.
 
 **Product rules (locked):**
 
@@ -140,7 +140,7 @@ Ace will stream and filter; slower, same result for curated tags.
 - Exclude non-alcoholic beer/wine tags; drop ABV ≤ 0 when tagged alcoholic
 - Require usable barcode (8–14 digits) + product name
 
-`--profile=full`: broader alcohol (wines, ciders, liqueurs, pastis, …) for later expansion. Not the MVP default.
+`--profile=full` (**fill-max / pre-prod gate**): all alcohol categories we expose (wine, cognac, liqueur, cider, pastis, tequila, …) plus curated spirits/beer. Use this path **before** public store release — see product ops plan in the Project store (`docs/catalog-fill-max.md`). Default remains `curated` for smaller smoke imports.
 
 ### Name cleanup + dedupe (implemented)
 
@@ -207,8 +207,8 @@ node ace catalog:off-dump \
   --profile=curated \
   --mirror-images
 
-# Broader alcohol later
-node ace catalog:off-dump --file=…jsonl.gz --profile=full
+# Broader alcohol — fill-max / pre-prod gate (wine, cognac, liqueur, …)
+node ace catalog:off-dump --file=…/openfoodfacts-products.jsonl.gz --profile=full
 
 # Root shortcut
 bun run catalog:off-dump -- --file=/var/lib/atasoif/off/alcohol.jsonl --dry-run --limit=20
@@ -220,16 +220,73 @@ Dry-run and persist both log `byCategory` (counts per AlcoholCategory slug after
 
 ---
 
+## Fill-max path (`--profile=full`) — release gate
+
+**Product rule:** maximize free catalog coverage **before** public store / go-prod. Not a post-MVP chore. TestFlight UI triage can stay parallel; prod release must wait for fill.
+
+| Step | Command / action |
+|---|---|
+| 1. Disk | `df -h` on VPS — full JSONL.gz is multi-GB |
+| 2. Dry-run smoke | `node ace catalog:off-dump --file=…jsonl.gz --profile=full --dry-run --limit=50` |
+| 3. Persist | same without `--dry-run` (no `--mirror-images` until volume ready) |
+| 4. Nurse | `node ace catalog:nurse --daily-limit=100` until REAL list exhausted |
+| 5. Verify | `byCategory` includes wine/cognac/liqueur/… · users/user_bottles unchanged |
+
+Do **not** wipe the DB. Leave `RUN_MIGRATIONS` unset/`0`. The curated `alcohol.jsonl` from the first seed is **too narrow** for fill-max — stream the full dump with `--profile=full`, or regenerate JSONL with full tags (DuckDB block below).
+
+### DuckDB filter — full tags (optional prefilter)
+
+When DuckDB is available on the **host**, prefer a filtered JSONL to avoid streaming multi-GB in Ace:
+
+```bash
+duckdb -c "
+COPY (
+  SELECT
+    code,
+    product_name,
+    product_name_fr,
+    brands,
+    quantity,
+    image_url,
+    image_front_url,
+    categories_tags,
+    countries,
+    countries_tags,
+    origins,
+    alcohol_100g
+  FROM read_parquet('food.parquet')
+  WHERE list_contains(CAST(categories_tags AS VARCHAR[]), 'en:whiskies')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:rums')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:gins')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:vodkas')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:beers')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:wines')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:cognacs')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:liqueurs')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:champagnes')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:ciders')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:tequilas')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:pastis')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:alcoholic-beverages')
+     OR list_contains(CAST(categories_tags AS VARCHAR[]), 'en:spirits')
+) TO 'alcohol-full.jsonl' (FORMAT JSON);
+"
+```
+
+Then: `node ace catalog:off-dump --file=…/alcohol-full.jsonl --profile=full`.
+
+---
+
 ## Prod / Dokploy runbook (Anthony)
 
-**Status (2026-09-30):** code E3.1–E3.2 is in the API image path (`catalog:off-dump` already ran nurse live on prod). Dump **not** executed yet — catalogue still ~64. This section is the safe ops path. **Do not** wipe the DB. Leave `RUN_MIGRATIONS` unset/`0`. Ask before multi-GB downloads if VPS disk is tight.
+**Status (2026-10-05):** curated dump already persisted (~11.5k bottles, 2026-10-01). **Next gate:** fill-max with `--profile=full` before public store — see § Fill-max path above. Nurse can continue in parallel (≤100 remote/UTC day). **Do not** wipe the DB. Leave `RUN_MIGRATIONS` unset/`0`. Ask before multi-GB downloads if VPS disk is tight.
 
 ### Disk & layout (host VPS)
 
 | Path | Role | Approx size |
 |---|---|---|
-| `/var/lib/atasoif/off/` | Parquet / filtered JSONL (host) | Parquet ~800MB · curated `alcohol.jsonl` usually tens–hundreds of MB |
-| Full `openfoodfacts-products.jsonl.gz` | Fallback only | **multi-GB** — prefer Parquet+DuckDB |
+| `/var/lib/atasoif/off/` | Parquet / filtered JSONL (host) | Parquet ~800MB · curated JSONL tens–hundreds of MB · **full** JSONL larger |
+| Full `openfoodfacts-products.jsonl.gz` | Fill-max when DuckDB/CSV prefilter unavailable | **multi-GB** — check `df -h` first |
 | `/var/lib/atasoif/catalog-images/` | Optional `--mirror-images` | grows with SKU count |
 
 ```bash
@@ -242,13 +299,13 @@ Install DuckDB CLI on the **host** if missing (`https://duckdb.org/` — not shi
 
 ### 1) Download + filter on the host
 
-Use the Parquet + DuckDB block above → `/var/lib/atasoif/off/alcohol.jsonl`.
+**Fill-max:** regenerate with **full** tags (`alcohol-full.jsonl`) or download `openfoodfacts-products.jsonl.gz` and let Ace filter with `--profile=full`. Do **not** re-use the curated-only JSONL for fill-max (wines/liqueurs missing).
 
-Prefer curated tags only. Spot-check:
+Spot-check:
 
 ```bash
-wc -l /var/lib/atasoif/off/alcohol.jsonl
-head -n 1 /var/lib/atasoif/off/alcohol.jsonl | python3 -m json.tool | head
+wc -l /var/lib/atasoif/off/alcohol-full.jsonl
+head -n 1 /var/lib/atasoif/off/alcohol-full.jsonl | python3 -m json.tool | head
 ```
 
 ### 2) Make the file visible to the API container
@@ -261,7 +318,8 @@ Dokploy Application `api` (container name pattern like `ta-soif-api-…`):
 
 ```bash
 # From VPS host — replace CONTAINER with current api container id/name from Dokploy Docker UI
-docker cp /var/lib/atasoif/off/alcohol.jsonl CONTAINER:/tmp/alcohol.jsonl
+docker cp /var/lib/atasoif/off/alcohol-full.jsonl CONTAINER:/tmp/alcohol-full.jsonl
+# or: docker cp …/openfoodfacts-products.jsonl.gz CONTAINER:/tmp/
 ```
 
 ### 3) Dry-run first (Dokploy terminal)
@@ -269,29 +327,30 @@ docker cp /var/lib/atasoif/off/alcohol.jsonl CONTAINER:/tmp/alcohol.jsonl
 Same path as live nurse: Dokploy → Docker → Containers → `ta-soif-api-…` → Terminal (`/bin/sh`, cwd `/app`).
 
 ```sh
-# Smoke parse/filter (no DB writes)
+# Smoke parse/filter (no DB writes) — fill-max profile
 node ace catalog:off-dump \
-  --file=/var/lib/atasoif/off/alcohol.jsonl \
+  --file=/var/lib/atasoif/off/openfoodfacts-products.jsonl.gz \
+  --profile=full \
   --dry-run --limit=50
 
-# Full dry-run (still no upserts) — watch drafted + byCategory
+# Broader dry-run (still no upserts) — watch drafted + byCategory (wine/cognac/liqueur…)
 node ace catalog:off-dump \
-  --file=/var/lib/atasoif/off/alcohol.jsonl \
-  --profile=curated \
+  --file=/var/lib/atasoif/off/openfoodfacts-products.jsonl.gz \
+  --profile=full \
   --dry-run
 ```
 
-If using Option B: `--file=/tmp/alcohol.jsonl`.
+If using Option B with a prefiltered file: `--file=/tmp/alcohol-full.jsonl`.
 
-Expect: `upserted=0`, non-zero `drafted`, sensible `byCategory` (whisky / rhum / beer / gin / vodka…). Re-run is safe once you persist (idempotent upsert).
+Expect: `upserted=0`, non-zero `drafted`, sensible `byCategory` across exposed slugs. Re-run is safe once you persist (idempotent upsert by barcode).
 
 ### 4) Persist (after dry-run looks good)
 
 ```sh
-# Without image mirror first (photos stay remote OFF URLs — OK for MVP volume)
+# Fill-max — photos stay remote OFF URLs until mirror volume is ready
 node ace catalog:off-dump \
-  --file=/var/lib/atasoif/off/alcohol.jsonl \
-  --profile=curated
+  --file=/var/lib/atasoif/off/openfoodfacts-products.jsonl.gz \
+  --profile=full
 ```
 
 ### 4b) Mirror images (after bottles exist)
@@ -318,24 +377,24 @@ Verify a few `photoUrl` start with `/api/v1/media/off/` and users/user_bottles c
 ### 5) Verify
 
 ```sh
-node -e 'const { Client }=require("pg");(async()=>{const c=new Client({host:process.env.DB_HOST,port:process.env.DB_PORT,user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_DATABASE});await c.connect();const r=await c.query("select count(*)::int as n from bottles");console.log("bottles",r.rows[0].n);const s=await c.query("select source, count(*)::int as n from bottle_sources group by 1 order by 1");console.log(s.rows);await c.end();})().catch(e=>{console.error(e.message);process.exit(1)})'
+node -e 'const { Client }=require("pg");(async()=>{const c=new Client({host:process.env.DB_HOST,port:process.env.DB_PORT,user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_DATABASE});await c.connect();const r=await c.query("select count(*)::int as n from bottles");console.log("bottles",r.rows[0].n);const s=await c.query("select source, count(*)::int as n from bottle_sources group by 1 order by 1");console.log(s.rows);const cat=await c.query("select c.slug, count(*)::int as n from bottles b join categories c on c.id=b.category_id where b.deleted_at is null group by 1 order by 1");console.log(cat.rows);await c.end();})().catch(e=>{console.error(e.message);process.exit(1)})'
 ```
 
-Then spot-check `GET /api/v1/catalog/bottles?q=heineken` (auth) / typeahead in `/cave/ajouter`.
+Then spot-check `GET /api/v1/catalog/bottles?q=heineken` and a wine brand (auth) / typeahead in `/cave/ajouter`.
 
 ### Safety checklist
 
 - [ ] `RUN_MIGRATIONS` still unset/`0` — dump does **not** need migrate
 - [ ] No `migration:fresh` / DB reset
 - [ ] Dry-run before persist
-- [ ] Prefer curated profile (not `full`) for first prod seed
+- [ ] Fill-max before public store: `--profile=full` (curated alone is **not** enough for go-prod)
 - [ ] Skip `--mirror-images` until disk + volume ready
 - [ ] Confirm free disk before Parquet or full JSONL.gz download
 - [ ] Nurse daily budget already used today → wait until next UTC day for more nurse; dump is independent
 
 ### Ask Anthony before
 
-- Downloading full JSONL.gz (multi-GB) instead of Parquet+DuckDB
+- Downloading full JSONL.gz (multi-GB) if disk is tight (prefer DuckDB full prefilter)
 - Enabling `--mirror-images` on prod without a sized volume
 - Any destructive DB ops
 
@@ -363,12 +422,13 @@ UPCitemdb trial base URL needs **no key**. Our throttle mirrors ~100 req/day.
 ## Suggested launch order (ops)
 
 1. Create VPS Postgres + set `DB_*` (no secrets in git).
-2. `migration:run` + `db:seed` (categories).
-3. Download OFF Parquet (or JSONL) → DuckDB filter → `catalog:off-dump` (optional `--mirror-images`).
+2. `migration:run` + `db:seed` (categories) — deliberate one-shot; keep `RUN_MIGRATIONS=0` at boot.
+3. **Fill-max (release gate):** OFF dump with `--profile=full` (dry-run → persist; optional `--mirror-images` later).
 4. Run `catalog:nurse` daily until REAL EANs are exhausted / mostly cache or upserted.
-5. Spot-check `GET /api/v1/catalog/bottles?q=` for FR brands (whisky, rhum, bière).
+5. Spot-check `GET /api/v1/catalog/bottles?q=` for FR brands (whisky, rhum, bière, **vin**, gin).
 6. Show OFF attribution in app about / credits (FR string above).
 7. Live barcode still falls through OFF → UPCitemdb for new scans.
+8. **Only then** public store / go-prod. TestFlight UI can ship in parallel before this gate.
 
 ---
 

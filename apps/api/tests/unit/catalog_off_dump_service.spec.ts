@@ -80,6 +80,16 @@ test.group('isAlcoholicOffProduct', () => {
     assert.isFalse(isAlcoholicOffProduct({}, 'full'))
     assert.isFalse(isAlcoholicOffProduct({ alcohol_100g: 40 }, 'curated'))
   })
+
+  test('full accepts wine, cognac, liqueur, tequila, sake tags', ({ assert }) => {
+    assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:wines'] }, 'full'))
+    assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:cognacs'] }, 'full'))
+    assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:liqueurs'] }, 'full'))
+    assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:tequilas'] }, 'full'))
+    assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:pastis'] }, 'full'))
+    assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:sake'] }, 'full'))
+    assert.isFalse(isAlcoholicOffProduct({ categories_tags: ['en:wines'] }, 'curated'))
+  })
 })
 
 test.group('cleanRetailName / identity', () => {
