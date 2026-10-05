@@ -2,6 +2,7 @@ import encryption from '@adonisjs/core/services/encryption'
 
 const EMAIL_VERIFICATION_PURPOSE = 'email-verification'
 const PASSWORD_RESET_PURPOSE = 'password-reset'
+const MAGIC_LINK_PURPOSE = 'magic-link'
 
 type EmailVerificationPayload = {
   userId: number
@@ -38,6 +39,21 @@ export default class AuthEmailTokenService {
 
   verifyPasswordResetToken(token: string): PasswordResetPayload | null {
     const payload = encryption.decrypt<PasswordResetPayload>(token, PASSWORD_RESET_PURPOSE)
+    if (!payload || typeof payload.userId !== 'number' || typeof payload.version !== 'number') {
+      return null
+    }
+    return payload
+  }
+
+  createMagicLinkToken(userId: number, version: number): string {
+    return encryption.encrypt({ userId, version } satisfies PasswordResetPayload, {
+      expiresIn: '15m',
+      purpose: MAGIC_LINK_PURPOSE,
+    })
+  }
+
+  verifyMagicLinkToken(token: string): PasswordResetPayload | null {
+    const payload = encryption.decrypt<PasswordResetPayload>(token, MAGIC_LINK_PURPOSE)
     if (!payload || typeof payload.userId !== 'number' || typeof payload.version !== 'number') {
       return null
     }

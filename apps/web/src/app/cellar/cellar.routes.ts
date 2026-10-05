@@ -28,6 +28,11 @@ export const CELLAR_ROUTES: Routes = [
           import('./friends-shell.page').then((m) => m.FriendsShellPage),
       },
       {
+        path: 'partage',
+        loadComponent: () =>
+          import('./share-settings.page').then((m) => m.ShareSettingsPage),
+      },
+      {
         path: 'premium',
         loadComponent: () =>
           import('./cellar-paywall.page').then((m) => m.CellarPaywallPage),
