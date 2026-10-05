@@ -10,3 +10,12 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare namespace NodeJS {
+  interface ProcessEnv {
+    readonly RESEND_API_KEY?: string;
+    readonly RESEND_FROM?: string;
+    readonly RESEND_REPLY_TO?: string;
+    readonly WAITLIST_NOTIFY_TO?: string;
+  }
+}
