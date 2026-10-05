@@ -169,9 +169,10 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 |---|---|
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/google/callback` |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/facebook/callback` |
-| `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | Sign in with Apple (Services ID / client secret) |
-| `APPLE_BUNDLE_ID` | iOS bundle (placeholder `fr.atasoif.app`) — optional until native SIWA ticket |
-| `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | Apple .p8 signing material — optional until native SIWA ticket |
+| `APPLE_CLIENT_ID` | Services ID web (`com.atasoif.web`) — redirect `{APP_URL}/api/v1/auth/apple/callback` |
+| `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | Team + Key ID + PEM `.p8` — JWT client secret signed at runtime (leave `APPLE_CLIENT_SECRET` empty) |
+| `APPLE_CLIENT_SECRET` | Legacy static JWT — unused when TEAM/KEY/PEM are set |
+| `APPLE_BUNDLE_ID` | iOS bundle (`fr.atasoif.app`) — optional until native SIWA ticket |
 
 ### Optionnels catalogue / ops
 

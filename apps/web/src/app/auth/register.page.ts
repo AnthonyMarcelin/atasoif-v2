@@ -32,6 +32,7 @@ export class RegisterPage {
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
   readonly showFacebookLogin = this.auth.showFacebookLogin;
+  readonly showAppleLogin = this.auth.showAppleLogin;
 
   readonly form = this.fb.group(
     {
@@ -97,6 +98,10 @@ export class RegisterPage {
 
   continueWithFacebook(): void {
     this.auth.startFacebookLogin();
+  }
+
+  continueWithApple(): void {
+    this.auth.startAppleLogin();
   }
 
   togglePassword(): void {

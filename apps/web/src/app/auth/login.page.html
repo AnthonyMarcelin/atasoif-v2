@@ -64,6 +64,11 @@
         <button class="auth-btn auth-btn--secondary" type="button" (click)="continueWithGoogle()">
           Continuer avec Google
         </button>
+        @if (showAppleLogin) {
+          <button class="auth-btn auth-btn--secondary" type="button" (click)="continueWithApple()">
+            Continuer avec Apple
+          </button>
+        }
         @if (showFacebookLogin) {
           <button class="auth-btn auth-btn--secondary" type="button" (click)="continueWithFacebook()">
             Continuer avec Facebook

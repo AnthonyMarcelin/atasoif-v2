@@ -29,16 +29,21 @@ export default await Env.create(new URL('../', import.meta.url), {
   GOOGLE_CLIENT_SECRET: Env.schema.string.optional(),
   FACEBOOK_CLIENT_ID: Env.schema.string.optional(),
   FACEBOOK_CLIENT_SECRET: Env.schema.string.optional(),
+  /** Services ID for web SIWA (e.g. com.atasoif.web). */
   APPLE_CLIENT_ID: Env.schema.string.optional(),
+  /**
+   * Legacy static client_secret JWT — unused when TEAM_ID + KEY_ID + PRIVATE_KEY are set.
+   * Prefer runtime JWT from the .p8 key (see apple_client_secret service).
+   */
   APPLE_CLIENT_SECRET: Env.schema.string.optional(),
-  /** iOS bundle id (Sign in with Apple / Capacitor). Optional until native OAuth ticket. */
-  APPLE_BUNDLE_ID: Env.schema.string.optional(),
-  /** Apple Developer Team ID — optional until native Sign in with Apple is wired. */
+  /** Apple Developer Team ID (JWT iss). */
   APPLE_TEAM_ID: Env.schema.string.optional(),
-  /** Apple Sign in key id — optional until native Sign in with Apple is wired. */
+  /** Sign in with Apple key id (JWT header kid). */
   APPLE_KEY_ID: Env.schema.string.optional(),
-  /** Apple .p8 private key (PEM). Optional until native Sign in with Apple is wired. */
+  /** PEM contents of the Apple .p8 key (\n escapes OK). Never log. */
   APPLE_PRIVATE_KEY: Env.schema.string.optional(),
+  /** iOS bundle id (e.g. fr.atasoif.app) — optional until native SIWA. */
+  APPLE_BUNDLE_ID: Env.schema.string.optional(),
 
   /**
    * Angular / Capacitor origin used in mail deep links (verify + reset).
