@@ -12,7 +12,15 @@ import {
   switchMap,
   takeUntil,
 } from 'rxjs';
-import { isWineCategorySlug, readWineAttr, WINE_ATTR_LIMITS } from '@atasoif/shared';
+import {
+  bottleTypesForCategory,
+  FILL_LEVEL_DEFAULT,
+  FILL_LEVEL_FINISHED,
+  isWineCategorySlug,
+  readBottleType,
+  readWineAttr,
+  WINE_ATTR_LIMITS,
+} from '@atasoif/shared';
 
 import { BarcodeScanService } from './barcode-scan.service';
 import { BottlePhoto } from './bottle-photo';
@@ -73,14 +81,23 @@ export class CellarAddPage implements OnInit, OnDestroy {
     name: ['', [Validators.required, Validators.maxLength(255)]],
     brand: ['', [Validators.maxLength(255)]],
     categoryId: [0 as number, [Validators.required, Validators.min(1)]],
+    bottleType: ['' as string],
     appellation: ['', [Validators.maxLength(WINE_ATTR_LIMITS.appellation)]],
     grape: ['', [Validators.maxLength(WINE_ATTR_LIMITS.grape)]],
     vintage: ['', [Validators.maxLength(WINE_ATTR_LIMITS.vintage)]],
     boughtAt: ['', [Validators.required, Validators.maxLength(255)]],
+    boughtOn: ['' as string],
     pricePaid: ['' as string],
     note: ['' as string],
     review: ['', [Validators.maxLength(5000)]],
+    fillLevel: [FILL_LEVEL_DEFAULT as number],
   });
+  readonly productOpen = signal(false);
+  readonly fillPresets = [
+    { label: 'Scellée', value: FILL_LEVEL_DEFAULT },
+    { label: 'Entamée', value: 50 },
+    { label: 'Finie', value: FILL_LEVEL_FINISHED },
+  ] as const;
 
   ngOnInit(): void {
     this.collection.freemium().subscribe({
@@ -200,17 +217,21 @@ export class CellarAddPage implements OnInit, OnDestroy {
   pickHit(bottle: CatalogBottle): void {
     this.selected.set(bottle);
     this.isMiss.set(false);
+    this.productOpen.set(false);
     this.form.reset({
       name: catalogBottleTitle(bottle),
       brand: catalogBottleBrand(bottle) ?? '',
       categoryId: bottle.categoryId,
+      bottleType: readBottleType(bottle.attrs),
       appellation: readWineAttr(bottle.attrs, 'appellation'),
       grape: readWineAttr(bottle.attrs, 'grape'),
       vintage: readWineAttr(bottle.attrs, 'vintage'),
       boughtAt: '',
+      boughtOn: '',
       pricePaid: '',
       note: '',
       review: '',
+      fillLevel: FILL_LEVEL_DEFAULT,
     });
     this.formError.set(null);
     this.step.set('confirm');
@@ -222,17 +243,21 @@ export class CellarAddPage implements OnInit, OnDestroy {
     const defaultCategoryId = cats[0]?.id ?? 0;
     this.selected.set(null);
     this.isMiss.set(true);
+    this.productOpen.set(true);
     this.form.reset({
       name: looksLikeBarcode(q) ? '' : q,
       brand: '',
       categoryId: defaultCategoryId,
+      bottleType: '',
       appellation: '',
       grape: '',
       vintage: '',
       boughtAt: '',
+      boughtOn: '',
       pricePaid: '',
       note: '',
       review: '',
+      fillLevel: FILL_LEVEL_DEFAULT,
     });
     this.formError.set(null);
     this.step.set('confirm');
@@ -277,6 +302,20 @@ export class CellarAddPage implements OnInit, OnDestroy {
     const wine = this.showWineFields();
     const wineOverride = wine ? wineOverrideFromForm(wineEntered, selected?.attrs) : null;
     const catalogWineAttrs = wine && this.isMiss() ? wineCatalogAttrs(wineEntered) : undefined;
+    const typeValue = raw.bottleType.trim();
+    const catalogType = typeValue ? { type: typeValue } : undefined;
+    const typeOverride =
+      typeValue && typeValue !== readBottleType(selected?.attrs) ? { type: typeValue } : null;
+    const attrsOverride = {
+      ...(wineOverride && wineOverrideHasValue(wineOverride) ? wineOverride : {}),
+      ...(typeOverride ?? {}),
+    };
+    const catalogAttrs = {
+      ...(catalogWineAttrs ?? {}),
+      ...(catalogType ?? {}),
+    };
+    const fillLevel = Number(raw.fillLevel);
+    const premium = this.freemium()?.entitlement === true;
     const payload =
       selected && !this.isMiss()
         ? {
@@ -291,21 +330,21 @@ export class CellarAddPage implements OnInit, OnDestroy {
             ...(raw.brand.trim() && raw.brand.trim() !== (selected.brand ?? '')
               ? { brandOverride: raw.brand.trim() }
               : {}),
-            ...(wineOverride && wineOverrideHasValue(wineOverride)
-              ? { attrsOverride: wineOverride }
-              : {}),
+            ...(Object.keys(attrsOverride).length ? { attrsOverride } : {}),
+            ...(premium && fillLevel !== FILL_LEVEL_DEFAULT ? { fillLevel } : {}),
           }
         : {
             bottle: {
               name: raw.name.trim(),
               ...(raw.brand.trim() ? { brand: raw.brand.trim() } : {}),
               categoryId: Number(raw.categoryId),
-              ...(catalogWineAttrs ? { attrs: catalogWineAttrs } : {}),
+              ...(Object.keys(catalogAttrs).length ? { attrs: catalogAttrs } : {}),
             },
             boughtAt,
             ...(pricePaid !== null ? { pricePaid } : {}),
             ...(note !== null ? { note } : {}),
             ...(raw.review.trim() ? { review: raw.review.trim() } : {}),
+            ...(premium && fillLevel !== FILL_LEVEL_DEFAULT ? { fillLevel } : {}),
           };
 
     this.saving.set(true);
@@ -337,6 +376,26 @@ export class CellarAddPage implements OnInit, OnDestroy {
     const categoryId = Number(this.form.controls.categoryId.value);
     const category = this.categories().find((row) => row.id === categoryId);
     return isWineCategorySlug(category?.slug);
+  }
+
+  currentCategorySlug(): string | null {
+    if (!this.isMiss()) {
+      return this.selected()?.category?.slug ?? null;
+    }
+    const categoryId = Number(this.form.controls.categoryId.value);
+    return this.categories().find((row) => row.id === categoryId)?.slug ?? null;
+  }
+
+  typeOptions(): readonly string[] {
+    return bottleTypesForCategory(this.currentCategorySlug());
+  }
+
+  setFillLevel(value: number): void {
+    this.form.controls.fillLevel.setValue(value);
+  }
+
+  toggleProductOpen(): void {
+    this.productOpen.update((open) => !open);
   }
 
   setFocused(field: string | null): void {

@@ -103,115 +103,66 @@
       </div>
     }
   } @else {
-    <form class="auth-form cellar-add" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <form class="auth-form cellar-add cellar-add--confirm" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
       <div class="cellar-add__step-row">
         <p class="cellar-add__step">Étape 2/2</p>
-        <button type="button" class="cellar-back" (click)="backToSearch()">← Recherche</button>
+        @if (!isMiss()) {
+          <span class="cellar-add__prefill-badge">Pré-rempli</span>
+        } @else {
+          <button type="button" class="cellar-back" (click)="backToSearch()">← Recherche</button>
+        }
       </div>
 
       @if (selected(); as bottle) {
-        <div class="cellar-prefill">
+        <div class="cellar-prefill-card">
           <app-bottle-photo
+            class="cellar-prefill-card__photo"
             [src]="bottle.photoUrl"
             [alt]="titleOf(bottle)"
-            variant="detail"
+            variant="list"
           />
-          <p class="cellar-prefill__hint">Photo catalogue · perso = premium</p>
-        </div>
-      }
-
-      <div [ngClass]="fieldClass('name')">
-        <label class="auth-field__label" for="add-name">Nom</label>
-        <input
-          id="add-name"
-          class="auth-field__control"
-          type="text"
-          formControlName="name"
-          (focus)="setFocused('name')"
-          (blur)="setFocused(null)"
-        />
-      </div>
-
-      <div [ngClass]="fieldClass('brand')">
-        <label class="auth-field__label" for="add-brand">Marque</label>
-        <input
-          id="add-brand"
-          class="auth-field__control"
-          type="text"
-          formControlName="brand"
-          (focus)="setFocused('brand')"
-          (blur)="setFocused(null)"
-        />
-      </div>
-
-      @if (isMiss()) {
-        <div [ngClass]="fieldClass('categoryId')">
-          <label class="auth-field__label" for="add-category">Catégorie</label>
-          <select
-            id="add-category"
-            class="auth-field__control"
-            formControlName="categoryId"
-            (focus)="setFocused('categoryId')"
-            (blur)="setFocused(null)"
-          >
-            @for (cat of categories(); track cat.id) {
-              <option [ngValue]="cat.id">{{ cat.name }}</option>
+          <div class="cellar-prefill-card__body">
+            <p class="cellar-prefill-card__name">{{ titleOf(bottle) }}</p>
+            @if (metaOf(bottle); as meta) {
+              <p class="cellar-prefill-card__meta">{{ meta }}</p>
             }
-          </select>
+          </div>
+          <button type="button" class="cellar-prefill-card__change" (click)="backToSearch()">
+            Changer
+          </button>
         </div>
       }
 
-      @if (showWineFields()) {
-        <p class="cellar-section-label">Le vin</p>
+      <p class="cellar-section-label">Ton souvenir</p>
 
-        <div [ngClass]="fieldClass('appellation')">
-          <label class="auth-field__label" for="add-appellation">Appellation</label>
+      <div class="cellar-add__row2">
+        <div [ngClass]="fieldClass('pricePaid')">
+          <label class="auth-field__label" for="add-price">Prix payé</label>
           <input
-            id="add-appellation"
+            id="add-price"
             class="auth-field__control"
             type="text"
-            formControlName="appellation"
-            autocomplete="off"
-            placeholder="Saint-Émilion"
-            [attr.maxlength]="wineLimits.appellation"
-            (focus)="setFocused('appellation')"
+            inputmode="decimal"
+            formControlName="pricePaid"
+            placeholder="62"
+            (focus)="setFocused('pricePaid')"
             (blur)="setFocused(null)"
           />
         </div>
-
-        <div [ngClass]="fieldClass('grape')">
-          <label class="auth-field__label" for="add-grape">Cépage</label>
+        <div [ngClass]="fieldClass('boughtOn')">
+          <label class="auth-field__label" for="add-bought-on">Date</label>
           <input
-            id="add-grape"
+            id="add-bought-on"
             class="auth-field__control"
             type="text"
-            formControlName="grape"
+            formControlName="boughtOn"
+            placeholder="12.03.26"
             autocomplete="off"
-            placeholder="Merlot"
-            [attr.maxlength]="wineLimits.grape"
-            (focus)="setFocused('grape')"
+            (focus)="setFocused('boughtOn')"
             (blur)="setFocused(null)"
           />
         </div>
-
-        <div [ngClass]="fieldClass('vintage')">
-          <label class="auth-field__label" for="add-vintage">Millésime</label>
-          <input
-            id="add-vintage"
-            class="auth-field__control"
-            type="text"
-            formControlName="vintage"
-            autocomplete="off"
-            inputmode="numeric"
-            placeholder="2015"
-            [attr.maxlength]="wineLimits.vintage"
-            (focus)="setFocused('vintage')"
-            (blur)="setFocused(null)"
-          />
-        </div>
-      }
-
-      <p class="cellar-section-label">Le souvenir</p>
+      </div>
 
       <div [ngClass]="fieldClass('boughtAt')">
         <label class="auth-field__label" for="add-bought-at">Acheté chez</label>
@@ -221,29 +172,28 @@
           type="text"
           formControlName="boughtAt"
           autocomplete="off"
-          placeholder="Nicolas, Cave du coin…"
+          placeholder="Nicolas Bastille"
           [attr.aria-required]="true"
           (focus)="setFocused('boughtAt')"
           (blur)="setFocused(null)"
         />
       </div>
 
-      <div [ngClass]="fieldClass('pricePaid')">
-        <label class="auth-field__label" for="add-price">Prix payé (€)</label>
-        <input
-          id="add-price"
-          class="auth-field__control"
-          type="text"
-          inputmode="decimal"
-          formControlName="pricePaid"
-          placeholder="89,90"
-          (focus)="setFocused('pricePaid')"
+      <div [ngClass]="fieldClass('review')">
+        <label class="auth-field__label" for="add-review">Ton mot (facultatif)</label>
+        <textarea
+          id="add-review"
+          class="auth-field__control auth-field__control--area"
+          formControlName="review"
+          rows="2"
+          placeholder="Tourbe franche, presque salée."
+          (focus)="setFocused('review')"
           (blur)="setFocused(null)"
-        />
+        ></textarea>
       </div>
 
       <div [ngClass]="fieldClass('note')">
-        <label class="auth-field__label" for="add-note">Note /10</label>
+        <label class="auth-field__label" for="add-note">Ta note /10</label>
         <input
           id="add-note"
           class="auth-field__control"
@@ -256,18 +206,143 @@
         />
       </div>
 
-      <div [ngClass]="fieldClass('review')">
-        <label class="auth-field__label" for="add-review">Avis</label>
-        <textarea
-          id="add-review"
-          class="auth-field__control auth-field__control--area"
-          formControlName="review"
-          rows="3"
-          placeholder="Tourbé, souvenir d’Islay…"
-          (focus)="setFocused('review')"
-          (blur)="setFocused(null)"
-        ></textarea>
+      <div class="cellar-fill-presets" role="group" aria-label="Niveau à l’ajout">
+        <p class="auth-field__label">Niveau à l’ajout</p>
+        <div class="cellar-fill-presets__row">
+          @for (preset of fillPresets; track preset.value) {
+            <button
+              type="button"
+              class="cellar-fill-presets__btn"
+              [class.is-active]="form.controls.fillLevel.value === preset.value"
+              (click)="setFillLevel(preset.value)"
+            >
+              {{ preset.label }}
+            </button>
+          }
+        </div>
+        @if (freemium()?.entitlement !== true) {
+          <p class="cellar-fill-presets__hint">La jauge perso reste premium · scellée par défaut.</p>
+        }
       </div>
+
+      <button
+        type="button"
+        class="cellar-product-toggle"
+        (click)="toggleProductOpen()"
+        [attr.aria-expanded]="productOpen()"
+      >
+        <span>Fiche produit : type, origine, degré</span>
+        <span aria-hidden="true">{{ productOpen() ? '−' : '+' }}</span>
+      </button>
+
+      @if (productOpen()) {
+        <div class="cellar-product-panel">
+          <div [ngClass]="fieldClass('name')">
+            <label class="auth-field__label" for="add-name">Nom</label>
+            <input
+              id="add-name"
+              class="auth-field__control"
+              type="text"
+              formControlName="name"
+              (focus)="setFocused('name')"
+              (blur)="setFocused(null)"
+            />
+          </div>
+
+          <div [ngClass]="fieldClass('brand')">
+            <label class="auth-field__label" for="add-brand">Marque</label>
+            <input
+              id="add-brand"
+              class="auth-field__control"
+              type="text"
+              formControlName="brand"
+              (focus)="setFocused('brand')"
+              (blur)="setFocused(null)"
+            />
+          </div>
+
+          @if (isMiss()) {
+            <div [ngClass]="fieldClass('categoryId')">
+              <label class="auth-field__label" for="add-category">Catégorie</label>
+              <select
+                id="add-category"
+                class="auth-field__control"
+                formControlName="categoryId"
+                (focus)="setFocused('categoryId')"
+                (blur)="setFocused(null)"
+              >
+                @for (cat of categories(); track cat.id) {
+                  <option [ngValue]="cat.id">{{ cat.name }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <div [ngClass]="fieldClass('bottleType')">
+            <label class="auth-field__label" for="add-type">Type</label>
+            <select
+              id="add-type"
+              class="auth-field__control"
+              formControlName="bottleType"
+              (focus)="setFocused('bottleType')"
+              (blur)="setFocused(null)"
+            >
+              <option value="">Choisir…</option>
+              @for (type of typeOptions(); track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+
+          @if (showWineFields()) {
+            <div [ngClass]="fieldClass('appellation')">
+              <label class="auth-field__label" for="add-appellation">Appellation</label>
+              <input
+                id="add-appellation"
+                class="auth-field__control"
+                type="text"
+                formControlName="appellation"
+                autocomplete="off"
+                placeholder="Saint-Émilion"
+                [attr.maxlength]="wineLimits.appellation"
+                (focus)="setFocused('appellation')"
+                (blur)="setFocused(null)"
+              />
+            </div>
+
+            <div [ngClass]="fieldClass('grape')">
+              <label class="auth-field__label" for="add-grape">Cépage</label>
+              <input
+                id="add-grape"
+                class="auth-field__control"
+                type="text"
+                formControlName="grape"
+                autocomplete="off"
+                placeholder="Merlot"
+                [attr.maxlength]="wineLimits.grape"
+                (focus)="setFocused('grape')"
+                (blur)="setFocused(null)"
+              />
+            </div>
+
+            <div [ngClass]="fieldClass('vintage')">
+              <label class="auth-field__label" for="add-vintage">Millésime</label>
+              <input
+                id="add-vintage"
+                class="auth-field__control"
+                type="text"
+                formControlName="vintage"
+                autocomplete="off"
+                inputmode="numeric"
+                placeholder="2015"
+                [attr.maxlength]="wineLimits.vintage"
+                (focus)="setFocused('vintage')"
+                (blur)="setFocused(null)"
+              />
+            </div>
+          }
+        </div>
+      }
 
       @if (formError(); as message) {
         <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
@@ -275,12 +350,17 @@
 
       <div class="auth-actions">
         <button class="auth-btn auth-btn--primary" type="submit" [disabled]="saving()">
-          {{ saving() ? 'Ajout…' : 'Confirmer' }}
-        </button>
-        <button class="auth-btn auth-btn--ghost" type="button" (click)="backToSearch()">
-          Annuler
+          {{ saving() ? 'Ajout…' : 'Ranger dans ma cave' }}
         </button>
       </div>
+      @if (freemium(); as meta) {
+        <p class="cellar-add__next-slot">
+          Elle sera la {{ meta.count + 1 }}e
+          @if (!meta.entitlement) {
+            sur {{ meta.limit }}
+          }
+        </p>
+      }
     </form>
   }
 </app-cellar-shell>

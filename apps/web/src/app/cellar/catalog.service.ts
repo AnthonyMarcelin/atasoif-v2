@@ -21,13 +21,26 @@ export class CatalogService {
   search(
     q: string,
     limit = 20,
+    extras: { category?: string; recentDays?: number; page?: number } = {},
   ): Observable<{ data: CatalogBottle[]; meta?: CatalogSearchMeta }> {
     const trimmed = q.trim();
-    if (!trimmed) {
+    if (!trimmed && !extras.category && !extras.recentDays) {
       return of({ data: [] });
     }
 
-    const params = new HttpParams().set('q', trimmed).set('limit', String(limit));
+    let params = new HttpParams().set('limit', String(limit));
+    if (trimmed) {
+      params = params.set('q', trimmed);
+    }
+    if (extras.category) {
+      params = params.set('category', extras.category);
+    }
+    if (extras.recentDays) {
+      params = params.set('recentDays', String(extras.recentDays));
+    }
+    if (extras.page) {
+      params = params.set('page', String(extras.page));
+    }
     return this.http.get<{ data: CatalogBottle[]; meta?: CatalogSearchMeta }>(
       `${this.apiBase}/api/v1/catalog/bottles`,
       { params },

@@ -5,6 +5,7 @@ import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import db from '@adonisjs/lucid/services/db'
 import {
   BOTTLE_SOURCES,
+  BOTTLE_TYPE_ATTR_KEY,
   FILL_LEVEL_DEFAULT,
   FREE_BOTTLE_LIMIT,
   isWineCategorySlug,
@@ -41,6 +42,8 @@ export type PremiumFeature = 'fillLevel' | 'photoOverride'
 
 const PENDING_PHOTO_STATUS = 'pending'
 
+type BottleAttrsInput = WineAttrsInput & { type?: string | null }
+
 type CreateBottleMiss = {
   name: string
   brand?: string
@@ -50,7 +53,7 @@ type CreateBottleMiss = {
   barcode?: string
   photoUrl?: string
   categoryId: number
-  attrs?: WineAttrsInput
+  attrs?: BottleAttrsInput
 }
 
 export type CreateUserBottleInput = {
@@ -67,7 +70,7 @@ export type CreateUserBottleInput = {
   originOverride?: string
   abvOverride?: number
   volumeMlOverride?: number
-  attrsOverride?: WineAttrsInput | null
+  attrsOverride?: BottleAttrsInput | null
   isPublic?: boolean
 }
 
@@ -83,7 +86,7 @@ export type UpdateUserBottleInput = {
   originOverride?: string | null
   abvOverride?: number | null
   volumeMlOverride?: number | null
-  attrsOverride?: WineAttrsInput | null
+  attrsOverride?: BottleAttrsInput | null
   isPublic?: boolean
 }
 
@@ -460,50 +463,95 @@ export default class CollectionService {
   }
 
   /**
-   * Wine keys belong on a wine bottle only. Other categories must omit `attrsOverride`.
+   * Bottle attrs override: wine keys (wine only) + optional `type` (any category).
    */
   private resolveWineAttrs(
     categorySlug: string | null,
     current: Record<string, unknown> | null,
-    patch: WineAttrsInput | null
+    patch: BottleAttrsInput | null
   ): Record<string, unknown> | null {
-    if (!isWineCategorySlug(categorySlug)) {
+    if (patch === null) {
+      if (!isWineCategorySlug(categorySlug)) {
+        const next: Record<string, unknown> = { ...(current ?? {}) }
+        delete next[BOTTLE_TYPE_ATTR_KEY]
+        return Object.keys(next).length ? next : null
+      }
+      return mergeWineAttrsOverride(current, null)
+    }
+
+    const winePatch: WineAttrsInput = {
+      appellation: patch.appellation,
+      grape: patch.grape,
+      vintage: patch.vintage,
+    }
+    const hasWineKeys = WINE_ATTR_KEYS.some((key) =>
+      Object.prototype.hasOwnProperty.call(patch, key)
+    )
+    const hasType = Object.prototype.hasOwnProperty.call(patch, BOTTLE_TYPE_ATTR_KEY)
+
+    if (hasWineKeys && !isWineCategorySlug(categorySlug)) {
       throw new CollectionError(
         'E_WINE_ATTRS_CATEGORY',
         'Appellation, cépage et millésime sont réservés au vin',
         422
       )
     }
-    return mergeWineAttrsOverride(current, patch)
+
+    let next: Record<string, unknown> | null = current ? { ...current } : null
+    if (hasWineKeys && isWineCategorySlug(categorySlug)) {
+      next = mergeWineAttrsOverride(next, winePatch)
+    }
+    if (hasType) {
+      next = { ...(next ?? {}) }
+      const raw = patch.type
+      if (raw === null || raw === undefined || !String(raw).trim()) {
+        delete next[BOTTLE_TYPE_ATTR_KEY]
+      } else {
+        next[BOTTLE_TYPE_ATTR_KEY] = String(raw).trim()
+      }
+    }
+    if (!next || Object.keys(next).length === 0) {
+      return null
+    }
+    return next
   }
 
   /**
-   * Miss create may seed wine keys onto the shared catalog row — nothing else.
+   * Miss create may seed wine keys (wine only) + optional type onto the catalog row.
    */
   private resolveCatalogMissAttrs(
     categorySlug: string | null,
-    attrs: WineAttrsInput | Record<string, unknown> | undefined
+    attrs: BottleAttrsInput | Record<string, unknown> | undefined
   ): Record<string, unknown> {
     if (!attrs || Object.keys(attrs).length === 0) {
       return {}
     }
-    if (!isWineCategorySlug(categorySlug)) {
+    const next: Record<string, unknown> = {}
+    const hasWineKeys = WINE_ATTR_KEYS.some((key) =>
+      Object.prototype.hasOwnProperty.call(attrs, key)
+    )
+    if (hasWineKeys && !isWineCategorySlug(categorySlug)) {
       throw new CollectionError(
         'E_WINE_ATTRS_CATEGORY',
         'Appellation, cépage et millésime sont réservés au vin',
         422
       )
     }
-    const next: Record<string, unknown> = {}
-    for (const key of WINE_ATTR_KEYS) {
-      const raw = (attrs as WineAttrsInput)[key as WineAttrKey]
-      if (typeof raw !== 'string') {
-        continue
+    if (isWineCategorySlug(categorySlug)) {
+      for (const key of WINE_ATTR_KEYS) {
+        const raw = (attrs as WineAttrsInput)[key as WineAttrKey]
+        if (typeof raw !== 'string') {
+          continue
+        }
+        const value = raw.trim()
+        if (value) {
+          next[key] = value
+        }
       }
-      const value = raw.trim()
-      if (value) {
-        next[key] = value
-      }
+    }
+    const typeRaw = (attrs as BottleAttrsInput).type
+    if (typeof typeRaw === 'string' && typeRaw.trim()) {
+      next[BOTTLE_TYPE_ATTR_KEY] = typeRaw.trim()
     }
     return next
   }
