@@ -70,7 +70,7 @@ export interface CollectionListResponse {
 
 export interface CollectionItemResponse {
   data: UserBottle;
-  meta: { freemium: FreemiumMeta };
+  meta: { freemium: FreemiumMeta; photoProcessing?: boolean };
 }
 
 export interface CreateUserBottlePayload {

@@ -7,12 +7,14 @@ import CellarPhotoStorage, { overridePhotoPath } from '#services/cellar_photo_st
 import CatalogImageMirror from '#services/catalog/catalog_image_mirror'
 import UserBottleTransformer from '#transformers/user_bottle_transformer'
 
-const PHOTO_EXTNAMES = ['jpg', 'jpeg', 'png', 'webp']
+const PHOTO_EXTNAMES = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']
 
 export default class CollectionPhotosController {
   /**
    * Premium shelf photo. Free plans are rejected before the file is stored.
    * POST /api/v1/collection/bottles/:id/photo
+   * ≤ CELLAR_PHOTO_SYNC_MAX_BYTES (default 2 MiB): sync Sharp/HEIC.
+   * Heavier: 202 + queue job.
    */
   async store({ auth, params, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
@@ -25,18 +27,23 @@ export default class CollectionPhotosController {
         extnames: PHOTO_EXTNAMES,
       })
       if (!photo) {
-        throw new CollectionError('E_PHOTO_INVALID', 'Ajoute une photo jpeg, png ou webp', 422)
+        throw new CollectionError(
+          'E_PHOTO_INVALID',
+          'Ajoute une photo jpeg, png, webp ou heic',
+          422
+        )
       }
       if (!photo.isValid) {
         throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
       }
 
-      const row = await service.saveShelfPhoto(user.id, Number(params.id), photo)
+      const { row, processing } = await service.saveShelfPhoto(user.id, Number(params.id), photo)
       const freemium = await service.freemiumPayload(user.id)
-      return response.ok({
+      const body = {
         data: new UserBottleTransformer(row).toObject(),
-        meta: { freemium },
-      })
+        meta: { freemium, photoProcessing: processing },
+      }
+      return processing ? response.accepted(body) : response.ok(body)
     } catch (error) {
       return this.handleError(response, error)
     }

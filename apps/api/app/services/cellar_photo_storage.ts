@@ -1,14 +1,21 @@
 import { randomUUID } from 'node:crypto'
 import { createReadStream } from 'node:fs'
-import { mkdir, open, readdir, rm, unlink } from 'node:fs/promises'
+import { mkdir, open, readdir, rm, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import app from '@adonisjs/core/services/app'
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import env from '#start/env'
 import { CollectionError } from '#services/collection/collection_error'
-import { imageExtForHeader, type ImageExt } from '#services/image_signature'
+import {
+  imageExtForHeader,
+  isHeicHeader,
+  type ImageExt,
+} from '#services/image_signature'
 
-const DEFAULT_MAX_BYTES = 5 * 1024 * 1024
+/** Absolute max upload (queue path). Default 10 MiB for HEIC camera originals. */
+const DEFAULT_MAX_BYTES = 10 * 1024 * 1024
+/** Sync processing threshold. Larger files go through `@adonisjs/queue` + Sharp. */
+const DEFAULT_SYNC_MAX_BYTES = 2 * 1024 * 1024
 
 const FILE_NAME =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/i
@@ -34,6 +41,15 @@ export default class CellarPhotoStorage {
     const configured = env.get('CELLAR_PHOTO_MAX_BYTES')
     if (configured === undefined || configured === null || configured <= 0) {
       return DEFAULT_MAX_BYTES
+    }
+    return configured
+  }
+
+  /** Bytes at or below this are processed inline; above → queue job. */
+  syncMaxBytes(): number {
+    const configured = env.get('CELLAR_PHOTO_SYNC_MAX_BYTES')
+    if (configured === undefined || configured === null || configured <= 0) {
+      return DEFAULT_SYNC_MAX_BYTES
     }
     return configured
   }
@@ -64,6 +80,37 @@ export default class CellarPhotoStorage {
     await file.move(dir, { name: filename, overwrite: false })
     this.assertInside(root, path.resolve(file.filePath ?? absolutePath))
     return { absolutePath, publicPath: overridePhotoPath(userBottleId) }
+  }
+
+  async storeOverrideBuffer(
+    userId: number,
+    userBottleId: number,
+    buffer: Buffer,
+    ext: ImageExt
+  ): Promise<StoredPhoto> {
+    const root = this.root()
+    const dir = this.overrideDir(root, userId, userBottleId)
+    await rm(dir, { recursive: true, force: true })
+    await mkdir(dir, { recursive: true })
+    const filename = `${randomUUID()}.${ext}`
+    const absolutePath = this.assertInside(dir, path.join(dir, filename))
+    await writeFile(absolutePath, buffer)
+    return { absolutePath, publicPath: overridePhotoPath(userBottleId) }
+  }
+
+  async storeInbox(
+    userId: number,
+    userBottleId: number,
+    buffer: Buffer,
+    originalExt: string
+  ): Promise<string> {
+    const root = this.root()
+    const dir = path.join(root, 'inbox', this.idSegment(userId), this.idSegment(userBottleId))
+    await mkdir(dir, { recursive: true })
+    const filename = `${randomUUID()}.${originalExt}`
+    const absolutePath = this.assertInside(dir, path.join(dir, filename))
+    await writeFile(absolutePath, buffer)
+    return absolutePath
   }
 
   async storeCatalog(file: MultipartFile): Promise<StoredPhoto> {
@@ -142,6 +189,14 @@ export default class CellarPhotoStorage {
       throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
     }
     const header = await readFileHeader(tmpPath)
+    if (isHeicHeader(header)) {
+      // Caller must convert HEIC via Sharp before calling storeOverride.
+      throw new CollectionError(
+        'E_PHOTO_INVALID',
+        'Photo HEIC : utilise le pipeline Sharp',
+        422
+      )
+    }
     const ext = imageExtForHeader(header)
     if (!ext) {
       throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)

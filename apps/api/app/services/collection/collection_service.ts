@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { DateTime } from 'luxon'
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
@@ -12,14 +13,17 @@ import {
   type WineAttrKey,
   type WineAttrsInput,
 } from '@atasoif/shared'
+import ProcessCellarPhoto from '#jobs/process_cellar_photo'
 import Bottle from '#models/bottle'
 import BottleSource from '#models/bottle_source'
 import Category from '#models/category'
 import User from '#models/user'
 import UserBottle from '#models/user_bottle'
+import CellarPhotoProcessor from '#services/cellar_photo_processor'
 import CellarPhotoStorage, { overridePhotoPath } from '#services/cellar_photo_storage'
 import { CollectionError } from '#services/collection/collection_error'
 import EntitlementService from '#services/entitlement_service'
+import { isHeicHeader } from '#services/image_signature'
 import { isCatalogPhotoUrl, isHttpPhotoUrl, isOwnShelfPhotoUrl } from '#services/photo_url'
 import { readPostgresUniqueViolation } from '#services/postgres_error'
 
@@ -379,21 +383,60 @@ export default class CollectionService {
   }
 
   /**
-   * Premium shelf photo. The row lock keeps two uploads from leaving two files.
-   * Signature check happens before the previous file is replaced.
+   * Premium shelf photo. ≤ sync threshold: Sharp/HEIC inline.
+   * Heavier files: inbox + `@adonisjs/queue` job (ProcessCellarPhoto).
    */
-  async saveShelfPhoto(userId: number, id: number, file: MultipartFile): Promise<UserBottle> {
+  async saveShelfPhoto(
+    userId: number,
+    id: number,
+    file: MultipartFile
+  ): Promise<{ row: UserBottle; processing: boolean }> {
     const entitlement = await this.entitlements.hasActiveEntitlement(userId)
     if (!entitlement) {
       throw this.premiumRequired('photoOverride')
     }
 
+    const tmpPath = file.tmpPath
+    if (!tmpPath) {
+      throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
+    }
+
+    const input = await readFile(tmpPath)
+    const storage = new CellarPhotoStorage()
+    const syncMax = storage.syncMaxBytes()
+    const heic = isHeicHeader(input.subarray(0, 16))
+    const needsQueue = input.length > syncMax
+
+    if (needsQueue) {
+      const row = await this.findOwned(userId, id)
+      const inboxPath = await storage.storeInbox(userId, row.id, input, heic ? 'heic' : 'bin')
+      await ProcessCellarPhoto.dispatch({
+        userId,
+        userBottleId: row.id,
+        inboxPath,
+      })
+      await row.load('bottle', (bottleQuery) => {
+        bottleQuery.preload('category')
+      })
+      return { row, processing: true }
+    }
+
     return db.transaction(async (trx) => {
       const row = await this.lockOwned(userId, id, trx)
-      const storage = new CellarPhotoStorage()
       try {
-        const stored = await storage.storeOverride(userId, row.id, file)
-        row.photoUrlOverride = stored.publicPath
+        if (heic) {
+          const processed = await new CellarPhotoProcessor().process(input, { forceEncode: true })
+          const stored = await storage.storeOverrideBuffer(
+            userId,
+            row.id,
+            processed.buffer,
+            processed.ext
+          )
+          row.photoUrlOverride = stored.publicPath
+        } else {
+          const stored = await storage.storeOverride(userId, row.id, file)
+          row.photoUrlOverride = stored.publicPath
+        }
         await row.save()
       } catch (error) {
         if (!(error instanceof CollectionError)) {
@@ -404,7 +447,7 @@ export default class CollectionService {
       await row.load('bottle', (bottleQuery) => {
         bottleQuery.preload('category')
       })
-      return row
+      return { row, processing: false }
     })
   }
 
