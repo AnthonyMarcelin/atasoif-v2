@@ -96,6 +96,7 @@ router
             bucket: 'catalog-barcode',
           })
         )
+        router.get('bottles/:id', [CatalogBottlesController, 'show'])
       })
       .prefix('catalog')
       .as('catalog')

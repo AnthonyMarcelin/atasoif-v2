@@ -132,6 +132,38 @@ test.group('Catalog bottles API', (group) => {
     assert.lengthOf((brandHit.body() as { data: unknown[] }).data, 1)
   })
 
+  test('show by id returns bottle for add-flow prefill', async ({ client, assert }) => {
+    const token = await signupAndVerify(client)
+    const bottle = await seedBottle()
+
+    const response = await client
+      .get(`/api/v1/catalog/bottles/${bottle.id}`)
+      .bearerToken(token)
+      .header('Accept', 'application/json')
+
+    response.assertStatus(200)
+    const body = response.body() as {
+      data: { id: number; name: string; origin: string | null; abv: number | null }
+    }
+    assert.equal(body.data.id, bottle.id)
+    assert.equal(body.data.name, 'Lagavulin 16')
+    assert.equal(body.data.origin, 'Islay')
+    assert.equal(body.data.abv, 43)
+  })
+
+  test('show by id returns 404 for missing bottle', async ({ client, assert }) => {
+    const token = await signupAndVerify(client)
+
+    const response = await client
+      .get('/api/v1/catalog/bottles/999999')
+      .bearerToken(token)
+      .header('Accept', 'application/json')
+
+    response.assertStatus(404)
+    const body = response.body() as { code?: string }
+    assert.equal(body.code, 'E_BOTTLE_NOT_FOUND')
+  })
+
   test('barcode cache hit returns bottle with lookupOrigin=cache', async ({ client, assert }) => {
     const token = await signupAndVerify(client)
     await seedBottle()

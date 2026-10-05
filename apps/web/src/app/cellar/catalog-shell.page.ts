@@ -168,7 +168,10 @@ export class CatalogShellPage implements OnInit, OnDestroy {
   }
 
   openAdd(bottle: CatalogBottle): void {
-    void this.router.navigate(['/cave/ajouter'], { queryParams: { bottleId: bottle.id } });
+    void this.router.navigate(['/cave/ajouter'], {
+      queryParams: { bottleId: bottle.id },
+      state: { bottle },
+    });
   }
 
   private loadBrowse(): void {

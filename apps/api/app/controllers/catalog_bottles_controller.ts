@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import Bottle from '#models/bottle'
 import BottleTransformer from '#transformers/bottle_transformer'
 import CatalogSearchService from '#services/catalog/catalog_search_service'
 import CatalogLookupService from '#services/catalog/catalog_lookup_service'
@@ -26,6 +27,35 @@ export default class CatalogBottlesController {
       recentDays,
     })
     return serialize(BottleTransformer.transform(paginator))
+  }
+
+  /**
+   * Prefill for add-flow when opening `/cave/ajouter?bottleId=`.
+   * GET /api/v1/catalog/bottles/:id
+   */
+  async show({ params, response }: HttpContext) {
+    const id = Number(params.id)
+    if (!Number.isInteger(id) || id < 1) {
+      return response.status(404).send({
+        code: 'E_BOTTLE_NOT_FOUND',
+        message: 'Bouteille introuvable',
+      })
+    }
+
+    const bottle = await Bottle.query()
+      .where('id', id)
+      .whereNull('deleted_at')
+      .preload('category')
+      .first()
+
+    if (!bottle) {
+      return response.status(404).send({
+        code: 'E_BOTTLE_NOT_FOUND',
+        message: 'Bouteille introuvable',
+      })
+    }
+
+    return response.ok({ data: new BottleTransformer(bottle).toObject() })
   }
 
   /**

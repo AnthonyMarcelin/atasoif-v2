@@ -1,7 +1,7 @@
 import { NgClass } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   Subject,
   catchError,
@@ -56,6 +56,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   private readonly collection = inject(CollectionService);
   private readonly barcodeScan = inject(BarcodeScanService);
   private readonly shelfCamera = inject(ShelfCameraService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
   private readonly query$ = new Subject<string>();
@@ -120,6 +121,8 @@ export class CellarAddPage implements OnInit, OnDestroy {
       next: (rows: CatalogCategory[]) => this.categories.set(rows),
       error: () => this.categories.set([]),
     });
+
+    this.hydrateFromBottleId();
 
     this.query$
       .pipe(
@@ -253,6 +256,46 @@ export class CellarAddPage implements OnInit, OnDestroy {
     });
     this.formError.set(null);
     this.step.set('confirm');
+  }
+
+  /**
+   * Catalogue / « déjà en cave » open `/cave/ajouter?bottleId=` — consume router
+   * state when present, otherwise fetch GET /catalog/bottles/:id.
+   */
+  private hydrateFromBottleId(): void {
+    const raw = this.route.snapshot.queryParamMap.get('bottleId');
+    const id = raw ? Number(raw) : NaN;
+    if (!Number.isInteger(id) || id < 1) {
+      return;
+    }
+
+    const stateBottle = (
+      this.router.getCurrentNavigation()?.extras.state as { bottle?: CatalogBottle } | null
+    )?.bottle;
+    const historyBottle = (history.state as { bottle?: CatalogBottle } | null)?.bottle;
+    const cached = stateBottle ?? historyBottle;
+    if (cached && cached.id === id) {
+      this.pickHit(cached);
+      return;
+    }
+
+    this.searching.set(true);
+    this.catalog
+      .getById(id)
+      .pipe(
+        catchError((err: unknown) => {
+          this.searchError.set(
+            cellarErrorMessage(err, 'Impossible de préremplir cette bouteille. Réessaie.'),
+          );
+          return of(null);
+        }),
+        finalize(() => this.searching.set(false)),
+      )
+      .subscribe((bottle) => {
+        if (bottle) {
+          this.pickHit(bottle);
+        }
+      });
   }
 
   startMiss(): void {
