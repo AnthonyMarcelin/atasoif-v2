@@ -10,6 +10,7 @@ import { controllers } from '#generated/controllers'
 const HealthController = () => import('#controllers/health_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const FacebookAuthController = () => import('#controllers/facebook_auth_controller')
+const AppleAuthController = () => import('#controllers/apple_auth_controller')
 const CatalogBottlesController = () => import('#controllers/catalog_bottles_controller')
 const CatalogCategoriesController = () => import('#controllers/catalog_categories_controller')
 const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
@@ -43,6 +44,10 @@ router
         router.get('google/callback', [GoogleAuthController, 'callback'])
         router.get('facebook/redirect', [FacebookAuthController, 'redirect'])
         router.get('facebook/callback', [FacebookAuthController, 'callback'])
+        router.get('apple/redirect', [AppleAuthController, 'redirect']).as('apple.redirect')
+        // Apple uses response_mode=form_post → POST callback; GET kept for parity.
+        router.get('apple/callback', [AppleAuthController, 'callback']).as('apple.callback')
+        router.post('apple/callback', [AppleAuthController, 'callback']).as('apple.callback.post')
       })
       .prefix('auth')
       .as('auth')

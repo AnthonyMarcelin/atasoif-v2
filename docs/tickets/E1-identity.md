@@ -281,14 +281,15 @@ Facebook OAuth **login** via Ally (accelerator). Friends stay in-app (E6) — do
 Sign in with Apple for store compliance. Ally **does not ship an Apple driver** — implement a **custom Ally driver** (or approved community package) using Apple’s OAuth/OIDC.
 
 ### Acceptance criteria
-- [ ] Custom Apple Ally driver registered alongside Google/Facebook
-- [ ] Env for Apple client id / secret (JWT client secret as required by Apple)
-- [ ] Web + native Capacitor flows documented
-- [ ] Issues same Bearer token as other providers
-- [ ] Store guideline checklist noted in ticket PR
+- [x] Custom Apple Ally driver registered alongside Google/Facebook
+- [x] Env for Services ID + Team/Key/PEM (runtime JWT client secret; no static 6-month secret)
+- [x] Web flow documented (`STACK-ADONIS.md`); native Capacitor SIWA = follow-up
+- [x] Issues same Bearer token as other providers
+- [ ] Store guideline checklist noted in ticket PR (before TestFlight / App Store submit)
 
 ### Out of scope
 - Shipping to stores in S1
+- Native Capacitor Apple button (web Ally redirect first)
 
 ### Suggested commit
 `feat: add Apple Sign In via custom Ally driver`
