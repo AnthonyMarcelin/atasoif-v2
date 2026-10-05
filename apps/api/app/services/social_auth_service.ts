@@ -9,11 +9,12 @@ export type AllyProfile = {
   emailVerificationState: 'verified' | 'unverified' | 'unsupported'
 }
 
-export type SocialProvider = 'google' | 'facebook'
+export type SocialProvider = 'google' | 'facebook' | 'apple'
 
 const EMAIL_MISSING_MESSAGE: Record<SocialProvider, string> = {
   google: 'Google n’a pas fourni d’e-mail',
   facebook: 'Facebook n’a pas fourni d’e-mail',
+  apple: 'Apple n’a pas fourni d’e-mail',
 }
 
 const EMAIL_UNVERIFIED_LINK_MESSAGE =
@@ -42,6 +43,10 @@ export default class SocialAuthService {
 
   async findOrCreateFromFacebook(profile: AllyProfile): Promise<SocialAuthResult> {
     return this.findOrCreateFromAlly(profile, 'facebook')
+  }
+
+  async findOrCreateFromApple(profile: AllyProfile): Promise<SocialAuthResult> {
+    return this.findOrCreateFromAlly(profile, 'apple')
   }
 
   async findOrCreateFromAlly(profile: AllyProfile, provider: SocialProvider): Promise<SocialAuthResult> {

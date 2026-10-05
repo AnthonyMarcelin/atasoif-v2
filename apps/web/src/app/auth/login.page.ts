@@ -23,6 +23,12 @@ const OAUTH_ERROR_COPY: Record<string, string> = {
   facebook_email: 'Facebook n’a pas fourni d’e-mail utilisable.',
   facebook_unverified:
     'Cet e-mail a déjà un compte non confirmé. Valide le lien reçu par mail, puis réessaie Facebook.',
+  apple_denied: 'Connexion Apple annulée.',
+  apple_state: 'Session Apple expirée. Réessaie.',
+  apple_error: 'Apple a renvoyé une erreur. Réessaie.',
+  apple_email: 'Apple n’a pas fourni d’e-mail utilisable.',
+  apple_unverified:
+    'Cet e-mail a déjà un compte non confirmé. Valide le lien reçu par mail, puis réessaie Apple.',
 };
 
 @Component({
@@ -41,6 +47,8 @@ export class LoginPage implements OnInit {
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly showFacebookLogin = this.auth.showFacebookLogin;
+  readonly showAppleLogin = this.auth.showAppleLogin;
 
   readonly form = this.fb.group({
     email: ['', emailValidators],
@@ -97,6 +105,10 @@ export class LoginPage implements OnInit {
 
   continueWithFacebook(): void {
     this.auth.startFacebookLogin();
+  }
+
+  continueWithApple(): void {
+    this.auth.startAppleLogin();
   }
 
   togglePassword(): void {

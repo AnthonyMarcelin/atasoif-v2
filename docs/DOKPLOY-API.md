@@ -26,7 +26,7 @@ Ne pas utiliser un service **Compose** (chemin git + `docker-compose.yml`) : le 
 | App | Workflow | Branch qui déploie |
 |---|---|---|
 | **API** (ce doc) | `api-ghcr.yml` | **`main`** |
-| Site (landing) | `site-ghcr.yml` | actuellement **`dev`** (voir [`docs/DOCKER.md`](./DOCKER.md)) |
+| Site (landing) | `site-ghcr.yml` | **`main`** (HTTPS webhook, pas Tailscale — voir [`docs/DOCKER.md`](./DOCKER.md)) |
 
 **Deploy API = merge `dev` → `main`** (ou **workflow_dispatch** sur `api-ghcr.yml` depuis `main`).
 
@@ -64,11 +64,11 @@ Settings → Secrets and variables → Actions.
 | Secret | Required | Purpose |
 |---|---|---|
 | `DOKPLOY_API_DEPLOY_WEBHOOK` | **Oui** | URL complète du webhook deploy Dokploy du service **Application** `api` (Tailscale, ex. `http://100.x.y.z:3000/api/deploy/<token>`). Ne jamais committer. |
-| `TS_OAUTH_CLIENT_ID` | Une des options Tailscale | Client OAuth Tailscale (`auth_keys`, tags `tag:ci`) — **déjà** utilisé pour le site |
-| `TS_OAUTH_SECRET` | Avec OAuth | Secret OAuth — **déjà** utilisé pour le site |
-| `TS_AUTHKEY` | **Ou** à la place d’OAuth | Auth key CI réutilisable + ephemeral + `tag:ci` — **déjà** utilisé pour le site |
+| `TS_OAUTH_CLIENT_ID` | Une des options Tailscale | Client OAuth Tailscale (`auth_keys`, tags `tag:ci`) — **API notify** (le site n’utilise plus Tailscale) |
+| `TS_OAUTH_SECRET` | Avec OAuth | Secret OAuth — **API notify** |
+| `TS_AUTHKEY` | **Ou** à la place d’OAuth | Auth key CI réutilisable + ephemeral + `tag:ci` — **API notify** |
 
-Réutiliser les secrets Tailscale du site. Seul secret **nouveau** typiquement : `DOKPLOY_API_DEPLOY_WEBHOOK`.
+Les secrets Tailscale restent pour l’**API** uniquement. Le site préfère un webhook **HTTPS** public (`DOKPLOY_SITE_DEPLOY_WEBHOOK`) sans join Tailscale — voir [`DOCKER.md`](./DOCKER.md).
 
 `GITHUB_TOKEN` (permissions packages write) suffit pour push GHCR — pas de PAT dédié si Workflow permissions = Read and write.
 
@@ -135,7 +135,8 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 | `LOG_LEVEL` | `info` |
 | `APP_KEY` | secret Adonis (32+ chars) |
 | `APP_URL` | `https://api.atasoif.fr` (origine publique HTTPS de l’API) |
-| `FRONTEND_URL` | origine Angular / deep links mail (ex. `https://www.atasoif.fr` ou URL Capacitor) |
+| `FRONTEND_URL` | landing / deep links mail (prod: `https://www.atasoif.fr`) |
+| `NATIVE_OAUTH_RETURN_URL` | Capacitor deep link after Ally (placeholder `fr.atasoif.app://auth/callback`; Ally native handoff = follow-up ticket) |
 | `SESSION_DRIVER` | `cookie` |
 | `DB_HOST` | `infra-postgis-rfekdz` |
 | `DB_PORT` | `5432` |
@@ -157,7 +158,7 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 
 | Variable | Notes |
 |---|---|
-| `CORS_ORIGIN` | origines front autorisées (CSV) |
+| `CORS_ORIGIN` | CSV — marketing + Capacitor WebView: `https://www.atasoif.fr,https://atasoif.fr,capacitor://localhost,https://localhost` (add a hosted cave origin later if needed — [`DOKPLOY-WEB.md`](./DOKPLOY-WEB.md)) |
 | `OPS_ADMIN_TOKEN` | long secret aléatoire pour `GET /api/v1/ops/kpis` (`X-Ops-Token`). Vide = route fermée |
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | si le SMTP le demande |
 | `CELLAR_PHOTO_DIR` | chemin absolu volume persistant (photos cave) hors release |
@@ -168,7 +169,10 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 |---|---|
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/google/callback` |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/facebook/callback` |
-| `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | Sign in with Apple (requis si social iOS) |
+| `APPLE_CLIENT_ID` | Services ID web (`com.atasoif.web`) — redirect `{APP_URL}/api/v1/auth/apple/callback` |
+| `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | Team + Key ID + PEM `.p8` — JWT client secret signed at runtime (leave `APPLE_CLIENT_SECRET` empty) |
+| `APPLE_CLIENT_SECRET` | Legacy static JWT — unused when TEAM/KEY/PEM are set |
+| `APPLE_BUNDLE_ID` | iOS bundle (`fr.atasoif.app`) — optional until native SIWA ticket |
 
 ### Optionnels catalogue / ops
 
