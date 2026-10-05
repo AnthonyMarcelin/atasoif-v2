@@ -6,6 +6,7 @@ import { finalize } from 'rxjs';
 
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
+import { StoreReviewBypass } from '../core/store-review-bypass';
 import { AuthTabs } from './auth-tabs';
 import {
   controlErrorMessage,
@@ -18,7 +19,7 @@ import { evaluatePasswordStrength } from './password-strength';
 
 @Component({
   selector: 'app-register-page',
-  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs],
+  imports: [NgClass, ReactiveFormsModule, RouterLink, AuthTabs, StoreReviewBypass],
   templateUrl: './register.page.html',
 })
 export class RegisterPage {
@@ -31,6 +32,7 @@ export class RegisterPage {
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly storeReviewOk = signal(false);
   readonly showFacebookLogin = this.auth.showFacebookLogin;
   readonly showAppleLogin = this.auth.showAppleLogin;
 
@@ -90,6 +92,11 @@ export class RegisterPage {
           );
         },
       });
+  }
+
+  onStoreReviewUnlocked(): void {
+    this.storeReviewOk.set(true);
+    this.formError.set(null);
   }
 
   continueWithGoogle(): void {
