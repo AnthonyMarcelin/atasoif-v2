@@ -55,6 +55,8 @@ import { absoluteApiUrl, photoNeedsBearer } from './photo-url';
         width: 100%;
         height: 100%;
         object-fit: cover;
+        /* Packshots are tall bottles; bias to label/neck instead of empty lower black. */
+        object-position: center 20%;
       }
 
       .bottle-photo__stripes {
