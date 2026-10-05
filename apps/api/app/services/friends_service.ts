@@ -58,12 +58,8 @@ export default class FriendsService {
 
     for (const row of rows) {
       const other = row.userAId === userId ? row.userB : row.userA
-      const countRow = await UserBottle.query()
-        .where('user_id', other.id)
-        .pojo<{ total: string }>()
-        .count('* as total')
-        .first()
-      const count = Number(countRow?.total ?? 0)
+      const bottleCount = await UserBottle.query().where('user_id', other.id).count('* as total')
+      const count = Number(bottleCount[0].$extras.total)
       const payload = {
         id: row.id,
         status: row.status,

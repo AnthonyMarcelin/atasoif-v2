@@ -7,7 +7,10 @@ import { defineConfig, drivers } from '@adonisjs/queue'
  * in production when you want large photo jobs off the HTTP thread.
  */
 export default defineConfig({
-  default: env.get('QUEUE_DRIVER', 'sync'),
+  default: (() => {
+    const driver = env.get('QUEUE_DRIVER')?.trim() || 'sync'
+    return driver === 'database' ? 'database' : 'sync'
+  })(),
 
   adapters: {
     database: drivers.database({

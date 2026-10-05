@@ -106,7 +106,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   /** Sync Sharp threshold. Default 2097152 (2 MiB). Larger → `@adonisjs/queue`. */
   CELLAR_PHOTO_SYNC_MAX_BYTES: Env.schema.number.optional(),
   /** Queue adapter: `sync` (default, inline) or `database` (+ `node ace queue:work`). */
-  QUEUE_DRIVER: Env.schema.enum(['sync', 'database'] as const).optional(),
+  QUEUE_DRIVER: Env.schema.string.optional(),
 
   /**
    * Shared secret for GET /api/v1/ops/kpis (header X-Ops-Token).
