@@ -20,13 +20,17 @@ export default class CatalogOffDump extends BaseCommand {
     'Import an OFF JSONL dump (.jsonl or .jsonl.gz), keep alcohol only, upsert Bottle + BottleSource'
 
   static help = [
-    'Primary volume seed for curated whisky / rum / gin / vodka / beer refs.',
+    'Bulk alcohol import from an OFF JSONL dump (.jsonl or .jsonl.gz).',
+    'Fill-max / pre-prod path: --profile=full (all exposed categories).',
+    'Default --profile=curated keeps whisky / rum / gin / vodka / beer only.',
     'Complement with catalog:nurse for curated spirits EANs OFF often misses.',
     '',
-    'Prefer Parquet (~800MB) + DuckDB filter → JSONL, then this command (docs/CATALOG-SEED.md).',
+    'Prefer Parquet (~800MB) + DuckDB filter → JSONL, or stream the full JSONL.gz',
+    'with --profile=full (docs/CATALOG-SEED.md). Idempotent upsert by barcode.',
     '',
     'Examples:',
     '  {{ binaryName }} catalog:off-dump --file=/var/lib/atasoif/off/alcohol.jsonl --dry-run --limit=50',
+    '  {{ binaryName }} catalog:off-dump --file=/var/lib/atasoif/off/openfoodfacts-products.jsonl.gz --profile=full',
     '  {{ binaryName }} catalog:off-dump --file=/var/lib/atasoif/off/openfoodfacts-products.jsonl.gz --profile=curated',
     '  {{ binaryName }} catalog:off-dump --file=…jsonl --mirror-images',
   ]
@@ -65,7 +69,8 @@ export default class CatalogOffDump extends BaseCommand {
   declare progressEvery: number
 
   @flags.string({
-    description: 'Filter profile: curated (default) or full',
+    description:
+      'Filter profile: curated (default) or full (fill-max / pre-prod — wine, cognac, liqueur, …)',
     default: 'curated',
   })
   declare profile: string
