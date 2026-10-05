@@ -229,6 +229,100 @@
         }
       </div>
 
+      <div class="cellar-add__photo-block">
+        <p class="auth-field__label">Photo</p>
+        <div class="cellar-photo-slot cellar-photo-slot--add">
+          <app-bottle-photo
+            [src]="confirmPhotoSrc()"
+            [alt]="confirmPhotoAlt()"
+            variant="list"
+          />
+          @if (freemium()?.entitlement) {
+            @if (nativePhotoPick) {
+              <div class="cellar-photo-actions">
+                <button
+                  class="cellar-photo-fab"
+                  type="button"
+                  (click)="pickAddPhoto('camera')"
+                  [disabled]="saving()"
+                  aria-label="Ajouter une photo avec la caméra"
+                  title="Caméra"
+                >
+                  <span aria-hidden="true">＋</span>
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="pickAddPhoto('library')"
+                  [disabled]="saving()"
+                >
+                  Photothèque
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="pickAddPhoto('camera')"
+                  [disabled]="saving()"
+                >
+                  Caméra
+                </button>
+              </div>
+            } @else {
+              <div class="cellar-photo-actions">
+                <button
+                  class="cellar-photo-fab"
+                  type="button"
+                  (click)="addPhotoInput.click()"
+                  [disabled]="saving()"
+                  aria-label="Ajouter une photo"
+                  title="Ajouter une photo"
+                >
+                  <span aria-hidden="true">＋</span>
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="addPhotoInput.click()"
+                  [disabled]="saving()"
+                >
+                  {{ pendingPhoto() ? 'Changer la photo' : 'Ajouter une photo' }}
+                </button>
+              </div>
+              <input
+                #addPhotoInput
+                class="cellar-photo-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                tabindex="-1"
+                aria-hidden="true"
+                (change)="onAddPhotoSelected($event)"
+              />
+            }
+            @if (pendingPhoto()) {
+              <button
+                type="button"
+                class="auth-btn auth-btn--ghost"
+                (click)="clearPendingPhoto()"
+                [disabled]="saving()"
+              >
+                Retirer la photo
+              </button>
+            }
+          } @else {
+            <a
+              class="auth-btn auth-btn--secondary"
+              routerLink="/cave/premium"
+              [queryParams]="{ reason: 'photo' }"
+            >
+              Photo perso · premium
+            </a>
+          }
+          @if (photoError(); as message) {
+            <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+          }
+        </div>
+      </div>
+
       <button
         type="button"
         class="cellar-product-toggle"
@@ -392,11 +486,6 @@
             sur {{ meta.limit }}
           }
         </p>
-        @if (meta.entitlement) {
-          <p class="cellar-add__photo-hint">
-            Photo perso : après « Ranger », sur la fiche bouteille (caméra / photothèque).
-          </p>
-        }
       }
     </form>
   }
