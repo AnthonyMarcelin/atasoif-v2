@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
-import { environment } from '../../environments/environment';
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
 import { StoreReviewBypass } from '../core/store-review-bypass';
@@ -36,7 +35,6 @@ export class RegisterPage {
   readonly storeReviewOk = signal(false);
   readonly showFacebookLogin = this.auth.showFacebookLogin;
   readonly showAppleLogin = this.auth.showAppleLogin;
-  readonly storeReviewSecret = environment.storeReviewSecret;
 
   readonly form = this.fb.group(
     {

@@ -10,9 +10,4 @@ export const environment = {
   showFacebookLogin: false,
   /** Sign in with Apple via Ally (web Services ID). Flip off to hide CTA. */
   showAppleLogin: true,
-  /**
-   * Store review bypass secret (7 taps on logo). Inject at build from
-   * `STORE_REVIEW_SECRET` / CI — never commit the real value.
-   */
-  storeReviewSecret: '',
 };
