@@ -74,7 +74,13 @@ export default class CatalogLookupService {
     try {
       return await this.writeDraft(draft)
     } catch (error) {
-      if (readPostgresUniqueViolation(error) !== 'bottles_barcode_active_unique') {
+      const violation = readPostgresUniqueViolation(error)
+      // Concurrent dump/nurse/scan: same barcode or same (source, external_id).
+      if (
+        violation !== 'bottles_barcode_active_unique' &&
+        violation !== 'bottle_sources_source_external_id_unique' &&
+        violation !== '23505'
+      ) {
         throw error
       }
       const existing = await this.findLocalByBarcode(draft.barcode)

@@ -31,7 +31,19 @@ const CATEGORY_PATTERNS: Array<{ slug: AlcoholCategory; patterns: RegExp[] }> = 
   },
   {
     slug: 'liqueur',
-    patterns: [/\bliqueurs?\b/i, /\bcream\b/i, /\bamaro\b/i, /\baperitif\b/i, /\bdigestif\b/i],
+    patterns: [
+      /\bliqueurs?\b/i,
+      /\bpastis\b/i,
+      /\banise\b/i,
+      /\bcream\b/i,
+      /\bamaro\b/i,
+      /\baperitif\b/i,
+      /\bdigestif\b/i,
+    ],
+  },
+  {
+    slug: 'other',
+    patterns: [/\btequilas?\b/i, /\bmezcals?\b/i, /\bsoju\b/i, /\bsake\b/i],
   },
 ]
 
