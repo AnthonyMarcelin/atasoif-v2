@@ -135,7 +135,8 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 | `LOG_LEVEL` | `info` |
 | `APP_KEY` | secret Adonis (32+ chars) |
 | `APP_URL` | `https://api.atasoif.fr` (origine publique HTTPS de l’API) |
-| `FRONTEND_URL` | origine Angular / deep links mail (ex. `https://www.atasoif.fr` ou URL Capacitor) |
+| `FRONTEND_URL` | landing / deep links mail (prod: `https://www.atasoif.fr`) |
+| `NATIVE_OAUTH_RETURN_URL` | Capacitor deep link after Ally (placeholder `fr.atasoif.app://auth/callback`; Ally native handoff = follow-up ticket) |
 | `SESSION_DRIVER` | `cookie` |
 | `DB_HOST` | `infra-postgis-rfekdz` |
 | `DB_PORT` | `5432` |
@@ -157,8 +158,7 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 
 | Variable | Notes |
 |---|---|
-| `CORS_ORIGIN` | origines front autorisées (CSV) — include marketing (`https://www.atasoif.fr`, `https://atasoif.fr`) **and** the Angular cave origin once hosted (see [`DOKPLOY-WEB.md`](./DOKPLOY-WEB.md)) |
-
+| `CORS_ORIGIN` | CSV — marketing + Capacitor WebView: `https://www.atasoif.fr,https://atasoif.fr,capacitor://localhost,https://localhost` (add a hosted cave origin later if needed — [`DOKPLOY-WEB.md`](./DOKPLOY-WEB.md)) |
 | `OPS_ADMIN_TOKEN` | long secret aléatoire pour `GET /api/v1/ops/kpis` (`X-Ops-Token`). Vide = route fermée |
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | si le SMTP le demande |
 | `CELLAR_PHOTO_DIR` | chemin absolu volume persistant (photos cave) hors release |
@@ -169,7 +169,9 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 |---|---|
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/google/callback` |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/facebook/callback` |
-| `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | Sign in with Apple (requis si social iOS) |
+| `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | Sign in with Apple (Services ID / client secret) |
+| `APPLE_BUNDLE_ID` | iOS bundle (placeholder `fr.atasoif.app`) — optional until native SIWA ticket |
+| `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | Apple .p8 signing material — optional until native SIWA ticket |
 
 ### Optionnels catalogue / ops
 
