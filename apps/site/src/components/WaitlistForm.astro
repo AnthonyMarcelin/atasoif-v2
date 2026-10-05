@@ -24,7 +24,7 @@ const {
     />
     <button type="submit">Être prévenu</button>
   </div>
-  <p class="waitlist__note" data-waitlist-note>{note}</p>
+  <p class="waitlist__note" data-waitlist-note role="status" aria-live="polite">{note}</p>
 </form>
 
 <style lang="scss">
@@ -75,6 +75,10 @@ const {
       outline: none;
       border: var(--stroke-accent) solid var(--color-accent);
     }
+
+    &:disabled {
+      opacity: 0.7;
+    }
   }
 
   button {
@@ -91,9 +95,14 @@ const {
     border-radius: var(--radius);
     transition: background var(--dur-tap) var(--ease);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: var(--color-accent-hover);
       border-color: var(--color-accent-hover);
+    }
+
+    &:disabled {
+      cursor: wait;
+      opacity: 0.85;
     }
   }
 
@@ -105,12 +114,26 @@ const {
     letter-spacing: 0.06em;
   }
 
+  .waitlist__note--ok {
+    color: var(--color-success);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  .waitlist__note--err {
+    color: var(--color-danger);
+  }
+
   .waitlist--center .waitlist__note {
     text-align: center;
   }
 </style>
 
 <script>
+  const SUCCESS_NOTE = 'MERCI · C’EST ENVOYÉ';
+  const PENDING_NOTE = 'ENVOI EN COURS…';
+  const FALLBACK_ERR = 'OUPS · RÉESSAIE DANS UN INSTANT';
+
   document.querySelectorAll<HTMLFormElement>('[data-waitlist]').forEach((form) => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -123,9 +146,17 @@ const {
       }
 
       const email = input.value.trim();
-      const previousNote = note?.textContent ?? '';
+      const previousNote = note?.dataset.defaultNote ?? note?.textContent ?? '';
+      if (note && !note.dataset.defaultNote) {
+        note.dataset.defaultNote = previousNote;
+      }
+
       if (button) button.disabled = true;
-      if (note) note.textContent = 'ENVOI EN COURS…';
+      if (input) input.disabled = true;
+      if (note) {
+        note.classList.remove('waitlist__note--ok', 'waitlist__note--err');
+        note.textContent = PENDING_NOTE;
+      }
 
       try {
         const response = await fetch('/api/waitlist', {
@@ -142,22 +173,30 @@ const {
 
         if (!response.ok) {
           if (note) {
+            note.classList.add('waitlist__note--err');
             note.textContent =
               typeof body.message === 'string' && body.message
                 ? body.message.toUpperCase()
-                : 'OUPS · RÉESSAIE DANS UN INSTANT';
+                : FALLBACK_ERR;
           }
           return;
         }
 
-        if (note) note.textContent = 'C’EST NOTÉ · ON TE PRÉVIENT À LA SORTIE';
+        if (note) {
+          note.classList.add('waitlist__note--ok');
+          note.textContent = SUCCESS_NOTE;
+        }
         form.reset();
       } catch {
-        if (note) note.textContent = 'OUPS · RÉESSAIE DANS UN INSTANT';
+        if (note) {
+          note.classList.add('waitlist__note--err');
+          note.textContent = FALLBACK_ERR;
+        }
       } finally {
         if (button) button.disabled = false;
-        if (note && note.textContent === 'ENVOI EN COURS…') {
-          note.textContent = previousNote;
+        if (input) input.disabled = false;
+        if (note && note.textContent === PENDING_NOTE) {
+          note.textContent = note.dataset.defaultNote ?? previousNote;
         }
       }
     });
