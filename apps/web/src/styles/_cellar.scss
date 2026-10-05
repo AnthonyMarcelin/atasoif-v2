@@ -806,6 +806,8 @@
 }
 
 .cellar-add__prefill-badge {
+  display: inline-block;
+  margin: 0 0 var(--space-sm);
   font-family: var(--font-mono);
   font-size: var(--text-mono-s);
   letter-spacing: var(--mono-track);
