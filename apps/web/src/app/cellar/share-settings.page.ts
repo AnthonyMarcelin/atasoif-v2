@@ -4,8 +4,6 @@ import { finalize } from 'rxjs';
 
 import { cellarErrorMessage } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
-import type { FreemiumMeta } from './cellar.types';
-import { CollectionService } from './collection.service';
 import { FriendsService, type ShareSettings } from './friends.service';
 
 @Component({
@@ -17,9 +15,7 @@ import { FriendsService, type ShareSettings } from './friends.service';
 })
 export class ShareSettingsPage implements OnInit {
   private readonly friendsApi = inject(FriendsService);
-  private readonly collection = inject(CollectionService);
 
-  readonly freemium = signal<FreemiumMeta | null>(null);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -27,10 +23,6 @@ export class ShareSettingsPage implements OnInit {
   readonly settings = signal<ShareSettings | null>(null);
 
   ngOnInit(): void {
-    this.collection.freemium().subscribe({
-      next: (meta) => this.freemium.set(meta),
-      error: () => this.freemium.set(null),
-    });
     this.reload();
   }
 
