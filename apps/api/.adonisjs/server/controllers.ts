@@ -5,6 +5,7 @@
 
 export const controllers = {
   AccessTokens: () => import('#controllers/access_tokens_controller'),
+  AppleAuth: () => import('#controllers/apple_auth_controller'),
   CatalogBottles: () => import('#controllers/catalog_bottles_controller'),
   CatalogCategories: () => import('#controllers/catalog_categories_controller'),
   CollectionBottles: () => import('#controllers/collection_bottles_controller'),

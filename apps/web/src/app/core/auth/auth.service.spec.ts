@@ -152,6 +152,20 @@ describe('AuthService', () => {
     );
   });
 
+  it('builds the Apple Ally redirect URL', () => {
+    expect(service.appleAuthUrl()).toBe(`${environment.apiBaseUrl}/api/v1/auth/apple/redirect`);
+  });
+
+  it('exposes Facebook login as hidden (UI standby)', () => {
+    expect(service.showFacebookLogin).toBe(environment.showFacebookLogin);
+    expect(service.showFacebookLogin).toBeFalse();
+  });
+
+  it('exposes Apple login when the feature flag is on', () => {
+    expect(service.showAppleLogin).toBe(environment.showAppleLogin);
+    expect(service.showAppleLogin).toBeTrue();
+  });
+
   it('completeOAuthLogin stores the token then loads the profile', () => {
     service.completeOAuthLogin('oauth-tok').subscribe();
 

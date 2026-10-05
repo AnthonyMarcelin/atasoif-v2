@@ -125,7 +125,35 @@ FACEBOOK_CLIENT_SECRET=...
 Same handoff as Google (`/auth/oauth/callback?token=…`). Scopes: `email` + `public_profile` only.  
 **No** `user_friends` / Graph friends import — in-app friends remain E6.
 
-Apple stays deferred until E1-T09.
+Facebook login UI is on standby (`environment.showFacebookLogin = false`); Ally routes stay available.
+
+### Apple Sign In via custom Ally driver (E1-T09)
+
+```bash
+# Apple Developer → Identifiers → Services ID (web): com.atasoif.web
+# Return URL must match exactly:
+#   {APP_URL}/api/v1/auth/apple/callback
+# Key → Sign in with Apple → download .p8 (never commit). Team ID + Key ID in env.
+
+# apps/api/.env
+APPLE_CLIENT_ID=com.atasoif.web
+APPLE_TEAM_ID=D3UKXNVT3D
+APPLE_KEY_ID=...
+APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+# Leave empty — JWT client_secret is signed at runtime (short TTL)
+APPLE_CLIENT_SECRET=
+APPLE_BUNDLE_ID=fr.atasoif.app
+```
+
+Flow:
+
+1. Angular « Continuer avec Apple » → `GET /api/v1/auth/apple/redirect`
+2. Ally redirects to Apple (`response_mode=form_post`, scopes `name` + `email`)
+3. Apple → `POST /api/v1/auth/apple/callback` on the API
+4. Driver signs a short-lived ES256 client_secret JWT (iss=Team, sub=Services ID, aud=appleid.apple.com) then exchanges the code
+5. Find-or-create user by email → Bearer token → `{FRONTEND_URL}/auth/oauth/callback?token=…`
+
+Never log the PEM or the JWT. `APPLE_CLIENT_SECRET` is legacy/optional when TEAM/KEY/PEM are set. Native Capacitor SIWA (bundle `fr.atasoif.app`) is a follow-up.
 
 ### Angular Bearer client (E1-T05)
 

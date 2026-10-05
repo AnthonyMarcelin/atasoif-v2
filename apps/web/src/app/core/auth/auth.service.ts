@@ -54,13 +54,40 @@ export class AuthService {
     window.location.assign(this.googleAuthUrl());
   }
 
+  /**
+   * When false, login/register hide the Facebook CTA (standby).
+   * Ally redirect/callback stay available on the API.
+   */
+  readonly showFacebookLogin = environment.showFacebookLogin;
+
+  /**
+   * When false, login/register hide the Apple CTA.
+   * Ally redirect/callback stay available on the API.
+   */
+  readonly showAppleLogin = environment.showAppleLogin;
+
   /** Browser navigation into Ally Facebook OAuth (full-page redirect). */
   facebookAuthUrl(): string {
     return `${this.apiBase}/api/v1/auth/facebook/redirect`;
   }
 
   startFacebookLogin(): void {
+    if (!this.showFacebookLogin) {
+      return;
+    }
     window.location.assign(this.facebookAuthUrl());
+  }
+
+  /** Browser navigation into Ally Apple OAuth (full-page redirect). */
+  appleAuthUrl(): string {
+    return `${this.apiBase}/api/v1/auth/apple/redirect`;
+  }
+
+  startAppleLogin(): void {
+    if (!this.showAppleLogin) {
+      return;
+    }
+    window.location.assign(this.appleAuthUrl());
   }
 
   /**
