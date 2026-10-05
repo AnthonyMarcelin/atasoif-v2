@@ -33,11 +33,12 @@
           <button
             type="button"
             class="cellar-add__scan"
-            disabled
-            title="Scan code-barres · bientôt"
-            aria-label="Scan code-barres, bientôt disponible"
+            (click)="onScan()"
+            [disabled]="scanning()"
+            title="Scanner un code-barres"
+            aria-label="Scanner un code-barres"
           >
-            SCAN
+            {{ scanning() ? '…' : 'SCAN' }}
           </button>
         </div>
         @if (results().length > 0 && !searching()) {

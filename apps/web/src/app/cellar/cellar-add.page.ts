@@ -14,6 +14,7 @@ import {
 } from 'rxjs';
 import { isWineCategorySlug, readWineAttr, WINE_ATTR_LIMITS } from '@atasoif/shared';
 
+import { BarcodeScanService } from './barcode-scan.service';
 import { BottlePhoto } from './bottle-photo';
 import { CatalogService, looksLikeBarcode } from './catalog.service';
 import { cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
@@ -43,6 +44,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   private readonly fb = new FormBuilder().nonNullable;
   private readonly catalog = inject(CatalogService);
   private readonly collection = inject(CollectionService);
+  private readonly barcodeScan = inject(BarcodeScanService);
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
   private readonly query$ = new Subject<string>();
@@ -50,6 +52,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   readonly step = signal<AddStep>('search');
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly searching = signal(false);
+  readonly scanning = signal(false);
   readonly results = signal<CatalogBottle[]>([]);
   readonly searchError = signal<string | null>(null);
   readonly barcodeMiss = signal(false);
@@ -161,6 +164,37 @@ export class CellarAddPage implements OnInit, OnDestroy {
   onQueryInput(value: string): void {
     this.searchControl.setValue(value);
     this.query$.next(value);
+  }
+
+  async onScan(): Promise<void> {
+    if (this.scanning()) {
+      return;
+    }
+    this.scanning.set(true);
+    this.searchError.set(null);
+    try {
+      const result = await this.barcodeScan.scan();
+      if (result.ok) {
+        this.onQueryInput(result.barcode);
+        return;
+      }
+      if (result.reason === 'cancelled') {
+        return;
+      }
+      if (result.reason === 'permission') {
+        this.searchError.set('Autorise la caméra pour scanner un code-barres.');
+        return;
+      }
+      if (result.reason === 'invalid') {
+        this.searchError.set('Code-barres illisible. Tape les chiffres ou réessaie.');
+        return;
+      }
+      this.searchError.set(
+        'Scan dispo sur l’app iOS/Android. Ici, colle ou tape le code-barres (8 à 14 chiffres).',
+      );
+    } finally {
+      this.scanning.set(false);
+    }
   }
 
   pickHit(bottle: CatalogBottle): void {
