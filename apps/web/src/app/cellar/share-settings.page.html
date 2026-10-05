@@ -1,0 +1,105 @@
+<app-cellar-shell title="Partage" [hideNav]="true" [freemium]="freemium()">
+  <div class="share-page">
+    <a class="cellar-back" routerLink="/cave/amis">← Amis</a>
+    <p class="share-page__kicker">Partage</p>
+    <h1 class="share-page__title">Qui voit quoi</h1>
+
+    @if (error(); as message) {
+      <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+    }
+    @if (ok(); as message) {
+      <p class="auth-status auth-status--ok" role="status">{{ message }}</p>
+    }
+
+    @if (loading()) {
+      <p class="auth-status" role="status">Chargement…</p>
+    } @else if (settings(); as s) {
+      <ul class="share-toggles">
+        <li>
+          <div>
+            <p class="share-toggles__label">Ma cave est visible</p>
+            <p class="share-toggles__hint">Par mes amis uniquement</p>
+          </div>
+          <button
+            type="button"
+            class="share-toggle"
+            [class.is-on]="s.shareCellarWithFriends"
+            [attr.aria-pressed]="s.shareCellarWithFriends"
+            (click)="toggle('shareCellarWithFriends')"
+          >
+            <span class="share-toggle__knob"></span>
+          </button>
+        </li>
+        <li>
+          <div>
+            <p class="share-toggles__label">Montrer les prix payés</p>
+            <p class="share-toggles__hint">Ce que tu as dépensé reste à toi</p>
+          </div>
+          <button
+            type="button"
+            class="share-toggle"
+            [class.is-on]="s.sharePrices"
+            [attr.aria-pressed]="s.sharePrices"
+            (click)="toggle('sharePrices')"
+          >
+            <span class="share-toggle__knob"></span>
+          </button>
+        </li>
+        <li>
+          <div>
+            <p class="share-toggles__label">Montrer mes notes</p>
+            <p class="share-toggles__hint">Notes sur 10, pas les textes</p>
+          </div>
+          <button
+            type="button"
+            class="share-toggle"
+            [class.is-on]="s.shareNotes"
+            [attr.aria-pressed]="s.shareNotes"
+            (click)="toggle('shareNotes')"
+          >
+            <span class="share-toggle__knob"></span>
+          </button>
+        </li>
+        <li>
+          <div>
+            <p class="share-toggles__label">Mes mots restent privés</p>
+            <p class="share-toggles__hint">Toujours, non modifiable</p>
+          </div>
+          <span class="share-locked">Verrouillé</span>
+        </li>
+        <li>
+          <div>
+            <p class="share-toggles__label">Trouvable par pseudo</p>
+            <p class="share-toggles__hint">{{ s.pseudo ? '@' + s.pseudo : 'Choisis un pseudo' }}</p>
+          </div>
+          <button
+            type="button"
+            class="share-toggle"
+            [class.is-on]="s.findableByPseudo"
+            [attr.aria-pressed]="s.findableByPseudo"
+            (click)="toggle('findableByPseudo')"
+          >
+            <span class="share-toggle__knob"></span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="share-link">
+        <div>
+          <p class="share-link__label">Mon lien d’invitation</p>
+          <p class="share-link__url">{{ s.inviteUrl }}</p>
+        </div>
+        <button type="button" class="share-link__copy" (click)="copyLink()">Copier</button>
+      </div>
+
+      <p class="share-foot">
+        Tu peux
+        <a class="auth-link" routerLink="/compte">gérer ta cave</a>
+        ou
+        <a class="auth-link" routerLink="/compte">supprimer ton compte</a>
+        à tout moment.
+      </p>
+      <p class="share-legal">Rgpd · suppression définitive sous 30 jours</p>
+    }
+  </div>
+</app-cellar-shell>

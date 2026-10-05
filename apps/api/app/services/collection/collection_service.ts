@@ -1,9 +1,11 @@
+import { readFile } from 'node:fs/promises'
 import { DateTime } from 'luxon'
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import db from '@adonisjs/lucid/services/db'
 import {
   BOTTLE_SOURCES,
+  BOTTLE_TYPE_ATTR_KEY,
   FILL_LEVEL_DEFAULT,
   FREE_BOTTLE_LIMIT,
   isWineCategorySlug,
@@ -12,14 +14,17 @@ import {
   type WineAttrKey,
   type WineAttrsInput,
 } from '@atasoif/shared'
+import ProcessCellarPhoto from '#jobs/process_cellar_photo'
 import Bottle from '#models/bottle'
 import BottleSource from '#models/bottle_source'
 import Category from '#models/category'
 import User from '#models/user'
 import UserBottle from '#models/user_bottle'
+import CellarPhotoProcessor from '#services/cellar_photo_processor'
 import CellarPhotoStorage, { overridePhotoPath } from '#services/cellar_photo_storage'
 import { CollectionError } from '#services/collection/collection_error'
 import EntitlementService from '#services/entitlement_service'
+import { isHeicHeader } from '#services/image_signature'
 import { isCatalogPhotoUrl, isHttpPhotoUrl, isOwnShelfPhotoUrl } from '#services/photo_url'
 import { readPostgresUniqueViolation } from '#services/postgres_error'
 
@@ -37,6 +42,8 @@ export type PremiumFeature = 'fillLevel' | 'photoOverride'
 
 const PENDING_PHOTO_STATUS = 'pending'
 
+type BottleAttrsInput = WineAttrsInput & { type?: string | null }
+
 type CreateBottleMiss = {
   name: string
   brand?: string
@@ -46,7 +53,7 @@ type CreateBottleMiss = {
   barcode?: string
   photoUrl?: string
   categoryId: number
-  attrs?: WineAttrsInput
+  attrs?: BottleAttrsInput
 }
 
 export type CreateUserBottleInput = {
@@ -63,7 +70,7 @@ export type CreateUserBottleInput = {
   originOverride?: string
   abvOverride?: number
   volumeMlOverride?: number
-  attrsOverride?: WineAttrsInput | null
+  attrsOverride?: BottleAttrsInput | null
   isPublic?: boolean
 }
 
@@ -79,7 +86,7 @@ export type UpdateUserBottleInput = {
   originOverride?: string | null
   abvOverride?: number | null
   volumeMlOverride?: number | null
-  attrsOverride?: WineAttrsInput | null
+  attrsOverride?: BottleAttrsInput | null
   isPublic?: boolean
 }
 
@@ -379,21 +386,60 @@ export default class CollectionService {
   }
 
   /**
-   * Premium shelf photo. The row lock keeps two uploads from leaving two files.
-   * Signature check happens before the previous file is replaced.
+   * Premium shelf photo. ≤ sync threshold: Sharp/HEIC inline.
+   * Heavier files: inbox + `@adonisjs/queue` job (ProcessCellarPhoto).
    */
-  async saveShelfPhoto(userId: number, id: number, file: MultipartFile): Promise<UserBottle> {
+  async saveShelfPhoto(
+    userId: number,
+    id: number,
+    file: MultipartFile
+  ): Promise<{ row: UserBottle; processing: boolean }> {
     const entitlement = await this.entitlements.hasActiveEntitlement(userId)
     if (!entitlement) {
       throw this.premiumRequired('photoOverride')
     }
 
+    const tmpPath = file.tmpPath
+    if (!tmpPath) {
+      throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
+    }
+
+    const input = await readFile(tmpPath)
+    const storage = new CellarPhotoStorage()
+    const syncMax = storage.syncMaxBytes()
+    const heic = isHeicHeader(input.subarray(0, 16))
+    const needsQueue = input.length > syncMax
+
+    if (needsQueue) {
+      const row = await this.findOwned(userId, id)
+      const inboxPath = await storage.storeInbox(userId, row.id, input, heic ? 'heic' : 'bin')
+      await ProcessCellarPhoto.dispatch({
+        userId,
+        userBottleId: row.id,
+        inboxPath,
+      })
+      await row.load('bottle', (bottleQuery) => {
+        bottleQuery.preload('category')
+      })
+      return { row, processing: true }
+    }
+
     return db.transaction(async (trx) => {
       const row = await this.lockOwned(userId, id, trx)
-      const storage = new CellarPhotoStorage()
       try {
-        const stored = await storage.storeOverride(userId, row.id, file)
-        row.photoUrlOverride = stored.publicPath
+        if (heic) {
+          const processed = await new CellarPhotoProcessor().process(input, { forceEncode: true })
+          const stored = await storage.storeOverrideBuffer(
+            userId,
+            row.id,
+            processed.buffer,
+            processed.ext
+          )
+          row.photoUrlOverride = stored.publicPath
+        } else {
+          const stored = await storage.storeOverride(userId, row.id, file)
+          row.photoUrlOverride = stored.publicPath
+        }
         await row.save()
       } catch (error) {
         if (!(error instanceof CollectionError)) {
@@ -404,7 +450,7 @@ export default class CollectionService {
       await row.load('bottle', (bottleQuery) => {
         bottleQuery.preload('category')
       })
-      return row
+      return { row, processing: false }
     })
   }
 
@@ -417,50 +463,95 @@ export default class CollectionService {
   }
 
   /**
-   * Wine keys belong on a wine bottle only. Other categories must omit `attrsOverride`.
+   * Bottle attrs override: wine keys (wine only) + optional `type` (any category).
    */
   private resolveWineAttrs(
     categorySlug: string | null,
     current: Record<string, unknown> | null,
-    patch: WineAttrsInput | null
+    patch: BottleAttrsInput | null
   ): Record<string, unknown> | null {
-    if (!isWineCategorySlug(categorySlug)) {
+    if (patch === null) {
+      if (!isWineCategorySlug(categorySlug)) {
+        const next: Record<string, unknown> = { ...(current ?? {}) }
+        delete next[BOTTLE_TYPE_ATTR_KEY]
+        return Object.keys(next).length ? next : null
+      }
+      return mergeWineAttrsOverride(current, null)
+    }
+
+    const winePatch: WineAttrsInput = {
+      appellation: patch.appellation,
+      grape: patch.grape,
+      vintage: patch.vintage,
+    }
+    const hasWineKeys = WINE_ATTR_KEYS.some((key) =>
+      Object.prototype.hasOwnProperty.call(patch, key)
+    )
+    const hasType = Object.prototype.hasOwnProperty.call(patch, BOTTLE_TYPE_ATTR_KEY)
+
+    if (hasWineKeys && !isWineCategorySlug(categorySlug)) {
       throw new CollectionError(
         'E_WINE_ATTRS_CATEGORY',
         'Appellation, cépage et millésime sont réservés au vin',
         422
       )
     }
-    return mergeWineAttrsOverride(current, patch)
+
+    let next: Record<string, unknown> | null = current ? { ...current } : null
+    if (hasWineKeys && isWineCategorySlug(categorySlug)) {
+      next = mergeWineAttrsOverride(next, winePatch)
+    }
+    if (hasType) {
+      next = { ...(next ?? {}) }
+      const raw = patch.type
+      if (raw === null || raw === undefined || !String(raw).trim()) {
+        delete next[BOTTLE_TYPE_ATTR_KEY]
+      } else {
+        next[BOTTLE_TYPE_ATTR_KEY] = String(raw).trim()
+      }
+    }
+    if (!next || Object.keys(next).length === 0) {
+      return null
+    }
+    return next
   }
 
   /**
-   * Miss create may seed wine keys onto the shared catalog row — nothing else.
+   * Miss create may seed wine keys (wine only) + optional type onto the catalog row.
    */
   private resolveCatalogMissAttrs(
     categorySlug: string | null,
-    attrs: WineAttrsInput | Record<string, unknown> | undefined
+    attrs: BottleAttrsInput | Record<string, unknown> | undefined
   ): Record<string, unknown> {
     if (!attrs || Object.keys(attrs).length === 0) {
       return {}
     }
-    if (!isWineCategorySlug(categorySlug)) {
+    const next: Record<string, unknown> = {}
+    const hasWineKeys = WINE_ATTR_KEYS.some((key) =>
+      Object.prototype.hasOwnProperty.call(attrs, key)
+    )
+    if (hasWineKeys && !isWineCategorySlug(categorySlug)) {
       throw new CollectionError(
         'E_WINE_ATTRS_CATEGORY',
         'Appellation, cépage et millésime sont réservés au vin',
         422
       )
     }
-    const next: Record<string, unknown> = {}
-    for (const key of WINE_ATTR_KEYS) {
-      const raw = (attrs as WineAttrsInput)[key as WineAttrKey]
-      if (typeof raw !== 'string') {
-        continue
+    if (isWineCategorySlug(categorySlug)) {
+      for (const key of WINE_ATTR_KEYS) {
+        const raw = (attrs as WineAttrsInput)[key as WineAttrKey]
+        if (typeof raw !== 'string') {
+          continue
+        }
+        const value = raw.trim()
+        if (value) {
+          next[key] = value
+        }
       }
-      const value = raw.trim()
-      if (value) {
-        next[key] = value
-      }
+    }
+    const typeRaw = (attrs as BottleAttrsInput).type
+    if (typeof typeRaw === 'string' && typeRaw.trim()) {
+      next[BOTTLE_TYPE_ATTR_KEY] = typeRaw.trim()
     }
     return next
   }

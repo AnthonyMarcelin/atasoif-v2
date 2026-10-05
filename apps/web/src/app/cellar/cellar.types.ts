@@ -1,5 +1,7 @@
 /** Catalog + collection shapes returned by Adonis cellar APIs (E2). */
 
+import { decodeHtmlEntities } from '../core/html-entities';
+
 export interface CatalogCategory {
   id: number;
   slug: string;
@@ -68,7 +70,7 @@ export interface CollectionListResponse {
 
 export interface CollectionItemResponse {
   data: UserBottle;
-  meta: { freemium: FreemiumMeta };
+  meta: { freemium: FreemiumMeta; photoProcessing?: boolean };
 }
 
 export interface CreateUserBottlePayload {
@@ -117,12 +119,13 @@ export interface UpdateUserBottlePayload {
 
 /** Resolved display fields for list / detail (overrides win). */
 export function displayName(entry: UserBottle): string {
-  return entry.nameOverride?.trim() || entry.bottle?.name || 'Bouteille';
+  const raw = entry.nameOverride?.trim() || entry.bottle?.name || 'Bouteille';
+  return decodeHtmlEntities(raw);
 }
 
 export function displayBrand(entry: UserBottle): string | null {
   const brand = entry.brandOverride?.trim() || entry.bottle?.brand?.trim();
-  return brand || null;
+  return brand ? decodeHtmlEntities(brand) : null;
 }
 
 export function displayPhotoUrl(entry: UserBottle): string | null {
@@ -132,3 +135,92 @@ export function displayPhotoUrl(entry: UserBottle): string | null {
 export function displayCategory(entry: UserBottle): CatalogCategory | null {
   return entry.bottle?.category ?? null;
 }
+
+export function displayOrigin(entry: UserBottle): string | null {
+  const origin = entry.originOverride?.trim() || entry.bottle?.origin?.trim();
+  return origin ? decodeHtmlEntities(origin) : null;
+}
+
+export function displayAbv(entry: UserBottle): number | null {
+  if (entry.abvOverride !== null && entry.abvOverride !== undefined) {
+    return entry.abvOverride;
+  }
+  return entry.bottle?.abv ?? null;
+}
+
+export function displayVolumeMl(entry: UserBottle): number | null {
+  if (entry.volumeMlOverride !== null && entry.volumeMlOverride !== undefined) {
+    return entry.volumeMlOverride;
+  }
+  return entry.bottle?.volumeMl ?? null;
+}
+
+/** Format ABV for FR UI: `43,0%`. */
+export function formatAbv(abv: number | null | undefined): string | null {
+  if (abv === null || abv === undefined || !Number.isFinite(abv)) {
+    return null;
+  }
+  const fixed = abv % 1 === 0 ? abv.toFixed(0) : abv.toFixed(1);
+  return `${fixed.replace('.', ',')}%`;
+}
+
+/** Format volume ml as `70CL` / `33CL`. */
+export function formatVolumeCl(volumeMl: number | null | undefined): string | null {
+  if (volumeMl === null || volumeMl === undefined || !Number.isFinite(volumeMl) || volumeMl <= 0) {
+    return null;
+  }
+  const cl = volumeMl / 10;
+  const label = cl % 1 === 0 ? String(cl) : cl.toFixed(1).replace('.', ',');
+  return `${label}CL`;
+}
+
+/** Format price: `62€` / `4,20€`. */
+export function formatPriceEur(price: number | null | undefined): string | null {
+  if (price === null || price === undefined || !Number.isFinite(price)) {
+    return null;
+  }
+  if (price % 1 === 0) {
+    return `${price}€`;
+  }
+  const compact = price.toFixed(2).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',');
+  return `${compact}€`;
+}
+
+/** Meta line: `ISLAY · 43,0% · 70CL` (skip missing parts). */
+export function formatBottleMeta(parts: Array<string | null | undefined>): string {
+  return parts
+    .map((part) => (part ? String(part).trim() : ''))
+    .filter(Boolean)
+    .join(' · ');
+}
+
+export function catalogBottleTitle(bottle: CatalogBottle): string {
+  return decodeHtmlEntities(bottle.name?.trim() || 'Bouteille');
+}
+
+export function catalogBottleBrand(bottle: CatalogBottle): string | null {
+  const brand = bottle.brand?.trim();
+  return brand ? decodeHtmlEntities(brand) : null;
+}
+
+export function catalogBottleMeta(bottle: CatalogBottle): string {
+  return formatBottleMeta([
+    bottle.category?.name?.toUpperCase() ?? null,
+    formatAbv(bottle.abv),
+    formatVolumeCl(bottle.volumeMl),
+  ]);
+}
+
+/** Fill-level label for list cards. */
+export function fillLevelLabel(fillLevel: number): string {
+  if (fillLevel >= 100) {
+    return 'SCELLÉE';
+  }
+  if (fillLevel <= 0) {
+    return 'VIDE';
+  }
+  return `${Math.round(fillLevel)}%`;
+}
+
+/** Client-side note scale: /10 (API accepts up to 99,9). */
+export const NOTE_MAX = 10;

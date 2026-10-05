@@ -6,26 +6,30 @@ import { finalize } from 'rxjs';
 
 import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
+import { CellarShell } from '../cellar/cellar-shell';
+import type { FreemiumMeta } from '../cellar/cellar.types';
+import { CollectionService } from '../cellar/collection.service';
 import { controlErrorMessage, pseudoValidators } from './auth-validators';
 
 @Component({
   selector: 'app-account-page',
-  imports: [NgClass, ReactiveFormsModule, RouterLink],
+  imports: [NgClass, ReactiveFormsModule, RouterLink, CellarShell],
   templateUrl: './account.page.html',
 })
 export class AccountPage implements OnInit {
   private readonly fb = new FormBuilder().nonNullable;
   private readonly auth = inject(AuthService);
+  private readonly collection = inject(CollectionService);
   private readonly router = inject(Router);
 
   readonly user = this.auth.user;
-  readonly loggedOut = signal(false);
   readonly loading = signal(true);
   readonly loggingOut = signal(false);
   readonly saving = signal(false);
   readonly savedOk = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  readonly freemium = signal<FreemiumMeta | null>(null);
 
   readonly form = this.fb.group({
     pseudo: ['', pseudoValidators],
@@ -33,6 +37,16 @@ export class AccountPage implements OnInit {
   });
 
   ngOnInit(): void {
+    this.reload();
+    this.collection.freemium().subscribe({
+      next: (meta) => this.freemium.set(meta),
+      error: () => this.freemium.set(null),
+    });
+  }
+
+  reload(): void {
+    this.loading.set(true);
+    this.formError.set(null);
     this.auth
       .loadProfile()
       .pipe(finalize(() => this.loading.set(false)))
@@ -86,8 +100,7 @@ export class AccountPage implements OnInit {
       .pipe(finalize(() => this.loggingOut.set(false)))
       .subscribe({
         next: () => {
-          this.loggedOut.set(true);
-          void this.router.navigateByUrl('/auth/login');
+          void this.router.navigateByUrl('/');
         },
       });
   }

@@ -137,7 +137,7 @@ Live barcode route: `GET /api/v1/catalog/bottles/barcode/:barcode` (auth + email
 
 Display order in UI: override (if any) → catalog `photoUrl` → striped placeholder (`docs/DESIGN.md`).
 
-Storage MVP: local disk on VPS (R2 later). Catalog seed can mirror OFF front images to `CATALOG_IMAGE_STORAGE_PATH` via `catalog:off-dump --mirror-images` (see [`CATALOG-SEED.md`](./CATALOG-SEED.md)); otherwise `Bottle.photoUrl` may still hold a remote OFF URL until ops enables the mirror. Personal uploads and user-contributed packshots use `CELLAR_PHOTO_DIR` (default max `CELLAR_PHOTO_MAX_BYTES` = 5 MiB, jpeg/png/webp).
+Storage MVP: local disk on VPS (R2 later). Catalog seed can mirror OFF front images to `CATALOG_IMAGE_STORAGE_PATH` via `catalog:off-dump --mirror-images` (see [`CATALOG-SEED.md`](./CATALOG-SEED.md)); otherwise `Bottle.photoUrl` may still hold a remote OFF URL until ops enables the mirror. Personal uploads and user-contributed packshots use `CELLAR_PHOTO_DIR` (jpeg/png/webp/heic). Sync path when size ≤ `CELLAR_PHOTO_SYNC_MAX_BYTES` (default **2 MiB**); heavier files go through `@adonisjs/queue` + Sharp (HEIC → jpeg). Absolute max `CELLAR_PHOTO_MAX_BYTES` (default 10 MiB). Docker API image includes libheif / vips-heif for Sharp HEIC decode.
 
 Serving (no public directory listing):
 

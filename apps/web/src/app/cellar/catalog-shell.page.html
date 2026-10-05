@@ -1,0 +1,109 @@
+<app-cellar-shell title="Catalogue" [freemium]="freemium()">
+  <div class="catalog-page">
+    <div class="catalog-page__search">
+      <span class="catalog-page__search-icon" aria-hidden="true"></span>
+      <input
+        class="catalog-page__search-input"
+        type="search"
+        autocomplete="off"
+        placeholder="Nom, marque, code-barres"
+        aria-label="Recherche catalogue"
+        [value]="searchControl.value"
+        (input)="onQueryInput($any($event.target).value)"
+      />
+    </div>
+
+    <div class="catalog-filters" role="tablist" aria-label="Filtres catégorie">
+      @for (slug of filterSlugs; track slug) {
+        <button
+          type="button"
+          class="catalog-filters__btn"
+          role="tab"
+          [class.is-active]="filter() === slug"
+          [attr.aria-selected]="filter() === slug"
+          (click)="setFilter(slug)"
+        >
+          {{ filterLabel(slug) }}
+        </button>
+      }
+    </div>
+
+    @if (error(); as message) {
+      <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+    }
+
+    @if (searchControl.value.trim()) {
+      <p class="catalog-section-label">
+        {{ results().length }} résultat{{ results().length > 1 ? 's' : '' }}
+      </p>
+      @if (searching()) {
+        <p class="auth-status" role="status">Recherche…</p>
+      }
+      <ul class="catalog-list" aria-label="Résultats">
+        @for (bottle of results(); track bottle.id) {
+          <li>
+            <button type="button" class="catalog-row" (click)="openAdd(bottle)">
+              <app-bottle-photo
+                class="catalog-row__photo"
+                [src]="bottle.photoUrl"
+                [alt]="titleOf(bottle)"
+                variant="list"
+              />
+              <span class="catalog-row__body">
+                <span class="catalog-row__name">{{ titleOf(bottle) }}</span>
+                @if (metaOf(bottle); as meta) {
+                  <span class="catalog-row__meta">{{ meta }}</span>
+                }
+                @if (isInCellar(bottle.id)) {
+                  <span class="catalog-row__owned">Dans ta cave</span>
+                }
+              </span>
+              <span class="catalog-row__plus" aria-hidden="true">+</span>
+            </button>
+          </li>
+        }
+      </ul>
+    } @else {
+      @if (inCellar().length > 0) {
+        <p class="catalog-section-label">Déjà dans ta cave</p>
+        <div class="catalog-owned" role="list">
+          @for (bottle of inCellar(); track bottle.id) {
+            <a class="catalog-owned__card" role="listitem" [routerLink]="['/cave/ajouter']" [queryParams]="{ bottleId: bottle.id }">
+              <app-bottle-photo [src]="bottle.photoUrl" [alt]="titleOf(bottle)" variant="list" />
+              <span class="catalog-owned__name">{{ titleOf(bottle) }}</span>
+              <span class="catalog-owned__stamp">Dans ta cave</span>
+            </a>
+          }
+        </div>
+      }
+
+      <p class="catalog-section-label">Ajoutées cette semaine</p>
+      @if (searching()) {
+        <p class="auth-status" role="status">Chargement…</p>
+      } @else if (recent().length === 0) {
+        <p class="auth-status" role="status">Rien de neuf pour ce filtre · cherche un nom.</p>
+      }
+      <ul class="catalog-list" aria-label="Ajouts récents">
+        @for (bottle of recent(); track bottle.id) {
+          <li>
+            <button type="button" class="catalog-row" (click)="openAdd(bottle)">
+              <app-bottle-photo
+                class="catalog-row__photo"
+                [src]="bottle.photoUrl"
+                [alt]="titleOf(bottle)"
+                variant="list"
+              />
+              <span class="catalog-row__body">
+                <span class="catalog-row__name">{{ titleOf(bottle) }}</span>
+                @if (metaOf(bottle); as meta) {
+                  <span class="catalog-row__meta">{{ meta }}</span>
+                }
+              </span>
+              <span class="catalog-row__plus" aria-hidden="true">+</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</app-cellar-shell>

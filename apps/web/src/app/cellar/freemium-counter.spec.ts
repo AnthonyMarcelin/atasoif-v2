@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { cellarEmptyKind, FreemiumCounter } from './freemium-counter';
+import { cellarEmptyKind, FreemiumCounter, freemiumSlots } from './freemium-counter';
 
 describe('freemium counter', () => {
   beforeEach(async () => {
@@ -9,7 +9,7 @@ describe('freemium counter', () => {
     }).compileComponents();
   });
 
-  it('shows lifetime creates from freemium meta', () => {
+  it('shows padded lifetime creates from freemium meta', () => {
     const fixture: ComponentFixture<FreemiumCounter> = TestBed.createComponent(FreemiumCounter);
     fixture.componentInstance.freemium = {
       count: 7,
@@ -20,9 +20,36 @@ describe('freemium counter', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement.querySelector('.freemium-counter') as HTMLElement;
-    expect(root.textContent).toContain('7/10');
+    expect(root.textContent).toContain('07');
+    expect(root.textContent).toContain('/10');
     expect(root.getAttribute('aria-label')).toContain('7 sur 10');
     expect(root.getAttribute('aria-label')).not.toContain('0 sur');
+  });
+
+  it('builds slot gauges for the header and footer', () => {
+    expect(freemiumSlots({ count: 7, limit: 10, remaining: 3, entitlement: false })).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+    ]);
+
+    const fixture: ComponentFixture<FreemiumCounter> = TestBed.createComponent(FreemiumCounter);
+    fixture.componentInstance.freemium = {
+      count: 7,
+      limit: 10,
+      remaining: 3,
+      entitlement: false,
+    };
+    fixture.componentInstance.variant = 'footer';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('DANS TA CAVE');
   });
 
   it('treats an empty list after deletes as a full lifetime cap', () => {

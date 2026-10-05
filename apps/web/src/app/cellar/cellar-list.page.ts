@@ -6,10 +6,18 @@ import { BottlePhoto } from './bottle-photo';
 import { cellarErrorMessage } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
 import {
+  displayAbv,
   displayBrand,
   displayCategory,
   displayName,
+  displayOrigin,
   displayPhotoUrl,
+  displayVolumeMl,
+  fillLevelLabel,
+  formatAbv,
+  formatBottleMeta,
+  formatPriceEur,
+  formatVolumeCl,
   type FreemiumMeta,
   type UserBottle,
 } from './cellar.types';
@@ -30,8 +38,28 @@ export class CellarListPage implements OnInit {
   readonly bottles = signal<UserBottle[]>([]);
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly category = signal<string | null>(null);
+  readonly localQuery = signal('');
   /** Header counter uses freemium meta (lifetime creates), never `bottles().length`. */
   readonly emptyKind = computed(() => cellarEmptyKind(this.freemium()));
+
+  readonly visibleBottles = computed(() => {
+    const q = this.localQuery().trim().toLowerCase();
+    if (!q) {
+      return this.bottles();
+    }
+    return this.bottles().filter((entry) => {
+      const hay = [
+        displayName(entry),
+        displayBrand(entry) ?? '',
+        entry.boughtAt ?? '',
+        displayOrigin(entry) ?? '',
+        displayCategory(entry)?.name ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  });
 
   readonly filters: Array<{ slug: string | null; label: string }> = [
     { slug: null, label: 'Tout' },
@@ -50,6 +78,7 @@ export class CellarListPage implements OnInit {
   readonly brandOf = displayBrand;
   readonly photoOf = displayPhotoUrl;
   readonly categoryOf = displayCategory;
+  readonly levelOf = (entry: UserBottle) => fillLevelLabel(entry.fillLevel);
 
   ngOnInit(): void {
     this.load();
@@ -61,6 +90,43 @@ export class CellarListPage implements OnInit {
     }
     this.category.set(slug);
     this.load();
+  }
+
+  onLocalQuery(value: string): void {
+    this.localQuery.set(value);
+  }
+
+  countFor(slug: string | null): number | null {
+    if (this.loading() || this.error()) {
+      return null;
+    }
+    if (slug === null) {
+      const n = this.bottles().length;
+      return n > 0 ? n : null;
+    }
+    // Counts only meaningful on the unfiltered list; skip when a category filter is active.
+    if (this.category() !== null) {
+      return null;
+    }
+    const n = this.bottles().filter((b) => b.bottle?.category?.slug === slug).length;
+    return n > 0 ? n : null;
+  }
+
+  metaOf(entry: UserBottle): string {
+    return formatBottleMeta([
+      displayOrigin(entry)?.toUpperCase() ?? null,
+      formatAbv(displayAbv(entry)),
+      formatVolumeCl(displayVolumeMl(entry)),
+    ]);
+  }
+
+  memoryLine(entry: UserBottle): string {
+    const price = formatPriceEur(entry.pricePaid);
+    const place = entry.boughtAt?.trim() || null;
+    if (price && place) {
+      return `${price} · ${place}`;
+    }
+    return price || place || 'Souvenir à compléter';
   }
 
   load(): void {

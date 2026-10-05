@@ -1,17 +1,6 @@
-<section class="auth-page">
-  <div class="auth-page__inner">
-    <h1 class="auth-title">Moi</h1>
-    <p class="auth-lead">Ton espace perso.</p>
-
-    @if (loggedOut()) {
-      <div class="auth-empty" role="status">
-        <p class="auth-status auth-status--ok">Tu es sorti de ta cave. À tout de suite.</p>
-        <div class="auth-actions">
-          <a class="auth-btn auth-btn--primary" routerLink="/auth/login">Se reconnecter</a>
-          <a class="auth-btn auth-btn--secondary" routerLink="/auth/register">Créer une cave</a>
-        </div>
-      </div>
-    } @else if (loading()) {
+<app-cellar-shell title="Mon profil" [freemium]="freemium()">
+  <div class="cellar-profile">
+    @if (loading()) {
       <p class="auth-status" role="status">Chargement de ton profil…</p>
     } @else if (user(); as profile) {
       <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
@@ -26,9 +15,7 @@
           </span>
         </p>
 
-        @if (profile.emailVerified) {
-          <p class="auth-lead auth-lead--ok">E-mail confirmé.</p>
-        } @else {
+        @if (!profile.emailVerified) {
           <p class="auth-lead">Confirme ton e-mail pour sécuriser ton compte.</p>
         }
 
@@ -62,9 +49,40 @@
             [attr.aria-checked]="form.controls.isPublic.value"
           />
           <label class="auth-switch__label" for="profile-is-public">
-            <span class="auth-switch__title">Profil public</span>
+            <span class="auth-switch__title">Trouvable par pseudo</span>
             <span class="auth-switch__hint">Pour que d’autres puissent te trouver plus tard.</span>
           </label>
+        </div>
+
+        <div class="cellar-profile__section" aria-label="Réglages">
+          <div class="cellar-profile__row">
+            <div class="cellar-profile__row-text">
+              <p class="cellar-profile__row-title">Premium</p>
+              <p class="cellar-profile__row-hint">Photo perso · jauge · cave sans limite</p>
+            </div>
+            <a class="auth-link" routerLink="/cave/premium">Voir</a>
+          </div>
+          <div class="cellar-profile__row">
+            <div class="cellar-profile__row-text">
+              <p class="cellar-profile__row-title">Amis</p>
+              <p class="cellar-profile__row-hint">Code · mail · accord · bientôt</p>
+            </div>
+            <a class="auth-link" routerLink="/cave/amis">Ouvrir</a>
+          </div>
+          <div class="cellar-profile__row">
+            <div class="cellar-profile__row-text">
+              <p class="cellar-profile__row-title">Biométrie</p>
+              <p class="cellar-profile__row-hint">Face ID / empreinte · bientôt</p>
+            </div>
+            <span class="cellar-profile__stub">Bientôt</span>
+          </div>
+          <div class="cellar-profile__row">
+            <div class="cellar-profile__row-text">
+              <p class="cellar-profile__row-title">Partage et visibilité</p>
+              <p class="cellar-profile__row-hint">Qui voit quoi · bientôt</p>
+            </div>
+            <span class="cellar-profile__stub">Bientôt</span>
+          </div>
         </div>
 
         @if (formError(); as message) {
@@ -79,7 +97,6 @@
           <button class="auth-btn auth-btn--primary" type="submit" [disabled]="saving()">
             {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
-          <a class="auth-btn auth-btn--secondary" routerLink="/cave">Ma cave</a>
           <button
             class="auth-btn auth-btn--ghost"
             type="button"
@@ -88,16 +105,16 @@
           >
             {{ loggingOut() ? 'Déconnexion…' : 'Se déconnecter' }}
           </button>
-          <a class="auth-btn auth-btn--ghost" routerLink="/">Accueil</a>
         </div>
       </form>
     } @else {
-      <div class="auth-empty" role="status">
-        <p class="auth-lead">Profil indisponible pour le moment. Réessaie un peu plus tard.</p>
-        <div class="auth-actions">
-          <a class="auth-btn auth-btn--primary" routerLink="/auth/login">Se reconnecter</a>
-        </div>
+      <div class="cellar-placeholder" role="status">
+        <p class="cellar-placeholder__title">Profil indisponible</p>
+        <p class="cellar-placeholder__text">Réessaie un peu plus tard.</p>
+        <button class="auth-btn auth-btn--secondary" type="button" (click)="reload()">
+          Réessayer
+        </button>
       </div>
     }
   </div>
-</section>
+</app-cellar-shell>

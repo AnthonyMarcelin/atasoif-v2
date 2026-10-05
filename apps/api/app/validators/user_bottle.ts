@@ -1,5 +1,11 @@
 import vine from '@vinejs/vine'
-import { FILL_LEVEL_MAX, FILL_LEVEL_MIN, WINE_ATTR_KEYS, WINE_ATTR_LIMITS } from '@atasoif/shared'
+import {
+  BOTTLE_TYPE_ATTR_KEY,
+  FILL_LEVEL_MAX,
+  FILL_LEVEL_MIN,
+  WINE_ATTR_KEYS,
+  WINE_ATTR_LIMITS,
+} from '@atasoif/shared'
 
 /**
  * « Acheté chez » / purchase place (maps to `user_bottles.bought_at`).
@@ -57,38 +63,38 @@ const barcodeDigits = vine.createRule((value: unknown, _options, field) => {
 })
 
 /**
- * Wine keys only (`appellation`, `grape`, `vintage`). See docs/DATABASE.md.
- * Blank or null clears that key in `attrsOverride`. Unknown keys are rejected.
+ * Wine keys + optional bottle `type` (taxo v1). Blank or null clears that key.
  */
 const wineAttrText = (maxLength: number) =>
   vine.string().trim().maxLength(maxLength).nullable().optional()
 
-const WINE_ATTR_KEY_SET = new Set<string>(WINE_ATTR_KEYS)
+const ATTR_KEY_SET = new Set<string>([...WINE_ATTR_KEYS, BOTTLE_TYPE_ATTR_KEY])
 
 /**
  * Vine objects drop unknown keys instead of failing. Reject them so a client
- * cannot think an undocumented wine key was saved.
+ * cannot think an undocumented attr key was saved.
  */
-const rejectUnknownWineKeys = vine.createRule((value: unknown, _options, field) => {
+const rejectUnknownAttrKeys = vine.createRule((value: unknown, _options, field) => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     return
   }
   for (const key of Object.keys(value)) {
-    if (!WINE_ATTR_KEY_SET.has(key)) {
-      field.report('Clé de vin inconnue', 'wine.unknownKey', field)
+    if (!ATTR_KEY_SET.has(key)) {
+      field.report('Clé d’attribut inconnue', 'attrs.unknownKey', field)
       return
     }
   }
 })
 
-const wineAttrsOverride = () =>
+const attrsOverride = () =>
   vine
     .object({
       appellation: wineAttrText(WINE_ATTR_LIMITS.appellation),
       grape: wineAttrText(WINE_ATTR_LIMITS.grape),
       vintage: wineAttrText(WINE_ATTR_LIMITS.vintage),
+      type: wineAttrText(64),
     })
-    .use(rejectUnknownWineKeys())
+    .use(rejectUnknownAttrKeys())
     .nullable()
     .optional()
 
@@ -102,16 +108,16 @@ const catalogMissBottle = {
   photoUrl: vine.string().trim().maxLength(2048).optional(),
   categoryId: vine.number().withoutDecimals().positive(),
   /**
-   * Shared catalog attrs on a miss. Only wine keys are accepted (E2-T12).
-   * Arbitrary JSON used to land on every authenticated user's catalog read.
+   * Shared catalog attrs on a miss. Wine keys + optional type (taxo v1).
    */
   attrs: vine
     .object({
       appellation: wineAttrText(WINE_ATTR_LIMITS.appellation),
       grape: wineAttrText(WINE_ATTR_LIMITS.grape),
       vintage: wineAttrText(WINE_ATTR_LIMITS.vintage),
+      type: wineAttrText(64),
     })
-    .use(rejectUnknownWineKeys())
+    .use(rejectUnknownAttrKeys())
     .optional(),
 }
 
@@ -134,7 +140,7 @@ export const createUserBottleValidator = vine.create({
   originOverride: vine.string().trim().maxLength(255).optional(),
   abvOverride: vine.number().min(0).max(100).decimal([0, 2]).optional(),
   volumeMlOverride: volumeMl().optional(),
-  attrsOverride: wineAttrsOverride(),
+  attrsOverride: attrsOverride(),
   isPublic: vine.boolean().optional(),
 })
 
@@ -159,7 +165,7 @@ export const updateUserBottleValidator = vine.create({
   originOverride: vine.string().trim().maxLength(255).nullable().optional(),
   abvOverride: vine.number().min(0).max(100).decimal([0, 2]).nullable().optional(),
   volumeMlOverride: volumeMl().nullable().optional(),
-  attrsOverride: wineAttrsOverride(),
+  attrsOverride: attrsOverride(),
   isPublic: vine.boolean().optional(),
 })
 
