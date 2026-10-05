@@ -31,6 +31,9 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=80
 # Standalone server serves prerendered pages + `/api/waitlist`.
+# Astro Node externalizes runtime deps (e.g. `resend`) — ship node_modules too.
+COPY --from=build /app/apps/site/package.json ./package.json
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/site/dist ./dist
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
