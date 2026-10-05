@@ -66,6 +66,19 @@
         <button class="auth-btn auth-btn--primary" type="submit" [disabled]="submitting()">
           {{ submitting() ? 'Connexion…' : 'Entrer dans ma cave' }}
         </button>
+        <button
+          class="auth-btn auth-btn--secondary"
+          type="button"
+          (click)="sendMagicLink()"
+          [disabled]="magicSending()"
+        >
+          {{ magicSending() ? 'Envoi…' : 'Recevoir un lien magique' }}
+        </button>
+        @if (biometricAvailable()) {
+          <button class="auth-btn auth-btn--secondary" type="button" (click)="unlockWithBiometrics()">
+            Face ID / Touch ID
+          </button>
+        }
         <button class="auth-btn auth-btn--secondary" type="button" (click)="continueWithGoogle()">
           Continuer avec Google
         </button>
@@ -80,6 +93,12 @@
           </button>
         }
       </div>
+
+      @if (magicSent()) {
+        <p class="auth-status auth-status--ok" role="status">
+          Si un compte existe, tu vas recevoir un lien magique.
+        </p>
+      }
 
       @if (submittedOk()) {
         <p class="auth-status auth-status--ok" role="status">Bienvenue · on ouvre ta cave.</p>

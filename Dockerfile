@@ -70,7 +70,9 @@ if (p.dependencies?.['@atasoif/shared']) {\
 FROM node:24-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup -S atasoif && adduser -S atasoif -G atasoif
+# libheif / vips-heif: Sharp can decode iPhone HEIC cellar photos
+RUN apk add --no-cache libheif vips-heif \
+  && addgroup -S atasoif && adduser -S atasoif -G atasoif
 COPY --from=build /app/apps/api/build ./
 COPY apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh \

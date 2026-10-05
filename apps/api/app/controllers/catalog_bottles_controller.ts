@@ -14,9 +14,17 @@ export default class CatalogBottlesController {
       q = '',
       limit = 20,
       page = 1,
+      category,
+      recentDays,
     } = await request.validateUsing(catalogSearchValidator)
 
-    const paginator = await new CatalogSearchService().search({ q, limit, page })
+    const paginator = await new CatalogSearchService().search({
+      q,
+      limit,
+      page,
+      category,
+      recentDays,
+    })
     return serialize(BottleTransformer.transform(paginator))
   }
 

@@ -15,6 +15,8 @@ const CatalogBottlesController = () => import('#controllers/catalog_bottles_cont
 const CatalogCategoriesController = () => import('#controllers/catalog_categories_controller')
 const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
 const CollectionPhotosController = () => import('#controllers/collection_photos_controller')
+const FriendsController = () => import('#controllers/friends_controller')
+const MagicLinksController = () => import('#controllers/magic_links_controller')
 const OpsKpisController = () => import('#controllers/ops_kpis_controller')
 
 router.get('/health', [HealthController, 'handle'])
@@ -40,6 +42,8 @@ router
         router.post('email/verify', [controllers.EmailVerifications, 'store'])
         router.post('forgot-password', [controllers.PasswordResets, 'store'])
         router.post('reset-password', [controllers.PasswordResets, 'update'])
+        router.post('magic-link', [MagicLinksController, 'store'])
+        router.post('magic-link/consume', [MagicLinksController, 'update'])
         router.get('google/redirect', [GoogleAuthController, 'redirect'])
         router.get('google/callback', [GoogleAuthController, 'callback'])
         router.get('facebook/redirect', [FacebookAuthController, 'redirect'])
@@ -113,6 +117,25 @@ router
       })
       .prefix('collection')
       .as('collection')
+      .use([middleware.auth(), middleware.emailVerified()])
+
+    router
+      .group(() => {
+        router.get('/', [FriendsController, 'index'])
+        router.get('/share', [FriendsController, 'shareShow'])
+        router.patch('/share', [FriendsController, 'shareUpdate'])
+        router.post('/', [FriendsController, 'store']).use(
+          middleware.throttle({
+            maxAttempts: 30,
+            windowMs: 15 * 60 * 1000,
+            bucket: 'friends-invite',
+          })
+        )
+        router.post('/:id/respond', [FriendsController, 'respond'])
+        router.delete('/:id/block', [FriendsController, 'unblock'])
+      })
+      .prefix('friends')
+      .as('friends')
       .use([middleware.auth(), middleware.emailVerified()])
   })
   .prefix('/api/v1')

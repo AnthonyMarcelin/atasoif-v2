@@ -805,6 +805,119 @@
   color: var(--color-ink-faint);
 }
 
+.cellar-add__prefill-badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-on-accent);
+  background: var(--color-ok, #3d9a8b);
+  padding: 4px 8px;
+}
+
+.cellar-prefill-card {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: var(--stroke) solid var(--color-border);
+  background: var(--color-surface-2, #161616);
+}
+
+.cellar-prefill-card__name {
+  margin: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cellar-prefill-card__meta {
+  margin: 4px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.cellar-prefill-card__change {
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cellar-add__row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cellar-fill-presets__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.cellar-fill-presets__btn {
+  min-height: 44px;
+  border: var(--stroke) solid var(--color-border);
+  background: transparent;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cellar-fill-presets__btn.is-active {
+  background: var(--color-ink);
+  color: var(--color-bg);
+  border-color: var(--color-ink);
+}
+
+.cellar-fill-presets__hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--color-ink-faint);
+}
+
+.cellar-product-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  margin: 8px 0;
+  padding: 0 12px;
+  border: var(--stroke) solid var(--color-border);
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cellar-product-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.cellar-add__next-slot {
+  margin: 8px 0 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
 .cellar-section-label {
   margin: 0;
   font-family: var(--font-mono);
@@ -846,6 +959,17 @@
   min-height: 44px;
   padding-inline: var(--space-sm);
   font-size: var(--text-body-s);
+}
+
+.cellar-photo-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2, 8px);
+  width: 100%;
+}
+
+.cellar-photo-actions .auth-btn {
+  width: 100%;
 }
 
 .cellar-photo-input {

@@ -14,23 +14,44 @@
             variant="detail"
           />
           @if (freemium()?.entitlement) {
-            <button
-              class="auth-btn auth-btn--secondary"
-              type="button"
-              (click)="photoInput.click()"
-              [disabled]="uploadingPhoto()"
-            >
-              {{ uploadingPhoto() ? 'Envoi…' : 'Remplacer la photo' }}
-            </button>
-            <input
-              #photoInput
-              class="cellar-photo-input"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-              tabindex="-1"
-              aria-hidden="true"
-              (change)="onPhotoSelected($event)"
-            />
+            @if (nativePhotoPick) {
+              <div class="cellar-photo-actions">
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="pickShelfPhoto('library')"
+                  [disabled]="uploadingPhoto()"
+                >
+                  {{ uploadingPhoto() ? 'Envoi…' : 'Photothèque' }}
+                </button>
+                <button
+                  class="auth-btn auth-btn--secondary"
+                  type="button"
+                  (click)="pickShelfPhoto('camera')"
+                  [disabled]="uploadingPhoto()"
+                >
+                  Caméra
+                </button>
+              </div>
+            } @else {
+              <button
+                class="auth-btn auth-btn--secondary"
+                type="button"
+                (click)="photoInput.click()"
+                [disabled]="uploadingPhoto()"
+              >
+                {{ uploadingPhoto() ? 'Envoi…' : 'Remplacer la photo' }}
+              </button>
+              <input
+                #photoInput
+                class="cellar-photo-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                tabindex="-1"
+                aria-hidden="true"
+                (change)="onPhotoSelected($event)"
+              />
+            }
           } @else {
             <a
               class="auth-btn auth-btn--secondary"

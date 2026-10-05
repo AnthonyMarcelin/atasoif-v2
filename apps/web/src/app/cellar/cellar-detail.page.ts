@@ -13,6 +13,7 @@ import {
 import { BottlePhoto } from './bottle-photo';
 import { apiErrorFeature, cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
+import { ShelfCameraService } from './shelf-camera.service';
 import { shelfPhotoRejection } from './shelf-photo';
 import {
   displayBrand,
@@ -37,6 +38,8 @@ export class CellarDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly collection = inject(CollectionService);
+  private readonly shelfCamera = inject(ShelfCameraService);
+  readonly nativePhotoPick = this.shelfCamera.isNative;
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -268,6 +271,29 @@ export class CellarDetailPage implements OnInit {
     this.submitShelfPhoto(file);
   }
 
+  async pickShelfPhoto(source: 'camera' | 'library'): Promise<void> {
+    if (this.uploadingPhoto()) {
+      return;
+    }
+    if (this.freemium()?.entitlement !== true) {
+      this.goPremium('photo');
+      return;
+    }
+    const result = await this.shelfCamera.pick(source);
+    if (result.ok) {
+      this.submitShelfPhoto(result.file);
+      return;
+    }
+    if (result.reason === 'cancelled') {
+      return;
+    }
+    if (result.reason === 'permission') {
+      this.photoError.set('Autorise la caméra ou la photothèque pour ajouter une photo.');
+      return;
+    }
+    this.photoError.set('Choisis une photo depuis ton appareil.');
+  }
+
   submitShelfPhoto(file: File): void {
     const current = this.entry();
     if (!current) {
@@ -294,6 +320,10 @@ export class CellarDetailPage implements OnInit {
           this.entry.set(body.data);
           this.freemium.set(body.meta.freemium);
           this.savedOk.set(true);
+          if (body.meta.photoProcessing) {
+            this.photoError.set(null);
+            this.savedOk.set(true);
+          }
         },
         error: (err: unknown) => {
           if (isFreemiumGateError(err)) {

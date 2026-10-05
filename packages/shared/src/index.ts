@@ -53,3 +53,10 @@ export {
   resolvedWineAttr,
 } from './wine-attrs';
 export type { WineAttrKey, WineAttrsInput } from './wine-attrs';
+
+export {
+  BOTTLE_TYPES_BY_CATEGORY,
+  BOTTLE_TYPE_ATTR_KEY,
+  bottleTypesForCategory,
+  readBottleType,
+} from './bottle-types';

@@ -9,3 +9,4 @@
 /// <reference path="../../config/hash.ts" />
 /// <reference path="../../config/logger.ts" />
 /// <reference path="../../config/mail.ts" />
+/// <reference path="../../config/queue.ts" />

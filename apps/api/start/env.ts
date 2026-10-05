@@ -98,8 +98,15 @@ export default await Env.create(new URL('../', import.meta.url), {
    * Absolute path outside the release dir in production. Unset in tests uses a temp dir.
    */
   CELLAR_PHOTO_DIR: Env.schema.string.optional(),
-  /** Max upload size in bytes. Default 5242880 (5 MiB) when unset. */
+  /**
+   * Absolute max upload size in bytes (jpeg/png/webp/heic). Default 10485760 (10 MiB).
+   * Files above CELLAR_PHOTO_SYNC_MAX_BYTES are queued for Sharp processing.
+   */
   CELLAR_PHOTO_MAX_BYTES: Env.schema.number.optional(),
+  /** Sync Sharp threshold. Default 2097152 (2 MiB). Larger → `@adonisjs/queue`. */
+  CELLAR_PHOTO_SYNC_MAX_BYTES: Env.schema.number.optional(),
+  /** Queue adapter: `sync` (default, inline) or `database` (+ `node ace queue:work`). */
+  QUEUE_DRIVER: Env.schema.string.optional(),
 
   /**
    * Shared secret for GET /api/v1/ops/kpis (header X-Ops-Token).

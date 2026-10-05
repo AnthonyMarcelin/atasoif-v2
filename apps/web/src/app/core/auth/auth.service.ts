@@ -122,6 +122,23 @@ export class AuthService {
       );
   }
 
+  requestMagicLink(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiBase}/api/v1/auth/magic-link`, {
+      email,
+    });
+  }
+
+  consumeMagicLink(token: string): Observable<AuthTokenResponse> {
+    return this.http
+      .post<ApiDataEnvelope<AuthTokenResponse>>(`${this.apiBase}/api/v1/auth/magic-link/consume`, {
+        token,
+      })
+      .pipe(
+        map((body) => body.data),
+        tap((data) => this.persistSession(data.token, data.user)),
+      );
+  }
+
   forgotPassword(email: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiBase}/api/v1/auth/forgot-password`, {
       email,

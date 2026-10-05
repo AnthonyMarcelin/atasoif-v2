@@ -1,0 +1,133 @@
+.share-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.share-page__kicker {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.share-page__title {
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+
+.share-toggles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.share-toggles li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: var(--stroke) solid var(--color-border);
+}
+
+.share-toggles__label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.share-toggles__hint {
+  margin: 4px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.share-toggle {
+  width: 52px;
+  height: 28px;
+  border: 0;
+  padding: 3px;
+  background: var(--color-surface-2, #2a2a2a);
+  cursor: pointer;
+  position: relative;
+}
+
+.share-toggle.is-on {
+  background: var(--color-accent);
+}
+
+.share-toggle__knob {
+  display: block;
+  width: 22px;
+  height: 22px;
+  background: var(--color-bg);
+  transition: transform 0.15s ease;
+}
+
+.share-toggle.is-on .share-toggle__knob {
+  transform: translateX(24px);
+}
+
+.share-locked {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-on-accent);
+  background: var(--color-ok, #3d9a8b);
+  padding: 4px 8px;
+}
+
+.share-link {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border: var(--stroke) solid var(--color-border);
+  padding: 12px;
+}
+
+.share-link__label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.share-link__url {
+  margin: 4px 0 0;
+  word-break: break-all;
+}
+
+.share-link__copy {
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.share-foot {
+  margin: 8px 0 0;
+  color: var(--color-ink-3);
+}
+
+.share-legal {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
