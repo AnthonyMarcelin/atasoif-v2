@@ -114,14 +114,28 @@ const {
     letter-spacing: 0.06em;
   }
 
+  .waitlist__note--ok,
+  .waitlist__note--err,
+  .waitlist__note--pending {
+    font-family: var(--font-body);
+    font-size: 15px;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+
   .waitlist__note--ok {
     color: var(--color-success);
-    font-size: 13px;
-    letter-spacing: 0.04em;
+    padding: 12px 14px;
+    border: var(--stroke) solid var(--color-success-border);
+    background: var(--color-success-bg);
   }
 
   .waitlist__note--err {
     color: var(--color-danger);
+  }
+
+  .waitlist__note--pending {
+    color: var(--color-ink-muted);
   }
 
   .waitlist--center .waitlist__note {
@@ -130,9 +144,9 @@ const {
 </style>
 
 <script>
-  const SUCCESS_NOTE = 'MERCI · C’EST ENVOYÉ';
-  const PENDING_NOTE = 'ENVOI EN COURS…';
-  const FALLBACK_ERR = 'OUPS · RÉESSAIE DANS UN INSTANT';
+  const SUCCESS_NOTE = 'C’est noté, on t’écrit à la sortie.';
+  const PENDING_NOTE = 'Envoi en cours…';
+  const FALLBACK_ERR = 'Oups, réessaie dans un instant.';
 
   document.querySelectorAll<HTMLFormElement>('[data-waitlist]').forEach((form) => {
     form.addEventListener('submit', async (event) => {
@@ -154,7 +168,8 @@ const {
       if (button) button.disabled = true;
       if (input) input.disabled = true;
       if (note) {
-        note.classList.remove('waitlist__note--ok', 'waitlist__note--err');
+        note.classList.remove('waitlist__note--ok', 'waitlist__note--err', 'waitlist__note--pending');
+        note.classList.add('waitlist__note--pending');
         note.textContent = PENDING_NOTE;
       }
 
@@ -173,22 +188,25 @@ const {
 
         if (!response.ok) {
           if (note) {
+            note.classList.remove('waitlist__note--pending');
             note.classList.add('waitlist__note--err');
             note.textContent =
               typeof body.message === 'string' && body.message
-                ? body.message.toUpperCase()
+                ? body.message
                 : FALLBACK_ERR;
           }
           return;
         }
 
         if (note) {
+          note.classList.remove('waitlist__note--pending');
           note.classList.add('waitlist__note--ok');
           note.textContent = SUCCESS_NOTE;
         }
         form.reset();
       } catch {
         if (note) {
+          note.classList.remove('waitlist__note--pending');
           note.classList.add('waitlist__note--err');
           note.textContent = FALLBACK_ERR;
         }
@@ -196,6 +214,7 @@ const {
         if (button) button.disabled = false;
         if (input) input.disabled = false;
         if (note && note.textContent === PENDING_NOTE) {
+          note.classList.remove('waitlist__note--pending');
           note.textContent = note.dataset.defaultNote ?? previousNote;
         }
       }
