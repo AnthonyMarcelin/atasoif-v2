@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { NativeBiometric } from '@capgo/capacitor-native-biometric';
 
 const CREDENTIAL_SERVER = 'fr.atasoif.app';
+const ENABLED_KEY = 'atasoif.biometric.enabled';
 
 export type BiometricGateResult =
   | { ok: true; email: string; password: string }
@@ -15,6 +16,26 @@ export type BiometricGateResult =
 @Injectable({ providedIn: 'root' })
 export class BiometricAuthService {
   readonly isNative = Capacitor.isNativePlatform();
+
+  isEnabledPreference(): boolean {
+    try {
+      return localStorage.getItem(ENABLED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  setEnabledPreference(enabled: boolean): void {
+    try {
+      if (enabled) {
+        localStorage.setItem(ENABLED_KEY, '1');
+      } else {
+        localStorage.removeItem(ENABLED_KEY);
+      }
+    } catch {
+      // ignore quota / private mode
+    }
+  }
 
   async isAvailable(): Promise<boolean> {
     if (!this.isNative) {
@@ -29,7 +50,7 @@ export class BiometricAuthService {
   }
 
   async rememberLogin(email: string, password: string): Promise<void> {
-    if (!this.isNative || !email || !password) {
+    if (!this.isNative || !email || !password || !this.isEnabledPreference()) {
       return;
     }
     try {

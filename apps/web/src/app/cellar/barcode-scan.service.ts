@@ -27,8 +27,11 @@ export function digitsFromScan(raw: string): string | null {
  */
 @Injectable({ providedIn: 'root' })
 export class BarcodeScanService {
+  /** True inside Capacitor iOS/Android (not the browser). */
+  readonly isNative = Capacitor.isNativePlatform();
+
   async scan(): Promise<BarcodeScanResult> {
-    if (!Capacitor.isNativePlatform()) {
+    if (!this.isNative) {
       return { ok: false, reason: 'unavailable' };
     }
 

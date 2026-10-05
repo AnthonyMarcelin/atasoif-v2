@@ -23,7 +23,7 @@
             autocomplete="off"
             autocorrect="off"
             spellcheck="false"
-            placeholder="Nom, marque…"
+            placeholder="Rechercher un nom ou une marque"
             aria-label="Recherche catalogue"
             [value]="searchControl.value"
             (input)="onQueryInput($any($event.target).value)"
@@ -127,8 +127,13 @@
               <p class="cellar-prefill-card__meta">{{ meta }}</p>
             }
           </div>
-          <button type="button" class="cellar-prefill-card__change" (click)="backToSearch()">
-            Changer
+          <button
+            type="button"
+            class="cellar-prefill-card__change"
+            (click)="backToSearch()"
+            title="Choisir une autre bouteille du catalogue"
+          >
+            Autre bouteille
           </button>
         </div>
       }
@@ -144,7 +149,7 @@
             type="text"
             inputmode="decimal"
             formControlName="pricePaid"
-            placeholder="62"
+            placeholder="Ex. : 62"
             (focus)="setFocused('pricePaid')"
             (blur)="setFocused(null)"
           />
@@ -156,7 +161,7 @@
             class="auth-field__control"
             type="text"
             formControlName="boughtOn"
-            placeholder="12.03.26"
+            placeholder="Ex. : 12.03.26"
             autocomplete="off"
             (focus)="setFocused('boughtOn')"
             (blur)="setFocused(null)"
@@ -172,7 +177,7 @@
           type="text"
           formControlName="boughtAt"
           autocomplete="off"
-          placeholder="Nicolas Bastille"
+          placeholder="Ex. : caviste, supermarché…"
           [attr.aria-required]="true"
           (focus)="setFocused('boughtAt')"
           (blur)="setFocused(null)"
@@ -186,7 +191,7 @@
           class="auth-field__control auth-field__control--area"
           formControlName="review"
           rows="2"
-          placeholder="Tourbe franche, presque salée."
+          placeholder="Facultatif — un souvenir, une note de dégustation…"
           (focus)="setFocused('review')"
           (blur)="setFocused(null)"
         ></textarea>
@@ -200,7 +205,7 @@
           type="text"
           inputmode="decimal"
           formControlName="note"
-          placeholder="7,5"
+          placeholder="Ex. : 7,5"
           (focus)="setFocused('note')"
           (blur)="setFocused(null)"
         />
@@ -231,7 +236,7 @@
         (click)="toggleProductOpen()"
         [attr.aria-expanded]="productOpen()"
       >
-        <span>Fiche produit : type, origine, degré</span>
+        <span>Infos supplémentaires</span>
         <span aria-hidden="true">{{ productOpen() ? '−' : '+' }}</span>
       </button>
 
@@ -292,6 +297,34 @@
                 <option [value]="type">{{ type }}</option>
               }
             </select>
+          </div>
+
+          <div [ngClass]="fieldClass('origin')">
+            <label class="auth-field__label" for="add-origin">Origine</label>
+            <input
+              id="add-origin"
+              class="auth-field__control"
+              type="text"
+              formControlName="origin"
+              autocomplete="off"
+              placeholder="Ex. : Islay, Bordeaux…"
+              (focus)="setFocused('origin')"
+              (blur)="setFocused(null)"
+            />
+          </div>
+
+          <div [ngClass]="fieldClass('abv')">
+            <label class="auth-field__label" for="add-abv">Degré (°)</label>
+            <input
+              id="add-abv"
+              class="auth-field__control"
+              type="text"
+              inputmode="decimal"
+              formControlName="abv"
+              placeholder="Ex. : 43"
+              (focus)="setFocused('abv')"
+              (blur)="setFocused(null)"
+            />
           </div>
 
           @if (showWineFields()) {
@@ -360,6 +393,11 @@
             sur {{ meta.limit }}
           }
         </p>
+        @if (meta.entitlement) {
+          <p class="cellar-add__photo-hint">
+            Photo perso : après « Ranger », sur la fiche bouteille (caméra / photothèque).
+          </p>
+        }
       }
     </form>
   }

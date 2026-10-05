@@ -1,12 +1,5 @@
 <app-cellar-shell title="Amis" [freemium]="freemium()">
   <div class="friends-page">
-    <div class="friends-page__head">
-      <h1 class="friends-page__title">Amis</h1>
-      @if (data(); as payload) {
-        <span class="friends-page__count">{{ payload.friends.length.toString().padStart(2, '0') }}</span>
-      }
-    </div>
-
     <form class="friends-search" [formGroup]="form" (ngSubmit)="invite()">
       <input
         class="friends-search__input"

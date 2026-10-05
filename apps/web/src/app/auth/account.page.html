@@ -65,23 +65,49 @@
           <div class="cellar-profile__row">
             <div class="cellar-profile__row-text">
               <p class="cellar-profile__row-title">Amis</p>
-              <p class="cellar-profile__row-hint">Code · mail · accord · bientôt</p>
+              <p class="cellar-profile__row-hint">Code · mail · accord</p>
             </div>
             <a class="auth-link" routerLink="/cave/amis">Ouvrir</a>
           </div>
           <div class="cellar-profile__row">
             <div class="cellar-profile__row-text">
               <p class="cellar-profile__row-title">Biométrie</p>
-              <p class="cellar-profile__row-hint">Face ID / empreinte · bientôt</p>
+              <p class="cellar-profile__row-hint">
+                @if (!biometricNative) {
+                  Face ID / empreinte · app iOS/Android
+                } @else if (!biometricAvailable()) {
+                  Non dispo sur cet appareil
+                } @else {
+                  Face ID / Touch ID pour déverrouiller
+                }
+              </p>
             </div>
-            <span class="cellar-profile__stub">Bientôt</span>
+            @if (biometricNative && biometricAvailable()) {
+              <label class="cellar-profile__toggle">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  [checked]="biometricEnabled()"
+                  [disabled]="biometricBusy()"
+                  (change)="onBiometricToggle($any($event.target).checked)"
+                />
+                <span>{{ biometricEnabled() ? 'On' : 'Off' }}</span>
+              </label>
+            } @else {
+              <span class="cellar-profile__stub">—</span>
+            }
           </div>
+          @if (biometricMessage(); as bioMsg) {
+            <p class="auth-status" [class.auth-status--error]="biometricError()" role="status">
+              {{ bioMsg }}
+            </p>
+          }
           <div class="cellar-profile__row">
             <div class="cellar-profile__row-text">
               <p class="cellar-profile__row-title">Partage et visibilité</p>
-              <p class="cellar-profile__row-hint">Qui voit quoi · bientôt</p>
+              <p class="cellar-profile__row-hint">Qui voit ta cave</p>
             </div>
-            <span class="cellar-profile__stub">Bientôt</span>
+            <a class="auth-link" routerLink="/cave/partage">Ouvrir</a>
           </div>
         </div>
 

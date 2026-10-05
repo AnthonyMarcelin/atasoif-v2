@@ -82,6 +82,8 @@ export class CellarAddPage implements OnInit, OnDestroy {
     brand: ['', [Validators.maxLength(255)]],
     categoryId: [0 as number, [Validators.required, Validators.min(1)]],
     bottleType: ['' as string],
+    origin: ['', [Validators.maxLength(255)]],
+    abv: ['' as string],
     appellation: ['', [Validators.maxLength(WINE_ATTR_LIMITS.appellation)]],
     grape: ['', [Validators.maxLength(WINE_ATTR_LIMITS.grape)]],
     vintage: ['', [Validators.maxLength(WINE_ATTR_LIMITS.vintage)]],
@@ -206,8 +208,11 @@ export class CellarAddPage implements OnInit, OnDestroy {
         this.searchError.set('Code-barres illisible. Tape les chiffres ou réessaie.');
         return;
       }
+      // `unavailable` = web build, OR native plugin not linked / not supported.
       this.searchError.set(
-        'Scan dispo sur l’app iOS/Android. Ici, colle ou tape le code-barres (8 à 14 chiffres).',
+        this.barcodeScan.isNative
+          ? 'Scan caméra indisponible pour le moment. Colle ou tape le code (8 à 14 chiffres).'
+          : 'Scan dispo sur l’app iOS/Android. Ici, colle ou tape le code-barres (8 à 14 chiffres).',
       );
     } finally {
       this.scanning.set(false);
@@ -223,6 +228,8 @@ export class CellarAddPage implements OnInit, OnDestroy {
       brand: catalogBottleBrand(bottle) ?? '',
       categoryId: bottle.categoryId,
       bottleType: readBottleType(bottle.attrs),
+      origin: bottle.origin?.trim() ?? '',
+      abv: bottle.abv !== null && bottle.abv !== undefined ? String(bottle.abv) : '',
       appellation: readWineAttr(bottle.attrs, 'appellation'),
       grape: readWineAttr(bottle.attrs, 'grape'),
       vintage: readWineAttr(bottle.attrs, 'vintage'),
@@ -249,6 +256,8 @@ export class CellarAddPage implements OnInit, OnDestroy {
       brand: '',
       categoryId: defaultCategoryId,
       bottleType: '',
+      origin: '',
+      abv: '',
       appellation: '',
       grape: '',
       vintage: '',
@@ -263,6 +272,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
     this.step.set('confirm');
   }
 
+  /** Returns to step 1 to pick another catalog bottle; souvenir fields are cleared on next pick. */
   backToSearch(): void {
     this.step.set('search');
     this.formError.set(null);
@@ -284,12 +294,17 @@ export class CellarAddPage implements OnInit, OnDestroy {
 
     const pricePaid = this.parseOptionalNumber(raw.pricePaid);
     const note = this.parseOptionalNote(raw.note);
+    const abv = this.parseOptionalAbv(raw.abv);
     if (pricePaid === 'invalid') {
       this.formError.set('Prix invalide.');
       return;
     }
     if (note === 'invalid') {
       this.formError.set('La note doit rester entre 0 et 10.');
+      return;
+    }
+    if (abv === 'invalid') {
+      this.formError.set('Le degré doit rester entre 0 et 100.');
       return;
     }
 
@@ -314,6 +329,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
       ...(catalogWineAttrs ?? {}),
       ...(catalogType ?? {}),
     };
+    const origin = raw.origin.trim();
     const fillLevel = Number(raw.fillLevel);
     const premium = this.freemium()?.entitlement === true;
     const payload =
@@ -330,6 +346,10 @@ export class CellarAddPage implements OnInit, OnDestroy {
             ...(raw.brand.trim() && raw.brand.trim() !== (selected.brand ?? '')
               ? { brandOverride: raw.brand.trim() }
               : {}),
+            ...(origin && origin !== (selected.origin ?? '').trim()
+              ? { originOverride: origin }
+              : {}),
+            ...(abv !== null && abv !== selected.abv ? { abvOverride: abv } : {}),
             ...(Object.keys(attrsOverride).length ? { attrsOverride } : {}),
             ...(premium && fillLevel !== FILL_LEVEL_DEFAULT ? { fillLevel } : {}),
           }
@@ -337,6 +357,8 @@ export class CellarAddPage implements OnInit, OnDestroy {
             bottle: {
               name: raw.name.trim(),
               ...(raw.brand.trim() ? { brand: raw.brand.trim() } : {}),
+              ...(origin ? { origin } : {}),
+              ...(abv !== null ? { abv } : {}),
               categoryId: Number(raw.categoryId),
               ...(Object.keys(catalogAttrs).length ? { attrs: catalogAttrs } : {}),
             },
@@ -418,6 +440,17 @@ export class CellarAddPage implements OnInit, OnDestroy {
     }
     const n = Number(trimmed);
     if (Number.isNaN(n) || n < 0) {
+      return 'invalid';
+    }
+    return n;
+  }
+
+  private parseOptionalAbv(value: string): number | null | 'invalid' {
+    const n = this.parseOptionalNumber(value);
+    if (n === null || n === 'invalid') {
+      return n;
+    }
+    if (n > 100) {
       return 'invalid';
     }
     return n;

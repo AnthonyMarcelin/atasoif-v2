@@ -93,10 +93,12 @@ export interface CreateUserBottlePayload {
   nameOverride?: string;
   brandOverride?: string;
   originOverride?: string;
+  abvOverride?: number;
   attrsOverride?: {
     appellation?: string | null;
     grape?: string | null;
     vintage?: string | null;
+    type?: string | null;
   };
 }
 
