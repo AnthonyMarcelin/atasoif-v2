@@ -38,6 +38,8 @@ import {
 } from './cellar.types';
 import { CollectionService } from './collection.service';
 import { FreemiumCounter } from './freemium-counter';
+import { ShelfCameraService } from './shelf-camera.service';
+import { shelfPhotoRejection } from './shelf-photo';
 import { wineCatalogAttrs, wineOverrideFromForm, wineOverrideHasValue } from './wine-attrs';
 
 type AddStep = 'search' | 'confirm';
@@ -53,9 +55,11 @@ export class CellarAddPage implements OnInit, OnDestroy {
   private readonly catalog = inject(CatalogService);
   private readonly collection = inject(CollectionService);
   private readonly barcodeScan = inject(BarcodeScanService);
+  private readonly shelfCamera = inject(ShelfCameraService);
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
   private readonly query$ = new Subject<string>();
+  private pendingPhotoObjectUrl: string | null = null;
 
   readonly step = signal<AddStep>('search');
   readonly freemium = signal<FreemiumMeta | null>(null);
@@ -70,6 +74,11 @@ export class CellarAddPage implements OnInit, OnDestroy {
   readonly saving = signal(false);
   readonly formError = signal<string | null>(null);
   readonly focusedField = signal<string | null>(null);
+  /** Premium shelf photo picked on confirm; uploaded after create. */
+  readonly pendingPhoto = signal<File | null>(null);
+  readonly pendingPhotoPreview = signal<string | null>(null);
+  readonly photoError = signal<string | null>(null);
+  readonly nativePhotoPick = this.shelfCamera.isNative;
   readonly wineLimits = WINE_ATTR_LIMITS;
   readonly titleOf = catalogBottleTitle;
   readonly brandOf = catalogBottleBrand;
@@ -176,6 +185,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearPendingPhoto();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -220,6 +230,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   }
 
   pickHit(bottle: CatalogBottle): void {
+    this.clearPendingPhoto();
     this.selected.set(bottle);
     this.isMiss.set(false);
     this.productOpen.set(false);
@@ -248,6 +259,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
     const q = this.searchControl.value.trim();
     const cats = this.categories();
     const defaultCategoryId = cats[0]?.id ?? 0;
+    this.clearPendingPhoto();
     this.selected.set(null);
     this.isMiss.set(true);
     this.productOpen.set(true);
@@ -274,8 +286,89 @@ export class CellarAddPage implements OnInit, OnDestroy {
 
   /** Returns to step 1 to pick another catalog bottle; souvenir fields are cleared on next pick. */
   backToSearch(): void {
+    this.clearPendingPhoto();
     this.step.set('search');
     this.formError.set(null);
+  }
+
+  /** Catalog packshot for the confirm step, or local preview of a pending shelf photo. */
+  confirmPhotoSrc(): string | null {
+    return this.pendingPhotoPreview() ?? this.selected()?.photoUrl ?? null;
+  }
+
+  confirmPhotoAlt(): string {
+    const bottle = this.selected();
+    if (bottle) {
+      return this.titleOf(bottle);
+    }
+    const name = this.form.controls.name.value.trim();
+    return name || 'Photo de la bouteille';
+  }
+
+  onAddPhotoSelected(event: Event): void {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) {
+      return;
+    }
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    this.setPendingPhoto(file);
+  }
+
+  async pickAddPhoto(source: 'camera' | 'library'): Promise<void> {
+    if (this.saving()) {
+      return;
+    }
+    if (this.freemium()?.entitlement !== true) {
+      void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'photo' } });
+      return;
+    }
+    const result = await this.shelfCamera.pick(source);
+    if (result.ok) {
+      this.setPendingPhoto(result.file);
+      return;
+    }
+    if (result.reason === 'cancelled') {
+      return;
+    }
+    if (result.reason === 'permission') {
+      this.photoError.set('Autorise la caméra ou la photothèque pour ajouter une photo.');
+      return;
+    }
+    this.photoError.set('Choisis une photo depuis ton appareil.');
+  }
+
+  clearPendingPhoto(): void {
+    if (this.pendingPhotoObjectUrl) {
+      URL.revokeObjectURL(this.pendingPhotoObjectUrl);
+      this.pendingPhotoObjectUrl = null;
+    }
+    this.pendingPhoto.set(null);
+    this.pendingPhotoPreview.set(null);
+    this.photoError.set(null);
+  }
+
+  private setPendingPhoto(file: File): void {
+    if (this.freemium()?.entitlement !== true) {
+      void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'photo' } });
+      return;
+    }
+    const rejection = shelfPhotoRejection(file);
+    if (rejection) {
+      this.photoError.set(rejection);
+      return;
+    }
+    if (this.pendingPhotoObjectUrl) {
+      URL.revokeObjectURL(this.pendingPhotoObjectUrl);
+      this.pendingPhotoObjectUrl = null;
+    }
+    this.pendingPhotoObjectUrl = URL.createObjectURL(file);
+    this.pendingPhoto.set(file);
+    this.pendingPhotoPreview.set(this.pendingPhotoObjectUrl);
+    this.photoError.set(null);
   }
 
   onSubmit(): void {
@@ -370,11 +463,24 @@ export class CellarAddPage implements OnInit, OnDestroy {
           };
 
     this.saving.set(true);
+    const pending = this.pendingPhoto();
     this.collection
       .create(payload)
-      .pipe(finalize(() => this.saving.set(false)))
+      .pipe(
+        switchMap((body) => {
+          if (!pending || !premium) {
+            return of(body);
+          }
+          return this.collection.uploadPhoto(body.data.id, pending).pipe(
+            // Bottle already created — land on detail so the user can retry photo.
+            catchError(() => of(body)),
+          );
+        }),
+        finalize(() => this.saving.set(false)),
+      )
       .subscribe({
         next: (body) => {
+          this.clearPendingPhoto();
           void this.router.navigate(['/cave', body.data.id]);
         },
         error: (err: unknown) => {

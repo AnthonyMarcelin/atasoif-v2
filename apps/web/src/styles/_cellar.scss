@@ -927,6 +927,16 @@
   color: var(--color-ink-muted);
 }
 
+.cellar-add__photo-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.cellar-photo-slot--add {
+  width: min(160px, 42vw);
+}
+
 .cellar-section-label {
   margin: 0;
   font-family: var(--font-mono);
