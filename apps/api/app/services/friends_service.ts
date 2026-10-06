@@ -7,6 +7,7 @@ import User from '#models/user'
 import FriendRequestNotification from '#mails/friend_request_notification'
 import UserBottle from '#models/user_bottle'
 import { buildShareInviteUrl } from '#services/frontend_url'
+import RewardService from '#services/reward_service'
 
 export class FriendsError extends Exception {
   constructor(
@@ -101,12 +102,17 @@ export default class FriendsService {
     }
 
     let targetUser: User | null = null
+    let viaInviteCode = false
     if (needle.includes('@')) {
       targetUser = await User.findBy('email', needle.toLowerCase())
     } else {
-      targetUser =
-        (await User.findBy('inviteCode', needle.toUpperCase())) ??
-        (await User.findBy('pseudo', needle.replace(/^@/, '')))
+      const byCode = await User.findBy('inviteCode', needle.toUpperCase())
+      if (byCode) {
+        targetUser = byCode
+        viaInviteCode = true
+      } else {
+        targetUser = await User.findBy('pseudo', needle.replace(/^@/, ''))
+      }
     }
 
     if (!targetUser) {
@@ -116,7 +122,13 @@ export default class FriendsService {
       throw new FriendsError('E_FRIEND_SELF', 'Tu ne peux pas t’ajouter toi-même', 422)
     }
 
-    const [userAId, userBId] = orderedPair(requesterId, targetUser.id)
+    // Invite-code path: code owner is the referrer (requester) for bonus slots.
+    const inviterId = viaInviteCode ? targetUser.id : requesterId
+    const inviteeId = viaInviteCode ? requesterId : targetUser.id
+    const notifyUser = viaInviteCode ? requester : targetUser
+    const fromUser = viaInviteCode ? targetUser : requester
+
+    const [userAId, userBId] = orderedPair(inviterId, inviteeId)
     const existing = await Friendship.query()
       .where('user_a_id', userAId)
       .where('user_b_id', userBId)
@@ -132,16 +144,22 @@ export default class FriendsService {
       throw new FriendsError('E_FRIEND_PENDING', 'Une demande est déjà en cours', 409)
     }
 
+    // Invite-code / share link: accept immediately so referral bonuses can unlock.
+    const status = viaInviteCode ? 'ACCEPTED' : 'PENDING'
     const row = await Friendship.create({
       userAId,
       userBId,
-      requesterId,
-      status: 'PENDING',
+      requesterId: inviterId,
+      status,
     })
 
-    const frontend = env.get('FRONTEND_URL').replace(/\/$/, '')
-    const acceptUrl = `${frontend}/cave/amis?request=${row.id}`
-    await mail.send(new FriendRequestNotification(targetUser, requester, acceptUrl))
+    if (!viaInviteCode) {
+      const frontend = env.get('FRONTEND_URL').replace(/\/$/, '')
+      const acceptUrl = `${frontend}/cave/amis?request=${row.id}`
+      await mail.send(new FriendRequestNotification(notifyUser, fromUser, acceptUrl))
+    } else {
+      await new RewardService().evaluateInviteRewardsForFriend(inviteeId)
+    }
 
     return row
   }
@@ -161,6 +179,8 @@ export default class FriendsService {
     if (accept) {
       row.status = 'ACCEPTED'
       await row.save()
+      const inviteeId = row.userAId === row.requesterId ? row.userBId : row.userAId
+      await new RewardService().evaluateInviteRewardsForFriend(inviteeId)
       return row
     }
 

@@ -37,10 +37,11 @@ export default class CollectionPhotosController {
         throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
       }
 
+      await service.assertUnlocked(user.id, Number(params.id))
       const { row, processing } = await service.saveShelfPhoto(user.id, Number(params.id), photo)
       const freemium = await service.freemiumPayload(user.id)
       const body = {
-        data: new UserBottleTransformer(row).toObject(),
+        data: new UserBottleTransformer(row).toObject({ locked: false }),
         meta: { freemium, photoProcessing: processing },
       }
       return processing ? response.accepted(body) : response.ok(body)
@@ -60,6 +61,7 @@ export default class CollectionPhotosController {
 
     try {
       const row = await service.findOwned(user.id, Number(params.id))
+      await service.assertUnlocked(user.id, row.id)
       if (row.photoUrlOverride !== overridePhotoPath(row.id)) {
         throw new CollectionError('E_PHOTO_NOT_FOUND', 'Photo introuvable', 404)
       }

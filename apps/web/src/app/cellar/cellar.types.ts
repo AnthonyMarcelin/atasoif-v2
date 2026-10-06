@@ -32,10 +32,17 @@ export interface FreemiumMeta {
   /** Lifetime creates consumed. Deleting a bottle does not free a slot. */
   count: number;
   limit: number;
+  /** Bonus slots from rewards (0…FREE_BONUS_CAP). */
+  bonus?: number;
   remaining: number | null;
   entitlement: boolean;
   /** Active plan when entitled; null on freemium (or unknown legacy id). */
   plan?: SubscriptionPlanId | null;
+}
+
+export interface GrantedReward {
+  key: string;
+  slots: number;
 }
 
 export interface UserBottle {
@@ -47,15 +54,20 @@ export interface UserBottle {
   originOverride: string | null;
   abvOverride: number | null;
   volumeMlOverride: number | null;
-  photoUrlOverride: string | null;
+  /** Omitted when `locked` (server strips personal photo). */
+  photoUrlOverride?: string | null;
   attrsOverride: Record<string, unknown> | null;
-  note: number | null;
-  review: string | null;
-  pricePaid: number | null;
-  boughtAt: string | null;
-  fillLevel: number;
-  fillLevelUpdatesCount: number;
+  /** Omitted when `locked`. */
+  note?: number | null;
+  review?: string | null;
+  pricePaid?: number | null;
+  boughtAt?: string | null;
+  /** Omitted when `locked`. */
+  fillLevel?: number;
+  fillLevelUpdatesCount?: number;
   isPublic: boolean;
+  /** Freemium return-to-free lock (conversion §3). */
+  locked?: boolean;
   createdAt: string;
   updatedAt: string | null;
   bottle: CatalogBottle | null;
@@ -65,6 +77,7 @@ export interface CollectionListResponse {
   data: UserBottle[];
   meta: {
     freemium: FreemiumMeta;
+    lockedCount?: number;
     total?: number;
     perPage?: number;
     currentPage?: number;
@@ -74,7 +87,11 @@ export interface CollectionListResponse {
 
 export interface CollectionItemResponse {
   data: UserBottle;
-  meta: { freemium: FreemiumMeta; photoProcessing?: boolean };
+  meta: {
+    freemium: FreemiumMeta;
+    photoProcessing?: boolean;
+    rewardsGranted?: GrantedReward[];
+  };
 }
 
 export interface CreateUserBottlePayload {
@@ -135,6 +152,9 @@ export function displayBrand(entry: UserBottle): string | null {
 }
 
 export function displayPhotoUrl(entry: UserBottle): string | null {
+  if (entry.locked) {
+    return entry.bottle?.photoUrl || null;
+  }
   return entry.photoUrlOverride || entry.bottle?.photoUrl || null;
 }
 

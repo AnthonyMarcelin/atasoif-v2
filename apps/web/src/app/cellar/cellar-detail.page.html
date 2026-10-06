@@ -91,7 +91,7 @@
       </div>
 
       <app-fill-gauge
-        [fillLevel]="bottle.fillLevel"
+        [fillLevel]="bottle.fillLevel ?? 100"
         [locked]="freemium()?.entitlement !== true"
         [syncKey]="fillSync()"
         (levelChange)="onFillLevel($event)"
@@ -151,7 +151,22 @@
           <p class="auth-status auth-status--ok" role="status">Souvenir à jour.</p>
         }
 
+        @if (shareMessage(); as message) {
+          <p class="auth-status auth-status--ok" role="status">{{ message }}</p>
+        }
+        @if (shareError(); as message) {
+          <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+        }
+
         <div class="auth-actions">
+          <button
+            class="auth-btn auth-btn--secondary"
+            type="button"
+            (click)="shareBottle()"
+            [disabled]="sharing()"
+          >
+            {{ sharing() ? 'Préparation…' : 'Partager' }}
+          </button>
           <button class="auth-btn auth-btn--primary" type="button" (click)="startEdit()">
             Modifier
           </button>
