@@ -7,24 +7,40 @@ export type ShelfPhotoPick =
   | { ok: false; reason: 'cancelled' | 'unavailable' | 'permission' };
 
 /**
- * Library / camera pick for premium shelf photos (Capacitor Camera).
+ * Shelf photo pick via Capacitor Camera.
+ * On native, `CameraSource.Prompt` shows the system sheet (Bibliothèque / Appareil photo).
  * Web falls back to a hidden `<input type="file">` in the page.
  */
 @Injectable({ providedIn: 'root' })
 export class ShelfCameraService {
   readonly isNative = Capacitor.isNativePlatform();
 
-  async pick(source: 'camera' | 'library'): Promise<ShelfPhotoPick> {
-    if (!this.isNative) {
+  /** Opens the native prompt (library or camera). One control in the UI. */
+  async pick(): Promise<ShelfPhotoPick> {
+    if (!this.isNative || !Capacitor.isPluginAvailable('Camera')) {
       return { ok: false, reason: 'unavailable' };
     }
 
     try {
+      const permission = await Camera.checkPermissions();
+      if (permission.camera !== 'granted' || permission.photos !== 'granted') {
+        const requested = await Camera.requestPermissions({
+          permissions: ['camera', 'photos'],
+        });
+        if (requested.camera !== 'granted' && requested.photos !== 'granted') {
+          return { ok: false, reason: 'permission' };
+        }
+      }
+
       const photo = await Camera.getPhoto({
         quality: 85,
         allowEditing: false,
         resultType: CameraResultType.Uri,
-        source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+        source: CameraSource.Prompt,
+        promptLabelHeader: 'Ajouter une photo',
+        promptLabelPhoto: 'Bibliothèque',
+        promptLabelPicture: 'Appareil photo',
+        promptLabelCancel: 'Annuler',
         // Prefer jpeg so HEIC is converted by the plugin when possible.
         webUseInput: false,
       });
