@@ -12,6 +12,8 @@ const config: CapacitorConfig = {
   server: {
     // Prod API is absolute (https://api.atasoif.fr); no local live-reload server in release builds.
     androidScheme: 'https',
+    // Keep default iosScheme (`capacitor`) for the WebView origin.
+    // OAuth return uses CFBundleURLSchemes `fr.atasoif.app` (see Info.plist + OAuthSessionPlugin).
   },
 };
 

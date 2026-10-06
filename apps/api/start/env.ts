@@ -51,10 +51,16 @@ export default await Env.create(new URL('../', import.meta.url), {
   FRONTEND_URL: Env.schema.string({ format: 'url', tld: false }),
 
   /**
-   * Capacitor deep-link return after Ally OAuth (e.g. fr.atasoif.app://auth/callback).
-   * Declared optional for boot; Ally native handoff is a follow-up ticket.
+   * Capacitor deep-link return after Ally OAuth when redirect starts with ?client=native.
+   * Example: fr.atasoif.app://auth/oauth/callback
    */
   NATIVE_OAUTH_RETURN_URL: Env.schema.string.optional(),
+
+  /**
+   * Public invite links (`/i/:code`) on the marketing site. Defaults to https://atasoif.fr.
+   * Independent from FRONTEND_URL (mail / OAuth web return).
+   */
+  SHARE_LINK_ORIGIN: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------

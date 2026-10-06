@@ -1,0 +1,96 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BottleMark from '../../components/BottleMark.astro';
+import StoreCtas from '../../components/StoreCtas.astro';
+import '../../styles/landing.scss';
+
+const code = Astro.params.code?.toUpperCase() ?? '';
+const valid = /^[A-Z0-9]{4,16}$/.test(code);
+const iosUrl = import.meta.env.PUBLIC_IOS_URL || '#ios';
+const androidUrl = import.meta.env.PUBLIC_ANDROID_URL || '#android';
+const deepLink = valid ? `fr.atasoif.app://i/${code}` : 'fr.atasoif.app://';
+const title = valid
+  ? `Invitation ${code} · À ta soif`
+  : 'Invitation · À ta soif';
+---
+
+<BaseLayout title={title} description="Rejoins un ami sur À ta soif et partagez vos caves.">
+  <div class="page invite">
+    <header class="header">
+      <div class="shell">
+        <a class="brand" href="/">
+          <BottleMark size="md" />
+          <span>À ta soif</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="shell invite__main">
+      <p class="invite__kicker">Invitation</p>
+      <h1 class="invite__title">On t’attend dans la cave</h1>
+      {
+        valid ? (
+          <p class="invite__body">
+            Code ami <strong>{code}</strong>. Ouvre l’app pour accepter l’invitation.
+          </p>
+        ) : (
+          <p class="invite__body">Ce lien d’invitation n’est pas valide.</p>
+        )
+      }
+      {
+        valid && (
+          <p class="invite__actions">
+            <a class="btn btn--primary" href={deepLink}>Ouvrir dans l’app</a>
+          </p>
+        )
+      }
+      <StoreCtas iosUrl={iosUrl} androidUrl={androidUrl} align="start" note="PAS ENCORE L’APP · TÉLÉCHARGE-LA" />
+    </main>
+  </div>
+</BaseLayout>
+
+<style lang="scss">
+  .invite {
+    &__main {
+      padding: 48px 0 80px;
+      max-width: 36rem;
+    }
+
+    &__kicker {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #9a8e7e;
+      margin: 0 0 12px;
+    }
+
+    &__title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      line-height: 0.95;
+      margin: 0 0 16px;
+    }
+
+    &__body {
+      color: #c3b7a5;
+      margin: 0 0 24px;
+      line-height: 1.45;
+
+      strong {
+        color: #f2ede4;
+        font-family: 'Space Mono', monospace;
+        letter-spacing: 0.06em;
+      }
+    }
+
+    &__actions {
+      margin: 0 0 28px;
+    }
+  }
+</style>

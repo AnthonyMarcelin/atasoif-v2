@@ -7,40 +7,47 @@ import {
   buildFrontendLoginErrorRedirect,
   buildFrontendUrl,
 } from '#services/frontend_url'
+import {
+  consumeOAuthReturnClient,
+  rememberOAuthReturnClient,
+} from '#services/oauth_return_client'
 import type { HttpContext } from '@adonisjs/core/http'
 import mail from '@adonisjs/mail/services/main'
 
 /**
- * Facebook OAuth via Ally → Adonis access token → redirect to Angular.
+ * Facebook OAuth via Ally → Adonis access token → redirect to Angular / Capacitor.
  * Login only — no Meta friends graph / social import (E6 stays in-app).
  */
 export default class FacebookAuthController {
   /**
-   * Start Facebook OAuth (browser redirect).
+   * Start Facebook OAuth (browser / ASWebAuthenticationSession).
    * Scopes limited to email + public_profile (never user_friends).
    */
-  async redirect({ ally }: HttpContext) {
-    return ally.use('facebook').redirect((request) => {
+  async redirect(ctx: HttpContext) {
+    rememberOAuthReturnClient(ctx)
+    return ctx.ally.use('facebook').redirect((request) => {
       request.scopes(['email', 'public_profile'])
     })
   }
 
   /**
-   * Facebook callback: find/create user, issue Bearer token, send browser to the SPA.
+   * Facebook callback: find/create user, issue Bearer token, send browser back to client.
    */
-  async callback({ ally, response }: HttpContext) {
+  async callback(ctx: HttpContext) {
+    const { ally, response } = ctx
+    const client = consumeOAuthReturnClient(ctx)
     const facebook = ally.use('facebook')
 
     if (facebook.accessDenied()) {
-      return response.redirect(buildFrontendLoginErrorRedirect('facebook_denied'))
+      return response.redirect(buildFrontendLoginErrorRedirect('facebook_denied', client))
     }
 
     if (facebook.stateMisMatch()) {
-      return response.redirect(buildFrontendLoginErrorRedirect('facebook_state'))
+      return response.redirect(buildFrontendLoginErrorRedirect('facebook_state', client))
     }
 
     if (facebook.hasError()) {
-      return response.redirect(buildFrontendLoginErrorRedirect('facebook_error'))
+      return response.redirect(buildFrontendLoginErrorRedirect('facebook_error', client))
     }
 
     const facebookUser = await facebook.user()
@@ -60,12 +67,12 @@ export default class FacebookAuthController {
       }
 
       const token = await User.accessTokens.create(user)
-      return response.redirect(buildFrontendOAuthRedirect(token.value!.release()))
+      return response.redirect(buildFrontendOAuthRedirect(token.value!.release(), client))
     } catch (error) {
       if (error instanceof SocialAuthError) {
         const code =
           error.code === 'E_SOCIAL_EMAIL_UNVERIFIED' ? 'facebook_unverified' : 'facebook_email'
-        return response.redirect(buildFrontendLoginErrorRedirect(code))
+        return response.redirect(buildFrontendLoginErrorRedirect(code, client))
       }
       throw error
     }

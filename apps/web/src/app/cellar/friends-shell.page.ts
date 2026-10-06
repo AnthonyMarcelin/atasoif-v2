@@ -86,7 +86,7 @@ export class FriendsShellPage implements OnInit {
     if (!code) {
       return;
     }
-    const text = `atasoif.fr/i/${code}`;
+    const text = `https://atasoif.fr/i/${code}`;
     try {
       await navigator.clipboard.writeText(text);
       this.ok.set('Lien copié.');
