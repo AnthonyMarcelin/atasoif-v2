@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
 import { authGuard } from './auth.guard';
+import { SessionGate } from './session-gate';
 import { environment } from '../../../environments/environment';
 import { HttpTestingController } from '@angular/common/http/testing';
 
@@ -53,5 +54,38 @@ describe('authGuard', () => {
     expect(result).toEqual(
       router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: '/cellar' } }),
     );
+  });
+
+  it('redirects to login when the biometric gate is locked without cover', () => {
+    const auth = TestBed.inject(AuthService);
+    const httpMock = TestBed.inject(HttpTestingController);
+    const gate = TestBed.inject(SessionGate);
+    const router = TestBed.inject(Router);
+
+    auth.login({ email: 'a@b.c', password: 'x' }).subscribe();
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`).flush({
+      data: {
+        type: 'bearer',
+        token: 'tok',
+        user: {
+          id: 1,
+          email: 'a@b.c',
+          fullName: null,
+          pseudo: null,
+          isPublic: false,
+          emailVerified: false,
+        },
+      },
+    });
+    gate.revealLogin();
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as never, { url: '/cave' } as never),
+    );
+    expect(result).toEqual(
+      router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: '/cave' } }),
+    );
+    expect(auth.getAccessToken()).toBe('tok');
+    httpMock.verify();
   });
 });

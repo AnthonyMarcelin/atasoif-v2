@@ -8,6 +8,7 @@ import { apiErrorMessage } from '../core/auth/api-error';
 import { AuthService } from '../core/auth/auth.service';
 import { BiometricAuthService } from '../core/auth/biometric-auth.service';
 import { safeInternalPath } from '../core/auth/safe-internal-path';
+import { SessionGate } from '../core/auth/session-gate';
 import { StoreReviewBypass } from '../core/store-review-bypass';
 import { AuthTabs } from './auth-tabs';
 import { controlErrorMessage, emailValidators, passwordValidators } from './auth-validators';
@@ -42,6 +43,7 @@ export class LoginPage implements OnInit {
   private readonly fb = new FormBuilder().nonNullable;
   private readonly auth = inject(AuthService);
   private readonly biometrics = inject(BiometricAuthService);
+  private readonly sessionGate = inject(SessionGate);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -130,6 +132,21 @@ export class LoginPage implements OnInit {
 
   async unlockWithBiometrics(): Promise<void> {
     this.formError.set(null);
+    if (this.auth.getAccessToken()) {
+      const verified = await this.biometrics.verifyUnlock();
+      if (!verified.ok) {
+        if (verified.reason === 'cancelled') {
+          return;
+        }
+        this.formError.set('Biométrie refusée · utilise ton mot de passe.');
+        return;
+      }
+      this.sessionGate.unlock();
+      const returnUrl = safeInternalPath(this.route.snapshot.queryParamMap.get('returnUrl'));
+      void this.router.navigateByUrl(this.auth.postAuthPath(returnUrl));
+      return;
+    }
+
     const result = await this.biometrics.unlock();
     if (!result.ok) {
       if (result.reason === 'cancelled') {

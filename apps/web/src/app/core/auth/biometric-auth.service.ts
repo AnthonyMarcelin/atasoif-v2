@@ -2,38 +2,45 @@ import { Injectable } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { NativeBiometric } from '@capgo/capacitor-native-biometric';
 
+import { BIOMETRIC_ENABLED_KEY } from './persist-keys';
+import { persistRead, persistRemove, persistWrite } from './persistent-kv';
+
 const CREDENTIAL_SERVER = 'fr.atasoif.app';
-const ENABLED_KEY = 'atasoif.biometric.enabled';
+
+const VERIFY_OPTIONS = {
+  reason: 'Déverrouille ta cave',
+  title: 'À ta soif',
+  subtitle: 'Face ID ou Touch ID',
+  description: 'Confirme que c’est bien toi',
+  negativeButtonText: 'Mot de passe',
+  useFallback: true,
+} as const;
+
+export type BiometricVerifyResult =
+  | { ok: true }
+  | { ok: false; reason: 'unavailable' | 'cancelled' | 'failed' };
 
 export type BiometricGateResult =
   | { ok: true; email: string; password: string }
   | { ok: false; reason: 'unavailable' | 'cancelled' | 'empty' | 'failed' };
 
 /**
- * Face ID / Touch ID unlock with password fallback storage.
- * Credentials stay in Keychain / Keystore — never logged.
+ * Face ID / Touch ID gate. Session tokens stay in Preferences — this only proves identity.
+ * Optional Keychain password is a fallback when the Bearer token is missing.
  */
 @Injectable({ providedIn: 'root' })
 export class BiometricAuthService {
   readonly isNative = Capacitor.isNativePlatform();
 
   isEnabledPreference(): boolean {
-    try {
-      return localStorage.getItem(ENABLED_KEY) === '1';
-    } catch {
-      return false;
-    }
+    return persistRead(BIOMETRIC_ENABLED_KEY) === '1';
   }
 
   setEnabledPreference(enabled: boolean): void {
-    try {
-      if (enabled) {
-        localStorage.setItem(ENABLED_KEY, '1');
-      } else {
-        localStorage.removeItem(ENABLED_KEY);
-      }
-    } catch {
-      // ignore quota / private mode
+    if (enabled) {
+      persistWrite(BIOMETRIC_ENABLED_KEY, '1');
+    } else {
+      persistRemove(BIOMETRIC_ENABLED_KEY);
     }
   }
 
@@ -68,7 +75,8 @@ export class BiometricAuthService {
     }
   }
 
-  async unlock(): Promise<BiometricGateResult> {
+  /** Prompt Face ID / Touch ID without reading or replacing the auth token. */
+  async verifyUnlock(): Promise<BiometricVerifyResult> {
     if (!this.isNative) {
       return { ok: false, reason: 'unavailable' };
     }
@@ -77,14 +85,19 @@ export class BiometricAuthService {
       if (!available) {
         return { ok: false, reason: 'unavailable' };
       }
-      await NativeBiometric.verifyIdentity({
-        reason: 'Déverrouille ta cave',
-        title: 'À ta soif',
-        subtitle: 'Face ID ou Touch ID',
-        description: 'Confirme que c’est bien toi',
-        negativeButtonText: 'Mot de passe',
-        useFallback: true,
-      });
+      await NativeBiometric.verifyIdentity({ ...VERIFY_OPTIONS });
+      return { ok: true };
+    } catch (err: unknown) {
+      return { ok: false, reason: this.classifyError(err) };
+    }
+  }
+
+  async unlock(): Promise<BiometricGateResult> {
+    const verified = await this.verifyUnlock();
+    if (!verified.ok) {
+      return verified;
+    }
+    try {
       const credentials = await NativeBiometric.getCredentials({
         server: CREDENTIAL_SERVER,
       });
@@ -97,14 +110,7 @@ export class BiometricAuthService {
         password: credentials.password,
       };
     } catch (err: unknown) {
-      const message =
-        err && typeof err === 'object' && 'message' in err
-          ? String((err as { message?: unknown }).message ?? '')
-          : '';
-      if (/cancel|dismiss|user|fallback/i.test(message)) {
-        return { ok: false, reason: 'cancelled' };
-      }
-      return { ok: false, reason: 'failed' };
+      return { ok: false, reason: this.classifyError(err) === 'cancelled' ? 'cancelled' : 'failed' };
     }
   }
 
@@ -117,5 +123,16 @@ export class BiometricAuthService {
     } catch {
       // ignore
     }
+  }
+
+  private classifyError(err: unknown): 'cancelled' | 'failed' {
+    const message =
+      err && typeof err === 'object' && 'message' in err
+        ? String((err as { message?: unknown }).message ?? '')
+        : '';
+    if (/cancel|dismiss|user|fallback/i.test(message)) {
+      return 'cancelled';
+    }
+    return 'failed';
   }
 }
