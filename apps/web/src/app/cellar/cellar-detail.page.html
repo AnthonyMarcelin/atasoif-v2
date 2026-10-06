@@ -89,7 +89,7 @@
         </div>
         <div class="cellar-detail__titles">
           @if (bottle.bottle?.category; as cat) {
-            <span class="cellar-card__stamp">{{ cat.name }}</span>
+            <span class="cellar-card__stamp" [attr.data-cat]="cat.slug">{{ cat.name }}</span>
           }
           <h2 class="cellar-detail__name">{{ nameOf(bottle) }}</h2>
           @if (brandOf(bottle); as brand) {

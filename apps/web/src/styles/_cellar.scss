@@ -416,16 +416,24 @@
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  height: 14px;
-  padding: 0 5px;
+  box-sizing: border-box;
+  height: 12px;
+  max-height: 12px;
+  padding: 0 4px;
   border: var(--stroke) solid var(--color-accent);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  line-height: 1;
   text-transform: uppercase;
   color: var(--color-accent);
   transform: rotate(var(--stamp-rotate-a));
+}
+
+.cellar-card__stamp[data-cat='whisky'] {
+  border-color: var(--color-cat-whisky);
+  color: var(--color-cat-whisky);
 }
 
 .cellar-card__stamp[data-cat='rhum'] {
@@ -1055,11 +1063,16 @@
   min-width: 0;
 }
 
+/* Detail stamp must stay subordinate to the bottle title (Nuit). */
+.cellar-detail__titles .cellar-card__stamp {
+  align-self: flex-start;
+}
+
 .cellar-detail__name {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: var(--text-display-s);
+  font-size: var(--text-display-m);
   letter-spacing: var(--display-track);
   text-transform: uppercase;
   line-height: 1.05;

@@ -47,4 +47,31 @@ describe('BottlePhoto', () => {
     const img = fixture.nativeElement.querySelector('img') as HTMLImageElement;
     expect(img.src.startsWith('blob:')).toBeTrue();
   });
+
+  it('opens an accessible lightbox on photo tap and closes on Escape', () => {
+    fixture.componentRef.setInput('src', 'https://example.com/lag.jpg');
+    fixture.componentRef.setInput('alt', 'Lagavulin');
+    fixture.detectChanges();
+
+    const hit = fixture.nativeElement.querySelector('.bottle-photo__hit') as HTMLButtonElement;
+    expect(hit.getAttribute('aria-label')).toContain('Agrandir la photo');
+    hit.click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('.bottle-lightbox') as HTMLElement;
+    expect(dialog).toBeTruthy();
+    expect(dialog.getAttribute('role')).toBe('dialog');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.bottle-lightbox')).toBeNull();
+  });
+
+  it('frames thumbnails with object-fit contain', () => {
+    fixture.componentRef.setInput('src', 'https://example.com/lag.jpg');
+    fixture.detectChanges();
+    const img = fixture.nativeElement.querySelector('.bottle-photo__img') as HTMLImageElement;
+    expect(getComputedStyle(img).objectFit).toBe('contain');
+  });
 });
