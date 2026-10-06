@@ -53,6 +53,15 @@ export class AuthService {
     return this.tokenSignal();
   }
 
+  /**
+   * Reload in-memory session from Preferences/localStorage after `TokenStorage.hydrate()`.
+   * Guards and SessionLock must see the Bearer token before the first navigation.
+   */
+  syncFromStorage(): void {
+    this.tokenSignal.set(this.tokenStorage.getToken());
+    this.userSignal.set(this.readStoredUser());
+  }
+
   /** Ally Google OAuth start URL (adds ?client=native on Capacitor). */
   googleAuthUrl(): string {
     return this.allyRedirectUrl('google');

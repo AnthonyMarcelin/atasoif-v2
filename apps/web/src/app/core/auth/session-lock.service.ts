@@ -7,6 +7,9 @@ import { AuthService } from './auth.service';
 import { BiometricAuthService } from './biometric-auth.service';
 import { SessionGate } from './session-gate';
 
+/** Ignore app pause/resume churn from the Face ID / system biometric sheet. */
+const BIOMETRIC_APP_STATE_GRACE_MS = 2_000;
+
 @Injectable({ providedIn: 'root' })
 export class SessionLockService {
   private readonly auth = inject(AuthService);
@@ -17,6 +20,7 @@ export class SessionLockService {
 
   private started = false;
   private prompting = false;
+  private ignoreAppStateUntil = 0;
   private appListener: PluginListenerHandle | null = null;
 
   shouldLock(): boolean {
@@ -44,13 +48,18 @@ export class SessionLockService {
 
     this.appListener = await App.addListener('appStateChange', ({ isActive }) => {
       this.zone.run(() => {
+        if (this.shouldIgnoreAppState()) {
+          return;
+        }
         if (!isActive) {
           if (this.shouldLock()) {
             this.gate.requireUnlock();
           }
           return;
         }
-        if (this.gate.locked() || this.shouldLock()) {
+        // Only prompt when already locked. `shouldLock()` alone is true while unlocked
+        // with biometrics on — using it here re-prompts after every Face ID dismissal.
+        if (this.gate.locked()) {
           void this.promptUnlock();
         }
       });
@@ -70,6 +79,8 @@ export class SessionLockService {
     this.prompting = true;
     try {
       const result = await this.biometrics.verifyUnlock();
+      // Biometric UI backgrounds the WebView; ignore the matching resume burst.
+      this.armAppStateGrace();
       if (result.ok) {
         this.gate.unlock();
         const target = this.auth.postAuthPath('/cave');
@@ -95,5 +106,29 @@ export class SessionLockService {
     await this.appListener?.remove();
     this.appListener = null;
     this.started = false;
+  }
+
+  /** @internal test helper — simulates Capacitor appStateChange. */
+  handleAppStateForTests(isActive: boolean): void {
+    if (this.shouldIgnoreAppState()) {
+      return;
+    }
+    if (!isActive) {
+      if (this.shouldLock()) {
+        this.gate.requireUnlock();
+      }
+      return;
+    }
+    if (this.gate.locked()) {
+      void this.promptUnlock();
+    }
+  }
+
+  private shouldIgnoreAppState(): boolean {
+    return this.prompting || Date.now() < this.ignoreAppStateUntil;
+  }
+
+  private armAppStateGrace(): void {
+    this.ignoreAppStateUntil = Date.now() + BIOMETRIC_APP_STATE_GRACE_MS;
   }
 }
