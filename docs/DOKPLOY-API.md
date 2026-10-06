@@ -135,8 +135,9 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 | `LOG_LEVEL` | `info` |
 | `APP_KEY` | secret Adonis (32+ chars) |
 | `APP_URL` | `https://api.atasoif.fr` (origine publique HTTPS de l’API) |
-| `FRONTEND_URL` | landing / deep links mail (prod: `https://www.atasoif.fr`) |
-| `NATIVE_OAUTH_RETURN_URL` | Capacitor deep link after Ally (placeholder `fr.atasoif.app://auth/callback`; Ally native handoff = follow-up ticket) |
+| `FRONTEND_URL` | mail / web OAuth return (prod: `https://www.atasoif.fr`). **Never** `https://api.atasoif.fr` |
+| `NATIVE_OAUTH_RETURN_URL` | Capacitor Ally return (`fr.atasoif.app://auth/oauth/callback`) when redirect uses `?client=native` |
+| `SHARE_LINK_ORIGIN` | Public invite links (default `https://atasoif.fr` → `/i/:code`) |
 | `SESSION_DRIVER` | `cookie` |
 | `DB_HOST` | `infra-postgis-rfekdz` |
 | `DB_PORT` | `5432` |
@@ -170,10 +171,25 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 |---|---|
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/google/callback` |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | redirect `{APP_URL}/api/v1/auth/facebook/callback` |
-| `APPLE_CLIENT_ID` | Services ID web (`com.atasoif.web`) — redirect `{APP_URL}/api/v1/auth/apple/callback` |
+| `APPLE_CLIENT_ID` | Services ID web (`com.atasoif.web`) — Return URL `{APP_URL}/api/v1/auth/apple/callback` |
 | `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | Team + Key ID + PEM `.p8` — JWT client secret signed at runtime (leave `APPLE_CLIENT_SECRET` empty) |
 | `APPLE_CLIENT_SECRET` | Legacy static JWT — unused when TEAM/KEY/PEM are set |
-| `APPLE_BUNDLE_ID` | iOS bundle (`fr.atasoif.app`) — optional until native SIWA ticket |
+| `APPLE_BUNDLE_ID` | iOS bundle (`fr.atasoif.app`) — documentation / future native SIWA |
+
+#### Sign in with Apple (TestFlight) — Anthony checklist
+
+1. **Dokploy API env**
+   - `APP_URL=https://api.atasoif.fr`
+   - `FRONTEND_URL=https://www.atasoif.fr` (not the API host)
+   - `NATIVE_OAUTH_RETURN_URL=fr.atasoif.app://auth/oauth/callback`
+   - `SHARE_LINK_ORIGIN=https://atasoif.fr` (optional; this is the default)
+   - Apple keys as above (`APPLE_CLIENT_ID=com.atasoif.web`, Team / Key / PEM)
+2. **Apple Developer → Identifiers → Services ID `com.atasoif.web`**
+   - Sign in with Apple enabled
+   - Domains: `api.atasoif.fr`
+   - Return URLs: `https://api.atasoif.fr/api/v1/auth/apple/callback` (exact)
+3. **Apple Developer → Keys** — Sign in with Apple key linked to the App ID `fr.atasoif.app` + Services ID
+4. Redeploy API after env change; ship a new TestFlight build that includes `OAuthSessionPlugin` + URL scheme `fr.atasoif.app`
 
 ### Optionnels catalogue / ops
 
