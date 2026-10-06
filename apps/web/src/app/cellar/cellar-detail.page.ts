@@ -11,8 +11,14 @@ import {
 } from '@atasoif/shared';
 
 import { BottlePhoto } from './bottle-photo';
-import { apiErrorFeature, cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
+import {
+  apiErrorFeature,
+  cellarErrorMessage,
+  isFreemiumGateError,
+  isPremiumLockedError,
+} from './cellar-errors';
 import { CellarShell } from './cellar-shell';
+import { CellarToastService, rewardSlotsToast } from './cellar-toast.service';
 import { ShelfCameraService } from './shelf-camera.service';
 import { shelfPhotoRejection } from './shelf-photo';
 import {
@@ -39,6 +45,7 @@ export class CellarDetailPage implements OnInit {
   private readonly router = inject(Router);
   private readonly collection = inject(CollectionService);
   private readonly shelfCamera = inject(ShelfCameraService);
+  private readonly toast = inject(CellarToastService);
   readonly nativePhotoPick = this.shelfCamera.isNative;
 
   readonly loading = signal(true);
@@ -101,6 +108,10 @@ export class CellarDetailPage implements OnInit {
           this.patchForm(body.data);
         },
         error: (err: unknown) => {
+          if (isPremiumLockedError(err)) {
+            void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'locked' } });
+            return;
+          }
           this.error.set(cellarErrorMessage(err, 'Impossible de charger cette bouteille.'));
         },
       });
@@ -189,8 +200,13 @@ export class CellarDetailPage implements OnInit {
           this.freemium.set(body.meta.freemium);
           this.editing.set(false);
           this.savedOk.set(true);
+          this.showRewardToast(body.meta.rewardsGranted);
         },
         error: (err: unknown) => {
+          if (isPremiumLockedError(err)) {
+            void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'locked' } });
+            return;
+          }
           if (isFreemiumGateError(err)) {
             void this.router.navigate(['/cave/premium'], {
               queryParams: { reason: 'premium' },
@@ -200,6 +216,16 @@ export class CellarDetailPage implements OnInit {
           this.formError.set(cellarErrorMessage(err, 'Enregistrement impossible. Réessaie.'));
         },
       });
+  }
+
+  private showRewardToast(rewards: Array<{ slots: number }> | undefined): void {
+    if (!rewards?.length) {
+      return;
+    }
+    const slots = rewards.reduce((sum, row) => sum + Number(row.slots || 0), 0);
+    if (slots > 0) {
+      this.toast.show(rewardSlotsToast(slots));
+    }
   }
 
   onFillLevel(level: number): void {

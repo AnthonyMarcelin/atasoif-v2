@@ -31,6 +31,7 @@ import { BottlePhoto } from './bottle-photo';
 import { CatalogService, looksLikeBarcode } from './catalog.service';
 import { cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
+import { CellarToastService, rewardSlotsToast } from './cellar-toast.service';
 import {
   catalogBottleBrand,
   catalogBottleMeta,
@@ -60,6 +61,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   private readonly collection = inject(CollectionService);
   private readonly barcodeScan = inject(BarcodeScanService);
   private readonly shelfCamera = inject(ShelfCameraService);
+  private readonly toast = inject(CellarToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
@@ -555,6 +557,13 @@ export class CellarAddPage implements OnInit, OnDestroy {
       .subscribe({
         next: (body) => {
           this.clearPendingPhoto();
+          const rewards = body.meta.rewardsGranted;
+          if (rewards?.length) {
+            const slots = rewards.reduce((sum, row) => sum + Number(row.slots || 0), 0);
+            if (slots > 0) {
+              this.toast.show(rewardSlotsToast(slots));
+            }
+          }
           void this.router.navigate(['/cave', body.data.id]);
         },
         error: (err: unknown) => {

@@ -91,7 +91,7 @@
       </div>
 
       <app-fill-gauge
-        [fillLevel]="bottle.fillLevel"
+        [fillLevel]="bottle.fillLevel ?? 100"
         [locked]="freemium()?.entitlement !== true"
         [syncKey]="fillSync()"
         (levelChange)="onFillLevel($event)"

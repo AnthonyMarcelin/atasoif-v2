@@ -1,7 +1,8 @@
-import { Component, HostBinding, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostBinding, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import type { FreemiumMeta } from './cellar.types';
+import { CellarToastService } from './cellar-toast.service';
 import { FreemiumCounter, freemiumSlots } from './freemium-counter';
 
 @Component({
@@ -46,8 +47,17 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
             <p class="cellar-shell__freemium-note">
               Retirer une bouteille ne libère pas de place.
             </p>
+            <p class="cellar-shell__bonus-hint">
+              <a routerLink="/cave/amis" class="cellar-shell__bonus-link"
+                >Comment gagner des places</a
+              >
+            </p>
           }
         </header>
+      }
+
+      @if (toast.message(); as toastText) {
+        <div class="cellar-toast" role="status" aria-live="polite">{{ toastText }}</div>
       }
 
       <div class="cellar-shell__body">
@@ -104,6 +114,8 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
   `,
 })
 export class CellarShell implements OnInit, OnDestroy {
+  readonly toast = inject(CellarToastService);
+
   @Input() title = 'Ma cave';
   @Input() lead: string | null = null;
   @Input() freemium: FreemiumMeta | null = null;

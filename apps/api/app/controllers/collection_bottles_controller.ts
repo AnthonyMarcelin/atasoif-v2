@@ -23,12 +23,19 @@ export default class CollectionBottlesController {
     const service = new CollectionService()
     const paginator = await service.list(user.id, filters)
     const freemium = await service.freemiumPayload(user.id)
+    const unlocked = await service.unlockedBottleIds(user.id)
+    const lockedCount = await service.lockedCount(user.id)
 
     return response.ok({
-      data: paginator.all().map((row) => new UserBottleTransformer(row).toObject()),
+      data: paginator.all().map((row) =>
+        new UserBottleTransformer(row).toObject({
+          locked: unlocked !== null && !unlocked.has(row.id),
+        })
+      ),
       meta: {
         ...paginator.getMeta(),
         freemium,
+        lockedCount,
       },
     })
   }
@@ -43,9 +50,10 @@ export default class CollectionBottlesController {
 
     try {
       const row = await service.findOwned(user.id, Number(params.id))
+      await service.assertUnlocked(user.id, row.id)
       const freemium = await service.freemiumPayload(user.id)
       return response.ok({
-        data: new UserBottleTransformer(row).toObject(),
+        data: new UserBottleTransformer(row).toObject({ locked: false }),
         meta: { freemium },
       })
     } catch (error) {
@@ -76,10 +84,11 @@ export default class CollectionBottlesController {
 
     try {
       const row = await service.create(user.id, payload)
+      const rewardsGranted = await service.evaluateRewardsAfterBottleWrite(user.id)
       const freemium = await service.freemiumPayload(user.id)
       return response.created({
-        data: new UserBottleTransformer(row).toObject(),
-        meta: { freemium },
+        data: new UserBottleTransformer(row).toObject({ locked: false }),
+        meta: { freemium, rewardsGranted },
       })
     } catch (error) {
       return this.handleError(response, error)
@@ -97,10 +106,11 @@ export default class CollectionBottlesController {
 
     try {
       const row = await service.update(user.id, Number(params.id), payload)
+      const rewardsGranted = await service.evaluateRewardsAfterBottleWrite(user.id)
       const freemium = await service.freemiumPayload(user.id)
       return response.ok({
-        data: new UserBottleTransformer(row).toObject(),
-        meta: { freemium },
+        data: new UserBottleTransformer(row).toObject({ locked: false }),
+        meta: { freemium, rewardsGranted },
       })
     } catch (error) {
       return this.handleError(response, error)
@@ -161,10 +171,11 @@ export default class CollectionBottlesController {
 
       const service = new CollectionService()
       const row = await service.create(user.id, payload)
+      const rewardsGranted = await service.evaluateRewardsAfterBottleWrite(user.id)
       const freemium = await service.freemiumPayload(user.id)
       return response.created({
-        data: new UserBottleTransformer(row).toObject(),
-        meta: { freemium },
+        data: new UserBottleTransformer(row).toObject({ locked: false }),
+        meta: { freemium, rewardsGranted },
       })
     } catch (error) {
       await storage.removeCatalogPublicPath(storedPath)

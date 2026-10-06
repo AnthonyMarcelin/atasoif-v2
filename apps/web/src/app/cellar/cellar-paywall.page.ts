@@ -36,7 +36,7 @@ export class CellarPaywallPage implements OnInit {
   private readonly share = inject(NativeShareService);
 
   readonly freemium = signal<FreemiumMeta | null>(null);
-  readonly reason = signal<'limit' | 'jauge' | 'photo' | 'premium'>('limit');
+  readonly reason = signal<'limit' | 'jauge' | 'photo' | 'premium' | 'locked'>('limit');
   readonly selectedPlan = signal<PaywallPlanId>('yearly');
   /** Optional vignettes when reason=limit (existing list API, no new endpoint). */
   readonly vignettes = signal<UserBottle[]>([]);
@@ -99,7 +99,13 @@ export class CellarPaywallPage implements OnInit {
 
   ngOnInit(): void {
     const raw = this.route.snapshot.queryParamMap.get('reason');
-    if (raw === 'jauge' || raw === 'photo' || raw === 'premium' || raw === 'limit') {
+    if (
+      raw === 'jauge' ||
+      raw === 'photo' ||
+      raw === 'premium' ||
+      raw === 'limit' ||
+      raw === 'locked'
+    ) {
       this.reason.set(raw);
     }
 
@@ -132,6 +138,8 @@ export class CellarPaywallPage implements OnInit {
         return 'Ta photo perso, c’est premium';
       case 'premium':
         return 'Cette touche est premium';
+      case 'locked':
+        return 'Tes souvenirs t’attendent';
       default:
         return 'Cave pleine';
     }
@@ -151,6 +159,8 @@ export class CellarPaywallPage implements OnInit {
         return 'Remplace la photo catalogue par la tienne.';
       case 'premium':
         return 'Photo perso et jauge restent réservées aux abonnés.';
+      case 'locked':
+        return 'Repasse premium pour rouvrir tes bouteilles en sommeil — prix, lieux, notes et avis.';
       default:
         return `Cave pleine · passe premium pour continuer au-delà de ${this.limit} bouteilles.`;
     }

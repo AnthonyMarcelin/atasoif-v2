@@ -21,7 +21,13 @@ export function apiErrorFeature(error: unknown): string | null {
 /** Freemium bottle cap or premium feature deny. */
 export function isFreemiumGateError(error: unknown): boolean {
   const code = apiErrorCode(error);
-  return code === 'E_BOTTLE_LIMIT' || code === 'E_PREMIUM_REQUIRED';
+  return (
+    code === 'E_BOTTLE_LIMIT' || code === 'E_PREMIUM_REQUIRED' || code === 'E_PREMIUM_LOCKED'
+  );
+}
+
+export function isPremiumLockedError(error: unknown): boolean {
+  return apiErrorCode(error) === 'E_PREMIUM_LOCKED';
 }
 
 export function cellarErrorMessage(error: unknown, fallback: string): string {
