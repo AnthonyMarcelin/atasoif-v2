@@ -361,7 +361,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
     this.setPendingPhoto(file);
   }
 
-  async pickAddPhoto(source: 'camera' | 'library'): Promise<void> {
+  async pickAddPhoto(): Promise<void> {
     if (this.saving()) {
       return;
     }
@@ -369,7 +369,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
       void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'photo' } });
       return;
     }
-    const result = await this.shelfCamera.pick(source);
+    const result = await this.shelfCamera.pick();
     if (result.ok) {
       this.setPendingPhoto(result.file);
       return;

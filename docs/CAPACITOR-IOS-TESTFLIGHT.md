@@ -11,9 +11,10 @@ Technical runbook for shipping `apps/web` (Angular cave) as a Capacitor iOS shel
 | Prod API | `https://api.atasoif.fr` (`environment.ts` / production build) |
 | Capacitor | `@capacitor/core` + `@capacitor/ios` + `@capacitor/cli` (aligned versions) |
 | `webDir` | `dist/web/browser` |
-| Xcode project | `apps/web/ios/App/App.xcodeproj` |
-| Marketing version | `1.0.2` (`MARKETING_VERSION`) |
-| Build number | `2` (`CURRENT_PROJECT_VERSION`) |
+| Xcode workspace | `apps/web/ios/App/App.xcworkspace` (CocoaPods — open this, not the `.xcodeproj`) |
+| Marketing version | `1.0.4` (`MARKETING_VERSION`) |
+| Build number | `4` (`CURRENT_PROJECT_VERSION`) |
+| iOS deps | CocoaPods (`Podfile`) — required for `@capacitor-mlkit/barcode-scanning` (no SPM) |
 
 Distribution preference: **native stores via Capacitor** — not a Dokploy `app.` / `cave.` subdomain (see Context prefs). Next Android AAB is later; do not bump Play versioning here.
 
@@ -59,16 +60,19 @@ Generated web assets under `ios/App/App/public` and `capacitor.config.json` are 
 
 Anthony must complete these steps locally (certs / Apple ID):
 
-1. Open `apps/web/ios/App/App.xcodeproj` (`bun run ios:open` or Xcode).
-2. Select target **App** → **Signing & Capabilities**:
+1. On a Mac: `bun install` then `bun run ios:sync` (runs `cap sync ios`, normalizes Podfile paths for Bun, then CocoaPods).
+2. If pods were skipped (no CocoaPods locally): `cd apps/web/ios/App && pod install`.
+3. Open `apps/web/ios/App/App.xcworkspace` (`bun run ios:open` or Xcode) — **not** the `.xcodeproj`.
+4. Select target **App** → **Signing & Capabilities**:
    - Team: `D3UKXNVT3D`
    - Bundle Identifier: `fr.atasoif.app`
    - Automatically manage signing
-3. Scheme **App**, destination **Any iOS Device (arm64)**.
-4. Product → **Archive**.
-5. Organizer → Distribute App → **App Store Connect** → Upload.
-6. Wait for processing in [App Store Connect](https://appstoreconnect.apple.com) → TestFlight.
-7. Add internal (and optionally external) testers; install via TestFlight on device.
+5. Scheme **App**, destination **Any iOS Device (arm64)**.
+6. Product → **Archive**.
+7. Organizer → Distribute App → **App Store Connect** → Upload.
+8. Wait for processing in [App Store Connect](https://appstoreconnect.apple.com) → TestFlight.
+9. Add internal (and optionally external) testers; install via TestFlight on device.
+10. Smoke: **SCAN** opens the native barcode camera; **Ajouter une photo** shows the system sheet (Bibliothèque / Appareil photo).
 
 If signing / provisioning fails, fix in Xcode or Apple Developer certificates — do not paste secrets into the repo or CI.
 
@@ -82,7 +86,8 @@ If signing / provisioning fails, fix in Xcode or Apple Developer certificates �
 
 ## Out of scope (this prep)
 
-- IAP / RevenueCat (trials 7j annual / 3j monthly noted for later)
+- **IAP purchase sheet** — Premium UI is structured for an in-app StoreKit / Play Billing modal (via RevenueCat later). Do **not** redirect to an App Store product webpage. Cancel/manage already deep-links to Apple/Google subscription settings. Restore purchases is a placeholder until E4.
+- IAP / RevenueCat wiring itself (trials 7j annual / 3j monthly noted for later)
 - Android / Play closed testing
 - Facebook login (standby)
 - Forced CI upload of IPA (manual Organizer upload is OK for holiday beta)
@@ -98,6 +103,8 @@ If signing / provisioning fails, fix in Xcode or Apple Developer certificates �
 | Blank WebView | Confirm `cap sync` copied `index.html` into `ios/App/App/public` |
 | ATS / network | API is HTTPS; check device network and API CORS if using custom schemes later |
 | Apple login opens Safari then Adonis 404 `/auth/oauth/callback` | Set Dokploy `NATIVE_OAUTH_RETURN_URL=fr.atasoif.app://auth/oauth/callback` and keep `FRONTEND_URL` off the API host; rebuild app (ASWebAuthenticationSession + URL scheme). API also serves HTML handoff at `GET /auth/oauth/callback`. |
+| SCAN dead / “ML Kit” / no camera | Open **`.xcworkspace`** after `pod install`. ML Kit is CocoaPods-only (SPM cannot link it). Re-run `bun run ios:sync` then Archive. |
+| Photo shows separate Caméra / Photothèque buttons | Native pick must use `CameraSource.Prompt` (system sheet). Rebuild web + sync. |
 
 ## Invite / share links (`https://atasoif.fr/i/:code`)
 

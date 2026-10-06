@@ -25,9 +25,9 @@ export function digitsFromScan(raw: string): string | null {
 /**
  * Native barcode scan for the add flow (maquette 05 SCAN).
  *
- * Prefer ML Kit when the native plugin is linked. On Capacitor SPM iOS the
- * ML Kit plugin is often missing — fall back to Camera + ZXing still-image decode
- * so SCAN still opens the device camera.
+ * Primary: Capacitor ML Kit `BarcodeScanner.scan()` (live camera UI).
+ * Requires CocoaPods on iOS (ML Kit has no SPM package).
+ * Fallback: Capacitor Camera still frame + ZXing if ML Kit is unavailable.
  */
 @Injectable({ providedIn: 'root' })
 export class BarcodeScanService {
@@ -39,15 +39,22 @@ export class BarcodeScanService {
       return { ok: false, reason: 'unavailable' };
     }
 
-    const mlkit = await this.scanWithMlKit();
-    if (mlkit.ok || mlkit.reason === 'cancelled' || mlkit.reason === 'permission') {
-      return mlkit;
-    }
-    if (mlkit.reason === 'invalid') {
-      return mlkit;
+    if (Capacitor.isPluginAvailable('BarcodeScanner')) {
+      const mlkit = await this.scanWithMlKit();
+      if (mlkit.ok || mlkit.reason === 'cancelled' || mlkit.reason === 'permission') {
+        return mlkit;
+      }
+      if (mlkit.reason === 'invalid') {
+        return mlkit;
+      }
     }
 
-    return this.scanWithCameraPhoto();
+    // Last resort: open the system camera and decode one still frame.
+    if (Capacitor.isPluginAvailable('Camera')) {
+      return this.scanWithCameraPhoto();
+    }
+
+    return { ok: false, reason: 'unavailable' };
   }
 
   private async scanWithMlKit(): Promise<BarcodeScanResult> {
@@ -55,6 +62,17 @@ export class BarcodeScanService {
       const { supported } = await BarcodeScanner.isSupported();
       if (!supported) {
         return { ok: false, reason: 'unavailable' };
+      }
+
+      // iOS live scanner needs the camera permission; Android `scan()` uses Play Services.
+      if (Capacitor.getPlatform() === 'ios') {
+        const current = await BarcodeScanner.checkPermissions();
+        if (current.camera !== 'granted') {
+          const requested = await BarcodeScanner.requestPermissions();
+          if (requested.camera !== 'granted') {
+            return { ok: false, reason: 'permission' };
+          }
+        }
       }
 
       if (Capacitor.getPlatform() === 'android') {
@@ -80,6 +98,14 @@ export class BarcodeScanService {
   /** Opens the system camera, then decodes EAN/UPC from the captured frame. */
   private async scanWithCameraPhoto(): Promise<BarcodeScanResult> {
     try {
+      const permission = await Camera.checkPermissions();
+      if (permission.camera !== 'granted') {
+        const requested = await Camera.requestPermissions({ permissions: ['camera'] });
+        if (requested.camera !== 'granted') {
+          return { ok: false, reason: 'permission' };
+        }
+      }
+
       const photo = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
@@ -105,7 +131,6 @@ export class BarcodeScanService {
       if (!mapped.ok && mapped.reason !== 'unavailable') {
         return mapped;
       }
-      // ZXing "not found" → illisible
       const message =
         err && typeof err === 'object' && 'message' in err
           ? String((err as { message?: unknown }).message ?? '')
