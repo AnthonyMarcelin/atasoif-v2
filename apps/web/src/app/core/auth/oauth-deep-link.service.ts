@@ -6,9 +6,11 @@ import { Capacitor } from '@capacitor/core';
 import { AuthService } from './auth.service';
 import { OAUTH_CALLBACK_SCHEME, readOAuthErrorFromUrl, readOAuthTokenFromUrl } from './oauth-session';
 
+const INVITE_PATH = /^\/?i\/([A-Za-z0-9]{4,16})\/?$/i;
+
 /**
- * Handles OAuth returns that open the app via custom URL scheme
- * (HTML handoff on the API, or system open of fr.atasoif.app://…).
+ * Handles custom-scheme opens: OAuth return + invite links (`fr.atasoif.app://i/:code`).
+ * Universal Links / Associated Domains are a later step (see CAPACITOR-IOS-TESTFLIGHT.md).
  */
 @Injectable({ providedIn: 'root' })
 export class OauthDeepLinkService {
@@ -28,6 +30,15 @@ export class OauthDeepLinkService {
 
   private async handleUrl(rawUrl: string): Promise<void> {
     if (!rawUrl.startsWith(`${OAUTH_CALLBACK_SCHEME}:`)) {
+      return;
+    }
+
+    const inviteCode = this.readInviteCode(rawUrl);
+    if (inviteCode) {
+      void this.router.navigate(['/cave/amis'], {
+        queryParams: { invite: inviteCode },
+        replaceUrl: true,
+      });
       return;
     }
 
@@ -63,5 +74,18 @@ export class OauthDeepLinkService {
         });
       },
     });
+  }
+
+  private readInviteCode(rawUrl: string): string | null {
+    try {
+      const url = new URL(rawUrl);
+      const path = `${url.host}${url.pathname}`.replace(/^\/+/, '');
+      // Custom schemes often parse as host=i, path=/CODE → "i/CODE"
+      const match = INVITE_PATH.exec(path.startsWith('i/') ? path : url.pathname);
+      return match?.[1]?.toUpperCase() ?? null;
+    } catch {
+      const bare = rawUrl.match(/:\/\/i\/([A-Za-z0-9]{4,16})/i);
+      return bare?.[1]?.toUpperCase() ?? null;
+    }
   }
 }

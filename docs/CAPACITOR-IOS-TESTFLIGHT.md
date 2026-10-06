@@ -98,3 +98,45 @@ If signing / provisioning fails, fix in Xcode or Apple Developer certificates �
 | Blank WebView | Confirm `cap sync` copied `index.html` into `ios/App/App/public` |
 | ATS / network | API is HTTPS; check device network and API CORS if using custom schemes later |
 | Apple login opens Safari then Adonis 404 `/auth/oauth/callback` | Set Dokploy `NATIVE_OAUTH_RETURN_URL=fr.atasoif.app://auth/oauth/callback` and keep `FRONTEND_URL` off the API host; rebuild app (ASWebAuthenticationSession + URL scheme). API also serves HTML handoff at `GET /auth/oauth/callback`. |
+
+## Invite / share links (`https://atasoif.fr/i/:code`)
+
+Clipboard and SMS must always copy an **absolute https** URL (e.g. `https://atasoif.fr/i/F702EA`). Host-only text is not tappable in Messages.
+
+| Layer | Behavior (MVP) |
+| --- | --- |
+| API | `SHARE_LINK_ORIGIN` (default `https://atasoif.fr`) → `inviteUrl` always `https://…/i/:code` |
+| App copy | Friends + partage use `inviteUrl` / `absoluteShareInviteUrl` (never strip `https://`) |
+| Site stub | `apps/site` route `/i/[code]` — CTA « Ouvrir dans l’app » (`fr.atasoif.app://i/:code`) + « Télécharger » (App Store / Play). On mobile, auto-tries the custom scheme then falls back to the store URL when `PUBLIC_IOS_URL` / `PUBLIC_ANDROID_URL` are real https links |
+| Capacitor | Custom scheme already in Info.plist; `appUrlOpen` routes `…://i/:code` → `/cave/amis?invite=CODE` |
+
+**Anthony — store URLs TBD:** set site env `PUBLIC_IOS_URL` / `PUBLIC_ANDROID_URL` (and `PUBLIC_CTA_MODE=stores`) when App Store / Play links exist. Until then the invite page shows a placeholder note.
+
+### Universal Links (true open-app-from-https) — not wired yet
+
+To make `https://atasoif.fr/i/:code` open the app without the custom-scheme hop:
+
+1. **Apple Developer** → App ID `fr.atasoif.app` → enable **Associated Domains**.
+2. **Xcode** → Signing & Capabilities → Associated Domains → `applinks:atasoif.fr` (and `applinks:www.atasoif.fr` if used).
+3. Host **AASA** at `https://atasoif.fr/.well-known/apple-app-site-association` (no file extension, `Content-Type: application/json`):
+
+```json
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["D3UKXNVT3D.fr.atasoif.app"],
+        "components": [
+          { "/": "/i/*", "comment": "Friend invite codes" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+4. Capacitor: listen for `https://atasoif.fr/i/…` in `appUrlOpen` (same handler as custom scheme) and keep the site stub as fallback when the app is not installed.
+5. **Android** (later): Digital Asset Links (`assetlinks.json`) + intent filters for `https://atasoif.fr/i/*`.
+
+Do **not** ship AASA until the Associated Domains entitlement is on the App ID / provisioning profile — a wrong or early file caches poorly on Apple’s CDN.
