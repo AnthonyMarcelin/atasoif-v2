@@ -24,7 +24,6 @@ export class App implements OnInit {
   }
 
   usePassword(): void {
-    this.gate.revealLogin();
-    void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/cave' } });
+    this.sessionLock.usePasswordFallback();
   }
 }
