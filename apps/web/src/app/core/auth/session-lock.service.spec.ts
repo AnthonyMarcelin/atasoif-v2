@@ -16,6 +16,7 @@ describe('SessionLockService', () => {
   let httpMock: HttpTestingController;
   let gate: SessionGate;
   let biometrics: BiometricAuthService;
+  let router: Router;
 
   beforeEach(() => {
     localStorage.clear();
@@ -27,7 +28,7 @@ describe('SessionLockService', () => {
     httpMock = TestBed.inject(HttpTestingController);
     gate = TestBed.inject(SessionGate);
     biometrics = TestBed.inject(BiometricAuthService);
-    const router = TestBed.inject(Router);
+    router = TestBed.inject(Router);
     spyOn(router, 'navigateByUrl').and.resolveTo(true);
     spyOn(router, 'navigate').and.resolveTo(true);
   });
@@ -55,6 +56,11 @@ describe('SessionLockService', () => {
     });
   }
 
+  function enableNativeBiometrics(): void {
+    spyOn(biometrics, 'isEnabledPreference').and.returnValue(true);
+    Object.assign(biometrics, { isNative: true });
+  }
+
   it('does not lock when biometrics are off', async () => {
     login();
     spyOn(biometrics, 'isEnabledPreference').and.returnValue(false);
@@ -68,8 +74,7 @@ describe('SessionLockService', () => {
 
   it('unlocks the existing token after a successful Face ID check', async () => {
     login();
-    spyOn(biometrics, 'isEnabledPreference').and.returnValue(true);
-    Object.assign(biometrics, { isNative: true });
+    enableNativeBiometrics();
     spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: true });
 
     const ok = await lock.promptUnlock();
@@ -81,8 +86,7 @@ describe('SessionLockService', () => {
 
   it('keeps the token and reveals login when Face ID is cancelled', async () => {
     login();
-    spyOn(biometrics, 'isEnabledPreference').and.returnValue(true);
-    Object.assign(biometrics, { isNative: true });
+    enableNativeBiometrics();
     spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: false, reason: 'cancelled' });
 
     const ok = await lock.promptUnlock();
@@ -91,5 +95,43 @@ describe('SessionLockService', () => {
     expect(gate.locked()).toBeTrue();
     expect(gate.cover()).toBeFalse();
     expect(auth.getAccessToken()).toBe('tok-lock');
+  });
+
+  it('does not re-lock after Face ID success when the biometric sheet backgrounds the app', async () => {
+    login();
+    enableNativeBiometrics();
+    spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: true });
+
+    await lock.promptUnlock();
+    expect(gate.locked()).toBeFalse();
+
+    // Face ID dismissal fires inactive → active; must not start another unlock loop.
+    lock.handleAppStateForTests(false);
+    expect(gate.locked()).toBeFalse();
+    lock.handleAppStateForTests(true);
+    expect(gate.locked()).toBeFalse();
+    expect(biometrics.verifyUnlock).toHaveBeenCalledTimes(1);
+  });
+
+  it('locks again on a real background after the Face ID grace period', async () => {
+    jasmine.clock().install();
+    try {
+      jasmine.clock().mockDate(new Date('2026-01-01T00:00:00Z'));
+
+      login();
+      enableNativeBiometrics();
+      spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: true });
+
+      await lock.promptUnlock();
+      expect(gate.locked()).toBeFalse();
+
+      jasmine.clock().tick(2_100);
+
+      lock.handleAppStateForTests(false);
+      expect(gate.locked()).toBeTrue();
+      expect(gate.cover()).toBeTrue();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 });
