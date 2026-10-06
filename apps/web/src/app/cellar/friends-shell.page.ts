@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { cellarErrorMessage } from './cellar-errors';
@@ -8,6 +8,7 @@ import { CellarShell } from './cellar-shell';
 import type { FreemiumMeta } from './cellar.types';
 import { CollectionService } from './collection.service';
 import { FriendsService, type FriendRow, type FriendsPayload } from './friends.service';
+import { absoluteShareInviteUrl } from './share-invite-url';
 
 @Component({
   selector: 'app-friends-shell-page',
@@ -20,6 +21,8 @@ export class FriendsShellPage implements OnInit {
   private readonly fb = new FormBuilder().nonNullable;
   private readonly friendsApi = inject(FriendsService);
   private readonly collection = inject(CollectionService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly loading = signal(true);
@@ -37,6 +40,22 @@ export class FriendsShellPage implements OnInit {
       error: () => this.freemium.set(null),
     });
     this.reload();
+    this.consumeInviteQuery();
+  }
+
+  private consumeInviteQuery(): void {
+    const invite = this.route.snapshot.queryParamMap.get('invite')?.trim().toUpperCase();
+    if (!invite || !/^[A-Z0-9]{4,16}$/.test(invite)) {
+      return;
+    }
+    this.form.controls.target.setValue(invite);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { invite: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    this.ok.set(`Code ${invite} prêt · envoie l’invitation.`);
   }
 
   reload(): void {
@@ -82,11 +101,11 @@ export class FriendsShellPage implements OnInit {
   }
 
   async copyInvite(): Promise<void> {
-    const code = this.data()?.inviteCode;
-    if (!code) {
+    const payload = this.data();
+    if (!payload?.inviteCode) {
       return;
     }
-    const text = `https://atasoif.fr/i/${code}`;
+    const text = absoluteShareInviteUrl(payload.inviteUrl, payload.inviteCode);
     try {
       await navigator.clipboard.writeText(text);
       this.ok.set('Lien copié.');

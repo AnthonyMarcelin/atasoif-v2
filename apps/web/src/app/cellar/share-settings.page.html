@@ -87,7 +87,7 @@
       <div class="share-link">
         <div>
           <p class="share-link__label">Mon lien d’invitation</p>
-          <p class="share-link__url">{{ s.inviteUrl }}</p>
+          <p class="share-link__url">{{ displayInviteUrl(s) }}</p>
         </div>
         <button type="button" class="share-link__copy" (click)="copyLink()">Copier</button>
       </div>

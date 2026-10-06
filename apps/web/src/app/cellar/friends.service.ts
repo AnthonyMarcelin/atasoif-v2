@@ -23,6 +23,8 @@ export interface FriendRow {
 
 export interface FriendsPayload {
   inviteCode: string;
+  /** Absolute https marketing URL (`https://atasoif.fr/i/XXXXXX`). */
+  inviteUrl: string;
   pending: FriendRow[];
   friends: FriendRow[];
   blocked: FriendRow[];
