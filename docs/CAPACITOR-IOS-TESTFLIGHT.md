@@ -12,8 +12,8 @@ Technical runbook for shipping `apps/web` (Angular cave) as a Capacitor iOS shel
 | Capacitor | `@capacitor/core` + `@capacitor/ios` + `@capacitor/cli` (aligned versions) |
 | `webDir` | `dist/web/browser` |
 | Xcode workspace | `apps/web/ios/App/App.xcworkspace` (CocoaPods — open this, not the `.xcodeproj`) |
-| Marketing version | `1.0.5` (`MARKETING_VERSION`) |
-| Build number | `5` (`CURRENT_PROJECT_VERSION`) |
+| Marketing version | `1.0.6` (`MARKETING_VERSION`) |
+| Build number | `6` (`CURRENT_PROJECT_VERSION`) |
 | iOS deps | CocoaPods (`Podfile`) — required for `@capacitor-mlkit/barcode-scanning` (no SPM) |
 
 Distribution preference: **native stores via Capacitor** — not a Dokploy `app.` / `cave.` subdomain (see Context prefs). Next Android AAB is later; do not bump Play versioning here.

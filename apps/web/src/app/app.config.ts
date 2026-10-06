@@ -14,7 +14,13 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideAppInitializer(async () => {
       const storage = inject(TokenStorage);
-      await storage.hydrate();
+      // Preferences must not block first paint / login (hung bridge → black screen).
+      await Promise.race([
+        storage.hydrate(),
+        new Promise<void>((resolve) => {
+          setTimeout(resolve, 2_000);
+        }),
+      ]);
       // AuthService must read the hydrated token before guards / SessionLock run.
       inject(AuthService).syncFromStorage();
     }),

@@ -95,6 +95,38 @@ describe('SessionLockService', () => {
     expect(gate.locked()).toBeTrue();
     expect(gate.cover()).toBeFalse();
     expect(auth.getAccessToken()).toBe('tok-lock');
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
+      queryParams: { returnUrl: '/cave' },
+    });
+  });
+
+  it('fail-opens to login when there is no bearer token', async () => {
+    enableNativeBiometrics();
+    spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: true });
+
+    const ok = await lock.promptUnlock();
+
+    expect(ok).toBeFalse();
+    expect(gate.locked()).toBeTrue();
+    expect(gate.cover()).toBeFalse();
+    expect(biometrics.verifyUnlock).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
+      queryParams: { returnUrl: '/cave' },
+    });
+  });
+
+  it('cold start fail-opens to login before Face ID (no blank cover)', async () => {
+    login();
+    enableNativeBiometrics();
+    spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: false, reason: 'cancelled' });
+
+    await lock.start();
+
+    expect(gate.cover()).toBeFalse();
+    expect(gate.locked()).toBeTrue();
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
+      queryParams: { returnUrl: '/cave' },
+    });
   });
 
   it('does not re-lock after Face ID success when the biometric sheet backgrounds the app', async () => {
@@ -111,6 +143,46 @@ describe('SessionLockService', () => {
     lock.handleAppStateForTests(true);
     expect(gate.locked()).toBeFalse();
     expect(biometrics.verifyUnlock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not auto Face ID again after password fail-open', async () => {
+    login();
+    enableNativeBiometrics();
+    spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: false, reason: 'cancelled' });
+
+    await lock.promptUnlock();
+    expect(gate.cover()).toBeFalse();
+    expect(biometrics.verifyUnlock).toHaveBeenCalledTimes(1);
+
+    lock.handleAppStateForTests(false);
+    expect(gate.cover()).toBeFalse();
+    lock.handleAppStateForTests(true);
+    expect(biometrics.verifyUnlock).toHaveBeenCalledTimes(1);
+  });
+
+  it('fail-opens to login when Face ID times out', async () => {
+    jasmine.clock().install();
+    try {
+      jasmine.clock().mockDate(new Date('2026-01-01T00:00:00Z'));
+      login();
+      enableNativeBiometrics();
+      spyOn(biometrics, 'verifyUnlock').and.returnValue(new Promise(() => undefined));
+
+      const pending = lock.promptUnlock({ allowCover: true });
+      expect(gate.cover()).toBeTrue();
+
+      jasmine.clock().tick(8_100);
+      const ok = await pending;
+
+      expect(ok).toBeFalse();
+      expect(gate.cover()).toBeFalse();
+      expect(gate.locked()).toBeTrue();
+      expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
+        queryParams: { returnUrl: '/cave' },
+      });
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('locks again on a real background after the Face ID grace period', async () => {
