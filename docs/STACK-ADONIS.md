@@ -151,9 +151,17 @@ Flow:
 2. Ally redirects to Apple (`response_mode=form_post`, scopes `name` + `email`)
 3. Apple → `POST /api/v1/auth/apple/callback` on the API
 4. Driver signs a short-lived ES256 client_secret JWT (iss=Team, sub=Services ID, aud=appleid.apple.com) then exchanges the code
-5. Find-or-create user by email → Bearer token → `{FRONTEND_URL}/auth/oauth/callback?token=…`
+5. Find-or-create user by email → Bearer token → web `{FRONTEND_URL}/auth/oauth/callback#token=…` or native `{NATIVE_OAUTH_RETURN_URL}#token=…` when the redirect started with `?client=native`
+6. Capacitor opens Ally via **ASWebAuthenticationSession** (`OAuthSessionPlugin`); custom scheme `fr.atasoif.app` must be in Info.plist
+7. Safety net: `GET /auth/oauth/callback` on the API serves HTML that deep-links into the app (covers a mis-set `FRONTEND_URL=APP_URL`)
 
-Never log the PEM or the JWT. `APPLE_CLIENT_SECRET` is legacy/optional when TEAM/KEY/PEM are set. Native Capacitor SIWA (bundle `fr.atasoif.app`) is a follow-up.
+Never log the PEM or the JWT. `APPLE_CLIENT_SECRET` is legacy/optional when TEAM/KEY/PEM are set.
+
+```bash
+# Capacitor / TestFlight
+NATIVE_OAUTH_RETURN_URL=fr.atasoif.app://auth/oauth/callback
+SHARE_LINK_ORIGIN=https://atasoif.fr
+```
 
 ### Angular Bearer client (E1-T05)
 

@@ -6,6 +6,7 @@ import Friendship from '#models/friendship'
 import User from '#models/user'
 import FriendRequestNotification from '#mails/friend_request_notification'
 import UserBottle from '#models/user_bottle'
+import { buildShareInviteUrl } from '#services/frontend_url'
 
 export class FriendsError extends Exception {
   constructor(
@@ -203,10 +204,9 @@ export default class FriendsService {
   async shareSettings(userId: number) {
     const user = await User.findOrFail(userId)
     const code = await this.ensureInviteCode(user)
-    const frontend = env.get('FRONTEND_URL').replace(/\/$/, '')
     return {
       inviteCode: code,
-      inviteUrl: `${frontend}/i/${code}`,
+      inviteUrl: buildShareInviteUrl(code),
       shareCellarWithFriends: user.shareCellarWithFriends,
       sharePrices: user.sharePrices,
       shareNotes: user.shareNotes,

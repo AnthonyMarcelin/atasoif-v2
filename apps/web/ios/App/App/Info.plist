@@ -72,5 +72,16 @@
 	<string>À ta soif utilise ta photothèque pour ajouter une photo perso de bouteille.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>À ta soif utilise Face ID pour déverrouiller ta cave rapidement.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>fr.atasoif.app.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fr.atasoif.app</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
