@@ -7,8 +7,10 @@
   min-height: 100%;
 }
 
+/* Keep the login route painted under the cover. Hiding the outlet caused a
+   black shell when Face ID hung before the session-lock overlay could render. */
 .app-shell--locked .app-shell__outlet {
-  visibility: hidden;
+  pointer-events: none;
 }
 
 .session-lock {

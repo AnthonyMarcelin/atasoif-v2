@@ -16,7 +16,9 @@ export const authGuard: CanActivateFn = (_route, state) => {
     });
   }
 
-  if (gate.locked() && !gate.cover()) {
+  // Any biometric lock → login. Never keep /cave active under a cover that can
+  // fail to paint (blank shell / no usable route). Cover is overlay-only on login.
+  if (gate.locked()) {
     return router.createUrlTree(['/auth/login'], {
       queryParams: { returnUrl: state.url },
     });
