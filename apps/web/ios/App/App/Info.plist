@@ -70,6 +70,8 @@
 	<string>À ta soif utilise la caméra pour scanner un code-barres ou prendre une photo de bouteille.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>À ta soif utilise ta photothèque pour ajouter une photo perso de bouteille.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>À ta soif enregistre ta photo perso de bouteille dans ta photothèque si tu le demandes.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>À ta soif utilise Face ID pour déverrouiller ta cave rapidement.</string>
 	<key>CFBundleURLTypes</key>

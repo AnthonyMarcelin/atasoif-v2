@@ -36,6 +36,8 @@ export type FreemiumSnapshot = {
   limit: number
   remaining: number | null
   entitlement: boolean
+  /** Active IAP / legacy plan when entitled; null on freemium. */
+  plan: 'monthly' | 'yearly' | null
 }
 
 export type PremiumFeature = 'fillLevel' | 'photoOverride'
@@ -110,13 +112,14 @@ export default class CollectionService {
    * `remaining` is null when entitled (uncapped).
    */
   async freemiumPayload(userId: number): Promise<FreemiumSnapshot> {
-    const entitlement = await this.entitlements.hasActiveEntitlement(userId)
+    const { entitled: entitlement, plan } = await this.entitlements.snapshot(userId)
     const count = await this.countFor(userId)
     return {
       count,
       limit: FREE_BOTTLE_LIMIT,
       remaining: entitlement ? null : Math.max(0, FREE_BOTTLE_LIMIT - count),
       entitlement,
+      plan,
     }
   }
 
@@ -640,6 +643,7 @@ export default class CollectionService {
           limit: FREE_BOTTLE_LIMIT,
           remaining: 0,
           entitlement: false,
+          plan: null,
         }
       )
     }
