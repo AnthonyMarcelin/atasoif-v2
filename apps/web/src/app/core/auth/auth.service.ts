@@ -1,10 +1,16 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import type { ApiDataEnvelope, AuthTokenResponse, AuthUser } from './auth.types';
+import {
+  readOAuthErrorFromUrl,
+  readOAuthTokenFromUrl,
+  startNativeOAuthSession,
+} from './oauth-session';
 import { SessionGate } from './session-gate';
 import { TokenStorage } from './token-storage';
 
@@ -47,13 +53,13 @@ export class AuthService {
     return this.tokenSignal();
   }
 
-  /** Browser navigation into Ally Google OAuth (full-page redirect). */
+  /** Ally Google OAuth start URL (adds ?client=native on Capacitor). */
   googleAuthUrl(): string {
-    return `${this.apiBase}/api/v1/auth/google/redirect`;
+    return this.allyRedirectUrl('google');
   }
 
   startGoogleLogin(): void {
-    window.location.assign(this.googleAuthUrl());
+    void this.startAllyLogin('google');
   }
 
   /**
@@ -68,28 +74,92 @@ export class AuthService {
    */
   readonly showAppleLogin = environment.showAppleLogin;
 
-  /** Browser navigation into Ally Facebook OAuth (full-page redirect). */
+  /** Ally Facebook OAuth start URL (adds ?client=native on Capacitor). */
   facebookAuthUrl(): string {
-    return `${this.apiBase}/api/v1/auth/facebook/redirect`;
+    return this.allyRedirectUrl('facebook');
   }
 
   startFacebookLogin(): void {
     if (!this.showFacebookLogin) {
       return;
     }
-    window.location.assign(this.facebookAuthUrl());
+    void this.startAllyLogin('facebook');
   }
 
-  /** Browser navigation into Ally Apple OAuth (full-page redirect). */
+  /** Ally Apple OAuth start URL (adds ?client=native on Capacitor). */
   appleAuthUrl(): string {
-    return `${this.apiBase}/api/v1/auth/apple/redirect`;
+    return this.allyRedirectUrl('apple');
   }
 
   startAppleLogin(): void {
     if (!this.showAppleLogin) {
       return;
     }
-    window.location.assign(this.appleAuthUrl());
+    void this.startAllyLogin('apple');
+  }
+
+  private allyRedirectUrl(provider: 'google' | 'facebook' | 'apple'): string {
+    const base = `${this.apiBase}/api/v1/auth/${provider}/redirect`;
+    if (!Capacitor.isNativePlatform()) {
+      return base;
+    }
+    const url = new URL(base);
+    url.searchParams.set('client', 'native');
+    return url.toString();
+  }
+
+  /**
+   * Native: ASWebAuthenticationSession → custom scheme with #token=.
+   * Web: full-page redirect to Ally (FRONTEND_URL handoff).
+   */
+  private async startAllyLogin(provider: 'google' | 'facebook' | 'apple'): Promise<void> {
+    const authorizeUrl = this.allyRedirectUrl(provider);
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const callbackUrl = await startNativeOAuthSession(authorizeUrl);
+        if (!callbackUrl) {
+          return;
+        }
+        const oauthError = readOAuthErrorFromUrl(callbackUrl);
+        if (oauthError) {
+          void this.router.navigate(['/auth/login'], {
+            queryParams: { oauthError },
+            replaceUrl: true,
+          });
+          return;
+        }
+        const token = readOAuthTokenFromUrl(callbackUrl);
+        if (!token) {
+          void this.router.navigate(['/auth/login'], {
+            queryParams: { oauthError: `${provider}_error` },
+            replaceUrl: true,
+          });
+          return;
+        }
+        this.completeOAuthLogin(token).subscribe({
+          next: (user) => {
+            if (!user) {
+              void this.router.navigate(['/auth/login'], {
+                queryParams: { oauthError: `${provider}_error` },
+                replaceUrl: true,
+              });
+              return;
+            }
+            void this.router.navigateByUrl(this.postAuthPath('/cave'), { replaceUrl: true });
+          },
+          error: () => {
+            void this.router.navigate(['/auth/login'], {
+              queryParams: { oauthError: `${provider}_error` },
+              replaceUrl: true,
+            });
+          },
+        });
+        return;
+      } catch {
+        // Older TestFlight binary without OAuthSession plugin — Safari + API HTML handoff.
+      }
+    }
+    window.location.assign(authorizeUrl);
   }
 
   /**

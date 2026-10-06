@@ -97,3 +97,4 @@ If signing / provisioning fails, fix in Xcode or Apple Developer certificates â€
 | Signing errors | Team + bundle in Xcode; regenerate provisioning in Apple Developer |
 | Blank WebView | Confirm `cap sync` copied `index.html` into `ios/App/App/public` |
 | ATS / network | API is HTTPS; check device network and API CORS if using custom schemes later |
+| Apple login opens Safari then Adonis 404 `/auth/oauth/callback` | Set Dokploy `NATIVE_OAUTH_RETURN_URL=fr.atasoif.app://auth/oauth/callback` and keep `FRONTEND_URL` off the API host; rebuild app (ASWebAuthenticationSession + URL scheme). API also serves HTML handoff at `GET /auth/oauth/callback`. |

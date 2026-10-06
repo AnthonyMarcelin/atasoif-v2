@@ -7,39 +7,46 @@ import {
   buildFrontendLoginErrorRedirect,
   buildFrontendUrl,
 } from '#services/frontend_url'
+import {
+  consumeOAuthReturnClient,
+  rememberOAuthReturnClient,
+} from '#services/oauth_return_client'
 import type { HttpContext } from '@adonisjs/core/http'
 import mail from '@adonisjs/mail/services/main'
 
 /**
- * Google OAuth via Ally → Adonis access token → redirect to Angular.
+ * Google OAuth via Ally → Adonis access token → redirect to Angular / Capacitor.
  */
 export default class GoogleAuthController {
   /**
-   * Start Google OAuth (browser redirect).
+   * Start Google OAuth (browser / ASWebAuthenticationSession).
    */
-  async redirect({ ally }: HttpContext) {
-    return ally.use('google').redirect((request) => {
+  async redirect(ctx: HttpContext) {
+    rememberOAuthReturnClient(ctx)
+    return ctx.ally.use('google').redirect((request) => {
       request.scopes(['openid', 'userinfo.email', 'userinfo.profile'])
       request.param('prompt', 'select_account')
     })
   }
 
   /**
-   * Google callback: find/create user, issue Bearer token, send browser to the SPA.
+   * Google callback: find/create user, issue Bearer token, send browser back to client.
    */
-  async callback({ ally, response }: HttpContext) {
+  async callback(ctx: HttpContext) {
+    const { ally, response } = ctx
+    const client = consumeOAuthReturnClient(ctx)
     const google = ally.use('google')
 
     if (google.accessDenied()) {
-      return response.redirect(buildFrontendLoginErrorRedirect('google_denied'))
+      return response.redirect(buildFrontendLoginErrorRedirect('google_denied', client))
     }
 
     if (google.stateMisMatch()) {
-      return response.redirect(buildFrontendLoginErrorRedirect('google_state'))
+      return response.redirect(buildFrontendLoginErrorRedirect('google_state', client))
     }
 
     if (google.hasError()) {
-      return response.redirect(buildFrontendLoginErrorRedirect('google_error'))
+      return response.redirect(buildFrontendLoginErrorRedirect('google_error', client))
     }
 
     const googleUser = await google.user()
@@ -59,12 +66,12 @@ export default class GoogleAuthController {
       }
 
       const token = await User.accessTokens.create(user)
-      return response.redirect(buildFrontendOAuthRedirect(token.value!.release()))
+      return response.redirect(buildFrontendOAuthRedirect(token.value!.release(), client))
     } catch (error) {
       if (error instanceof SocialAuthError) {
         const code =
           error.code === 'E_SOCIAL_EMAIL_UNVERIFIED' ? 'google_unverified' : 'google_email'
-        return response.redirect(buildFrontendLoginErrorRedirect(code))
+        return response.redirect(buildFrontendLoginErrorRedirect(code, client))
       }
       throw error
     }

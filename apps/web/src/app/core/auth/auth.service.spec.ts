@@ -165,6 +165,10 @@ describe('AuthService', () => {
     expect(service.appleAuthUrl()).toBe(`${environment.apiBaseUrl}/api/v1/auth/apple/redirect`);
   });
 
+  it('keeps Ally redirect URLs without client=native on web', () => {
+    expect(service.appleAuthUrl()).not.toContain('client=native');
+  });
+
   it('exposes Facebook login as hidden (UI standby)', () => {
     expect(service.showFacebookLogin).toBe(environment.showFacebookLogin);
     expect(service.showFacebookLogin).toBeFalse();

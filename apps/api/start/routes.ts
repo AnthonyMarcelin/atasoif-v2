@@ -11,6 +11,7 @@ const HealthController = () => import('#controllers/health_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const FacebookAuthController = () => import('#controllers/facebook_auth_controller')
 const AppleAuthController = () => import('#controllers/apple_auth_controller')
+const OauthHandoffController = () => import('#controllers/oauth_handoff_controller')
 const CatalogBottlesController = () => import('#controllers/catalog_bottles_controller')
 const CatalogCategoriesController = () => import('#controllers/catalog_categories_controller')
 const CollectionBottlesController = () => import('#controllers/collection_bottles_controller')
@@ -21,6 +22,12 @@ const StoreReviewController = () => import('#controllers/store_review_controller
 const OpsKpisController = () => import('#controllers/ops_kpis_controller')
 
 router.get('/health', [HealthController, 'handle'])
+
+/**
+ * Capacitor / misconfigured FRONTEND_URL safety net.
+ * Ally redirects here when FRONTEND_URL points at the API; HTML deep-links into the app.
+ */
+router.get('/auth/oauth/callback', [OauthHandoffController, 'callback'])
 
 router
   .get('/api/v1/media/catalog/:name', [CollectionPhotosController, 'showCatalog'])

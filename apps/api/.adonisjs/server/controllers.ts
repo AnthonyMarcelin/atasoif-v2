@@ -17,6 +17,7 @@ export const controllers = {
   Health: () => import('#controllers/health_controller'),
   MagicLinks: () => import('#controllers/magic_links_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
+  OauthHandoff: () => import('#controllers/oauth_handoff_controller'),
   OpsKpis: () => import('#controllers/ops_kpis_controller'),
   PasswordResets: () => import('#controllers/password_resets_controller'),
   Profile: () => import('#controllers/profile_controller'),
