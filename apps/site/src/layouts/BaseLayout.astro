@@ -6,6 +6,8 @@ interface Props {
   description?: string;
   /** Absolute or site-relative OG image. Generic brand stub when omitted. */
   ogImage?: string;
+  /** When true, emit robots noindex (invites + SEO stubs before public API). */
+  noindex?: boolean;
 }
 
 const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://atasoif.fr';
@@ -15,6 +17,7 @@ const description =
   'Le prix, l’endroit, ton avis : tu te souviendras de chaque bouteille. Whisky, rhum, vin, bière. Dix bouteilles offertes.';
 const canonical = new URL(Astro.url.pathname, siteUrl).toString();
 const ogImage = new URL(Astro.props.ogImage ?? '/og-invite.png', siteUrl).toString();
+const noindex = Astro.props.noindex === true;
 ---
 
 <!doctype html>
@@ -25,6 +28,8 @@ const ogImage = new URL(Astro.props.ogImage ?? '/og-invite.png', siteUrl).toStri
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex, nofollow" /> : null}
+    <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="theme-color" content="#0E0C0A" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />

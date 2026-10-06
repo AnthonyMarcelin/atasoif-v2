@@ -1,0 +1,49 @@
+---
+/**
+ * Programmatic SEO category hub stub.
+ * noindex + excluded from sitemap until the public catalog API feeds real content.
+ * Plan: Project store docs/seo-programmatic.md
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BottleMark from '../../components/BottleMark.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import { SEO_CATEGORY_LABELS, SEO_CATEGORY_SLUGS } from '../../lib/seo-categories';
+import '../../styles/landing.scss';
+
+export function getStaticPaths() {
+  return SEO_CATEGORY_SLUGS.map((slug) => ({ params: { slug } }));
+}
+
+const slug = Astro.params.slug as (typeof SEO_CATEGORY_SLUGS)[number];
+const label = SEO_CATEGORY_LABELS[slug] ?? slug;
+const title = `${label} · À ta soif`;
+const description = `${label} dans ta cave numérique. Bientôt des fiches catalogue à explorer sur atasoif.fr.`;
+const year = new Date().getFullYear();
+---
+
+<BaseLayout title={title} description={description} noindex>
+  <div class="page">
+    <header class="header">
+      <div class="shell">
+        <a class="brand" href="/">
+          <BottleMark size="md" />
+          <span>À ta soif</span>
+        </a>
+      </div>
+    </header>
+    <main class="shell" style="padding-block: 4rem 6rem; max-width: 36rem;">
+      <p class="eyebrow">{label.toUpperCase()}</p>
+      <h1 class="display" style="font-size: clamp(2rem, 6vw, 3rem); margin: 0.5rem 0 1rem;">
+        {label} · bientôt ici
+      </h1>
+      <p class="lede">
+        Les pages catalogue arrivent. En attendant, range tes bouteilles dans l’app : prix, endroit,
+        ton avis.
+      </p>
+      <p style="margin-top: 1.5rem;">
+        <a class="btn btn--primary" href="/#debut">Retour à l’accueil</a>
+      </p>
+    </main>
+    <SiteFooter year={year} />
+  </div>
+</BaseLayout>

@@ -1,0 +1,44 @@
+---
+/**
+ * Programmatic SEO bottle page stub.
+ * getStaticPaths is empty until the public catalog API provides indexable bottles.
+ * URL shape (locked in plan): /bouteille/{id}-{slug}
+ * Plan: Project store docs/seo-programmatic.md
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BottleMark from '../../components/BottleMark.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import '../../styles/landing.scss';
+
+export function getStaticPaths() {
+  // Phase 1 will return { params: { idSlug: `${id}-${slug}` }, props: { bottle } }.
+  return [];
+}
+
+const year = new Date().getFullYear();
+---
+
+<BaseLayout
+  title="Bouteille · À ta soif"
+  description="Fiche bouteille À ta soif — bientôt alimentée par le catalogue."
+  noindex
+>
+  <div class="page">
+    <header class="header">
+      <div class="shell">
+        <a class="brand" href="/">
+          <BottleMark size="md" />
+          <span>À ta soif</span>
+        </a>
+      </div>
+    </header>
+    <main class="shell" style="padding-block: 4rem 6rem;">
+      <h1 class="display" style="font-size: clamp(2rem, 6vw, 3rem);">Fiche à venir</h1>
+      <p class="lede">Cette URL accueillera les fiches catalogue indexables.</p>
+      <p style="margin-top: 1.5rem;">
+        <a class="btn btn--primary" href="/">Retour à l’accueil</a>
+      </p>
+    </main>
+    <SiteFooter year={year} />
+  </div>
+</BaseLayout>
