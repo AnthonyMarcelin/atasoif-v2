@@ -29,7 +29,6 @@ When the cave app has a public origin, add it to API `CORS_ORIGIN` (and set `FRO
 
 ## Marketing site (`apps/site`) → GHCR → Dokploy
 
-
 La landing Astro (pages prerender + endpoint waitlist Resend) a son **propre** image Node standalone. CI builds and pushes it; **Dokploy does not build from git**.
 
 | Item | Value |
