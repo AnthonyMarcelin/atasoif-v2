@@ -7,7 +7,9 @@ import { cellarErrorMessage } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
 import type { FreemiumMeta } from './cellar.types';
 import { CollectionService } from './collection.service';
+import { normalizeFriendInviteTarget } from './friend-invite-target';
 import { FriendsService, type FriendRow, type FriendsPayload } from './friends.service';
+import { NativeShareService } from './native-share.service';
 import { absoluteShareInviteUrl } from './share-invite-url';
 
 @Component({
@@ -21,12 +23,14 @@ export class FriendsShellPage implements OnInit {
   private readonly fb = new FormBuilder().nonNullable;
   private readonly friendsApi = inject(FriendsService);
   private readonly collection = inject(CollectionService);
+  private readonly share = inject(NativeShareService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly loading = signal(true);
   readonly inviting = signal(false);
+  readonly sharing = signal(false);
   readonly error = signal<string | null>(null);
   readonly ok = signal<string | null>(null);
   readonly data = signal<FriendsPayload | null>(null);
@@ -71,7 +75,7 @@ export class FriendsShellPage implements OnInit {
   }
 
   invite(): void {
-    const target = this.form.controls.target.value.trim();
+    const target = normalizeFriendInviteTarget(this.form.controls.target.value);
     if (!target || this.inviting()) {
       return;
     }
@@ -83,7 +87,7 @@ export class FriendsShellPage implements OnInit {
       .pipe(finalize(() => this.inviting.set(false)))
       .subscribe({
         next: () => {
-          this.ok.set('Invitation envoyée · mail + notif en route.');
+          this.ok.set('Invitation envoyée.');
           this.form.controls.target.setValue('');
           this.reload();
         },
@@ -100,17 +104,31 @@ export class FriendsShellPage implements OnInit {
     });
   }
 
-  async copyInvite(): Promise<void> {
+  async shareInvite(): Promise<void> {
     const payload = this.data();
-    if (!payload?.inviteCode) {
+    if (!payload?.inviteCode || this.sharing()) {
       return;
     }
-    const text = absoluteShareInviteUrl(payload.inviteUrl, payload.inviteCode);
+    const url = absoluteShareInviteUrl(payload.inviteUrl, payload.inviteCode);
+    this.sharing.set(true);
+    this.error.set(null);
+    this.ok.set(null);
     try {
-      await navigator.clipboard.writeText(text);
-      this.ok.set('Lien copié.');
-    } catch {
-      this.ok.set(text);
+      const result = await this.share.shareOrCopy({
+        title: 'À ta soif — rejoins ma cave',
+        text: `Ajoute-moi sur À ta soif : ${url}`,
+        url,
+        dialogTitle: 'Partager mon profil',
+      });
+      if (result === 'copied') {
+        this.ok.set('Lien https copié · ouvre ton app de messagerie pour l’envoyer.');
+      } else if (result === 'shown') {
+        this.ok.set(url);
+      } else {
+        this.ok.set('Lien partagé.');
+      }
+    } finally {
+      this.sharing.set(false);
     }
   }
 

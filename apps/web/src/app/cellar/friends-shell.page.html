@@ -1,18 +1,44 @@
-<app-cellar-shell title="Amis" [freemium]="freemium()">
+<app-cellar-shell
+  title="Amis"
+  lead="Retrouve des potes · partage ton lien."
+  [freemium]="freemium()"
+>
   <div class="friends-page">
-    <form class="friends-search" [formGroup]="form" (ngSubmit)="invite()">
-      <input
-        class="friends-search__input"
-        type="text"
-        formControlName="target"
-        placeholder="Pseudo, e-mail ou lien"
-        aria-label="Inviter un ami"
-        autocomplete="off"
-      />
-      <button class="auth-btn auth-btn--primary friends-search__btn" type="submit" [disabled]="inviting()">
-        {{ inviting() ? '…' : 'Inviter' }}
+    <section class="friends-action" aria-labelledby="friends-search-title">
+      <h2 id="friends-search-title" class="friends-action__title">Rechercher un ami</h2>
+      <p class="friends-action__hint">Pseudo unique, ou colle un lien d’invitation.</p>
+      <form class="friends-search" [formGroup]="form" (ngSubmit)="invite()">
+        <input
+          class="friends-search__input"
+          type="text"
+          formControlName="target"
+          placeholder="Pseudo ou lien /i/CODE"
+          aria-label="Pseudo ou lien d’invitation"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+        <button class="auth-btn auth-btn--primary friends-search__btn" type="submit" [disabled]="inviting()">
+          {{ inviting() ? '…' : 'Inviter' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="friends-action" aria-labelledby="friends-share-title">
+      <h2 id="friends-share-title" class="friends-action__title">Partager mon profil</h2>
+      <p class="friends-action__hint">
+        Copie un lien https et ouvre le partage natif (Messages, Discord, Messenger…).
+      </p>
+      <button
+        type="button"
+        class="auth-btn auth-btn--secondary"
+        (click)="shareInvite()"
+        [disabled]="sharing() || !data()?.inviteCode"
+      >
+        {{ sharing() ? '…' : 'Partager mon lien' }}
       </button>
-    </form>
+      <a class="auth-link friends-action__settings" routerLink="/cave/partage">Réglages de partage</a>
+    </section>
 
     @if (error(); as message) {
       <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
@@ -47,7 +73,7 @@
 
       <p class="friends-section-label">Mes amis</p>
       @if (payload.friends.length === 0) {
-        <p class="auth-status" role="status">Pas encore d’amis · envoie ton lien.</p>
+        <p class="auth-status" role="status">Pas encore d’amis · partage ton lien ou cherche un pseudo.</p>
       }
       <ul class="friends-list">
         @for (row of payload.friends; track row.id) {
@@ -64,16 +90,6 @@
           </li>
         }
       </ul>
-
-      <div class="friends-invite-box">
-        <p>
-          Ta cave est plus drôle à plusieurs. Envoie ton lien, il expire dans 7 jours.
-        </p>
-        <button type="button" class="auth-btn auth-btn--secondary" (click)="copyInvite()">
-          Copier mon lien
-        </button>
-        <a class="auth-link" routerLink="/cave/partage">Réglages de partage</a>
-      </div>
     }
   </div>
 </app-cellar-shell>

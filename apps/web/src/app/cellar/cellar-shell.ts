@@ -67,7 +67,7 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
             class="cellar-nav__add"
             routerLink="/cave/ajouter"
             routerLinkActive="is-active"
-            aria-label="Ajouter une bouteille"
+            aria-label="Ajouter à ta cave · chercher dans le catalogue ou scanner"
           >
             <span class="cellar-nav__add-mark" aria-hidden="true">+</span>
             <span class="cellar-nav__label cellar-nav__label--on-accent">Ajouter</span>
