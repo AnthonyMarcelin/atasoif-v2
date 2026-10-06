@@ -115,15 +115,30 @@ describe('SessionLockService', () => {
     });
   });
 
-  it('cold start fail-opens to login before Face ID (no blank cover)', async () => {
+  it('cold start lands on login before Face ID (no blank cover-only shell)', async () => {
     login();
     enableNativeBiometrics();
     spyOn(biometrics, 'verifyUnlock').and.resolveTo({ ok: false, reason: 'cancelled' });
 
     await lock.start();
 
+    // Sync path before deferred Face ID: login route, no cover-only blank shell.
     expect(gate.cover()).toBeFalse();
     expect(gate.locked()).toBeTrue();
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
+      queryParams: { returnUrl: '/cave' },
+    });
+    expect(biometrics.verifyUnlock).not.toHaveBeenCalled();
+  });
+
+  it('on background soft-locks to login without covering a cave route', () => {
+    login();
+    enableNativeBiometrics();
+
+    lock.handleAppStateForTests(false);
+
+    expect(gate.locked()).toBeTrue();
+    expect(gate.cover()).toBeFalse();
     expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
       queryParams: { returnUrl: '/cave' },
     });
@@ -168,8 +183,11 @@ describe('SessionLockService', () => {
       enableNativeBiometrics();
       spyOn(biometrics, 'verifyUnlock').and.returnValue(new Promise(() => undefined));
 
-      const pending = lock.promptUnlock({ allowCover: true });
+      const pending = lock.promptUnlock();
       expect(gate.cover()).toBeTrue();
+      expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
+        queryParams: { returnUrl: '/cave' },
+      });
 
       jasmine.clock().tick(8_100);
       const ok = await pending;
@@ -177,15 +195,12 @@ describe('SessionLockService', () => {
       expect(ok).toBeFalse();
       expect(gate.cover()).toBeFalse();
       expect(gate.locked()).toBeTrue();
-      expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
-        queryParams: { returnUrl: '/cave' },
-      });
     } finally {
       jasmine.clock().uninstall();
     }
   });
 
-  it('locks again on a real background after the Face ID grace period', async () => {
+  it('prompts Face ID again on resume after a real background soft-lock', async () => {
     jasmine.clock().install();
     try {
       jasmine.clock().mockDate(new Date('2026-01-01T00:00:00Z'));
@@ -201,7 +216,14 @@ describe('SessionLockService', () => {
 
       lock.handleAppStateForTests(false);
       expect(gate.locked()).toBeTrue();
-      expect(gate.cover()).toBeTrue();
+      expect(gate.cover()).toBeFalse();
+
+      const resumed = lock.promptUnlock();
+      jasmine.clock().tick(0);
+      await resumed;
+
+      expect(biometrics.verifyUnlock).toHaveBeenCalledTimes(2);
+      expect(gate.locked()).toBeFalse();
     } finally {
       jasmine.clock().uninstall();
     }
