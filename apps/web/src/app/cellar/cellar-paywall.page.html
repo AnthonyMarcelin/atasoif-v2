@@ -3,62 +3,110 @@
     <h2 id="paywall-title" class="cellar-paywall__title">{{ headline }}</h2>
     <p class="cellar-paywall__lead">{{ lead }}</p>
 
-    <ul class="cellar-paywall__plans">
-      <li class="cellar-paywall__plan">
-        <span class="cellar-paywall__plan-name">Mensuel</span>
-        <span class="cellar-paywall__plan-price">{{ monthly.priceEur }} € / mois</span>
-        <span class="cellar-paywall__plan-hint">
-          Essai {{ monthly.trialDays }} jours · App Store / Play uniquement
-        </span>
-      </li>
-      <li class="cellar-paywall__plan is-featured">
-        <span class="cellar-paywall__plan-name">Annuel</span>
-        <span class="cellar-paywall__plan-price">{{ yearly.priceEur }} € / an</span>
-        <span class="cellar-paywall__plan-hint">
-          Essai {{ yearly.trialDays }} jours · App Store / Play uniquement
-        </span>
-      </li>
-    </ul>
+    <div class="cellar-paywall__status" role="status">
+      <span class="cellar-paywall__status-label">Formule actuelle</span>
+      <span class="cellar-paywall__status-value">{{ statusLine() }}</span>
+    </div>
 
-    <p class="auth-status" role="status">
-      Le paiement se fait dans l’app (App Store ou Google Play), jamais par carte sur le site.
-      @if (reason() === 'limit') {
-        Retirer une bouteille ne libère pas de place.
-      }
-    </p>
-
-    <section class="cellar-paywall__cancel" aria-labelledby="paywall-cancel-title">
-      <h3 id="paywall-cancel-title" class="cellar-paywall__cancel-title">
-        Annuler avant la fin de l’essai
-      </h3>
-      <p class="cellar-paywall__cancel-lead">
-        L’essai commence quand tu t’abonnes dans l’app. Tu peux annuler quand tu veux avant la fin :
-        aucun prélèvement si tu coupes l’abonnement à temps. On ne te demande jamais de carte ici.
+    @if (isPremium()) {
+      <p class="auth-status" role="status">
+        Pour changer de formule ou couper le renouvellement, ouvre la gestion des abonnements de ton
+        magasin (Apple ou Google) — pas une page produit App Store.
       </p>
-      <ol class="cellar-paywall__cancel-steps">
-        <li>Ouvre la gestion des abonnements de ton magasin (Apple ou Google).</li>
-        <li>Trouve « À ta soif » et arrête le renouvellement avant la fin de l’essai.</li>
-        <li>Tu gardes l’accès premium jusqu’à la fin de la période d’essai.</li>
-      </ol>
-      <a
-        class="auth-btn auth-btn--secondary"
-        [href]="manageSubscriptionsUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Gérer mes abonnements
-      </a>
+
+      <div class="auth-actions">
+        <a
+          class="auth-btn auth-btn--primary"
+          [href]="manageSubscriptionsUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Annuler mon abonnement
+        </a>
+        <button
+          class="auth-btn auth-btn--ghost"
+          type="button"
+          disabled
+          (click)="onRestorePlaceholder()"
+        >
+          Restaurer mes achats · bientôt
+        </button>
+        <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à ma cave</a>
+      </div>
+
       <p class="cellar-paywall__cancel-note">
         Sur iPhone : Réglages → [ton nom] → Abonnements. Sur Android : Play Store → profil →
-        Paiements et abonnements.
+        Paiements et abonnements. Tu gardes Premium jusqu’à la fin de la période déjà payée (ou de
+        l’essai).
       </p>
-    </section>
+    } @else {
+      <ul class="cellar-paywall__plans">
+        <li class="cellar-paywall__plan">
+          <span class="cellar-paywall__plan-name">Mensuel</span>
+          <span class="cellar-paywall__plan-price">{{ monthly.priceEur }} € / mois</span>
+          <span class="cellar-paywall__plan-hint">
+            Essai {{ monthly.trialDays }} jours · feuille de paiement dans l’app
+          </span>
+        </li>
+        <li class="cellar-paywall__plan is-featured">
+          <span class="cellar-paywall__plan-name">Annuel</span>
+          <span class="cellar-paywall__plan-price">{{ yearly.priceEur }} € / an</span>
+          <span class="cellar-paywall__plan-hint">
+            Essai {{ yearly.trialDays }} jours · feuille de paiement dans l’app
+          </span>
+        </li>
+      </ul>
 
-    <div class="auth-actions">
-      <button class="auth-btn auth-btn--primary" type="button" disabled>
-        Paiement dans l’app · bientôt
-      </button>
-      <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à ma cave</a>
-    </div>
+      <p class="auth-status" role="status">
+        L’abonnement s’ouvrira dans l’app (fenêtre Apple / Google), jamais par carte sur le site ni
+        via une page produit du store. Le branchement arrive bientôt.
+        @if (reason() === 'limit') {
+          Retirer une bouteille ne libère pas de place.
+        }
+      </p>
+
+      <div class="auth-actions">
+        <button class="auth-btn auth-btn--primary" type="button" disabled>
+          S’abonner dans l’app · bientôt
+        </button>
+        <button
+          class="auth-btn auth-btn--ghost"
+          type="button"
+          disabled
+          (click)="onRestorePlaceholder()"
+        >
+          Restaurer mes achats · bientôt
+        </button>
+        <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à ma cave</a>
+      </div>
+
+      <section class="cellar-paywall__cancel" aria-labelledby="paywall-cancel-title">
+        <h3 id="paywall-cancel-title" class="cellar-paywall__cancel-title">
+          Annuler avant la fin de l’essai
+        </h3>
+        <p class="cellar-paywall__cancel-lead">
+          L’essai commence quand tu t’abonnes dans l’app. Tu peux annuler quand tu veux avant la fin
+          : aucun prélèvement si tu coupes l’abonnement à temps. On ne te demande jamais de carte
+          ici.
+        </p>
+        <ol class="cellar-paywall__cancel-steps">
+          <li>Ouvre la gestion des abonnements de ton magasin (Apple ou Google).</li>
+          <li>Trouve « À ta soif » et arrête le renouvellement avant la fin de l’essai.</li>
+          <li>Tu gardes l’accès premium jusqu’à la fin de la période d’essai.</li>
+        </ol>
+        <a
+          class="auth-btn auth-btn--secondary"
+          [href]="manageSubscriptionsUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Annuler mon abonnement
+        </a>
+        <p class="cellar-paywall__cancel-note">
+          Sur iPhone : Réglages → [ton nom] → Abonnements. Sur Android : Play Store → profil →
+          Paiements et abonnements.
+        </p>
+      </section>
+    }
   </section>
 </app-cellar-shell>

@@ -86,7 +86,8 @@ If signing / provisioning fails, fix in Xcode or Apple Developer certificates â€
 
 ## Out of scope (this prep)
 
-- IAP / RevenueCat (trials 7j annual / 3j monthly noted for later)
+- **IAP purchase sheet** â€” Premium UI is structured for an in-app StoreKit / Play Billing modal (via RevenueCat later). Do **not** redirect to an App Store product webpage. Cancel/manage already deep-links to Apple/Google subscription settings. Restore purchases is a placeholder until E4.
+- IAP / RevenueCat wiring itself (trials 7j annual / 3j monthly noted for later)
 - Android / Play closed testing
 - Facebook login (standby)
 - Forced CI upload of IPA (manual Organizer upload is OK for holiday beta)

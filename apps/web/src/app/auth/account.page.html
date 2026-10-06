@@ -57,8 +57,13 @@
         <div class="cellar-profile__section" aria-label="Réglages">
           <div class="cellar-profile__row">
             <div class="cellar-profile__row-text">
-              <p class="cellar-profile__row-title">Premium</p>
-              <p class="cellar-profile__row-hint">Photo perso · jauge · cave sans limite</p>
+              <p class="cellar-profile__row-title">
+                Premium
+                @if (freemium()?.entitlement) {
+                  <span class="cellar-premium-badge cellar-premium-badge--inline">Actif</span>
+                }
+              </p>
+              <p class="cellar-profile__row-hint">{{ premiumRowHint() }}</p>
             </div>
             <a class="auth-link" routerLink="/cave/premium">Voir</a>
           </div>

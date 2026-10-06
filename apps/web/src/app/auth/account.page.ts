@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -10,6 +10,7 @@ import { BiometricAuthService } from '../core/auth/biometric-auth.service';
 import { CellarShell } from '../cellar/cellar-shell';
 import type { FreemiumMeta } from '../cellar/cellar.types';
 import { CollectionService } from '../cellar/collection.service';
+import { subscriptionStatusLabel } from '../cellar/subscription-copy';
 import { controlErrorMessage, pseudoValidators } from './auth-validators';
 
 @Component({
@@ -38,6 +39,14 @@ export class AccountPage implements OnInit {
   readonly biometricBusy = signal(false);
   readonly biometricMessage = signal<string | null>(null);
   readonly biometricError = signal(false);
+
+  readonly premiumRowHint = computed(() => {
+    const meta = this.freemium();
+    if (!meta) {
+      return 'Photo perso · jauge · cave sans limite';
+    }
+    return `${subscriptionStatusLabel(meta)} · photo · jauge`;
+  });
 
   readonly form = this.fb.group({
     pseudo: ['', pseudoValidators],

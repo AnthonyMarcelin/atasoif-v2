@@ -58,6 +58,13 @@
   color: var(--color-accent);
 }
 
+.cellar-shell__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
 .cellar-shell__title {
   margin: 0;
   font-family: var(--font-display);
@@ -67,6 +74,27 @@
   text-transform: uppercase;
   line-height: 0.95;
   color: var(--color-ink);
+}
+
+.cellar-premium-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 3px 7px;
+  border: var(--stroke) solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  line-height: 1.2;
+}
+
+.cellar-premium-badge--inline {
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 .cellar-shell__lead {
@@ -143,6 +171,21 @@
 .cellar-nav__item.is-active {
   color: var(--color-accent);
   border-top-color: var(--color-accent);
+}
+
+.cellar-nav__item--premium {
+  position: relative;
+}
+
+.cellar-nav__premium-dot {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 14px);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  opacity: 0.85;
 }
 
 .cellar-nav__label {
@@ -1143,6 +1186,30 @@
   line-height: 1.45;
 }
 
+.cellar-paywall__status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-md);
+  border: var(--stroke) solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.cellar-paywall__status-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.cellar-paywall__status-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-l);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
 .cellar-paywall__plans {
   list-style: none;
   margin: 0;
@@ -1254,6 +1321,10 @@
   margin: 0;
   font-size: var(--text-body);
   color: var(--color-ink);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .cellar-profile__row-hint {
