@@ -210,6 +210,12 @@
         />
       </div>
 
+      @if (memoryComplete()) {
+        <p class="cellar-memory-complete" role="status">Fiche mémoire complète</p>
+      } @else if (memoryHint(); as hint) {
+        <p class="cellar-memory-hint">{{ hint }}</p>
+      }
+
       <div class="cellar-fill-presets" role="group" aria-label="Niveau à l’ajout">
         <p class="auth-field__label">Niveau à l’ajout</p>
         <div class="cellar-fill-presets__row">

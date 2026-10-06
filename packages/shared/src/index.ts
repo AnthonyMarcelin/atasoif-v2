@@ -64,3 +64,22 @@ export {
   bottleTypesForCategory,
   readBottleType,
 } from './bottle-types';
+
+export {
+  MEMORY_REVIEW_MIN_CHARS,
+  MEMORY_SHEET_FIELD_COUNT,
+  MEMORY_SHEET_FIELD_LABELS_FR,
+  MEMORY_SHEET_FIELDS,
+  isMemoryFieldFilled,
+  isMemoryNoteFilled,
+  isMemoryPlaceFilled,
+  isMemoryPriceFilled,
+  isMemoryReviewFilled,
+  memorySheetCompleteness,
+  memorySheetMissingHintFr,
+} from './memory-sheet';
+export type {
+  MemorySheetCompleteness,
+  MemorySheetFieldKey,
+  MemorySheetInput,
+} from './memory-sheet';

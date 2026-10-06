@@ -81,6 +81,7 @@
           <a
             class="cellar-card"
             [class.is-empty]="entry.fillLevel <= 0"
+            [class.is-memory-complete]="memoryOf(entry).complete"
             [routerLink]="['/cave', entry.id]"
           >
             <app-bottle-photo
@@ -107,7 +108,24 @@
                 <div class="cellar-card__gauge-fill" [style.width.%]="entry.fillLevel"></div>
               </div>
               <div class="cellar-card__foot">
-                <span class="cellar-card__place">{{ memoryLine(entry) }}</span>
+                <div
+                  class="cellar-card__memory"
+                  [attr.aria-label]="
+                    'Fiche mémoire ' + memoryOf(entry).filled + ' sur ' + memoryOf(entry).total
+                  "
+                >
+                  <span class="cellar-card__memory-segs" aria-hidden="true">
+                    @for (filled of memoryOf(entry).segments; track $index) {
+                      <span
+                        class="cellar-card__memory-seg"
+                        [class.is-filled]="filled"
+                      ></span>
+                    }
+                  </span>
+                  <span class="cellar-card__memory-label">
+                    {{ memoryOf(entry).filled }}/{{ memoryOf(entry).total }}
+                  </span>
+                </div>
                 <span
                   class="cellar-card__level"
                   [class.is-sealed]="entry.fillLevel >= 100"
