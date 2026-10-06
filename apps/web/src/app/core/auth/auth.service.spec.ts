@@ -50,6 +50,18 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBeTrue();
   });
 
+  it('syncFromStorage reloads the bearer token written after construction', () => {
+    expect(service.getAccessToken()).toBeNull();
+    storage.setToken('tok-hydrated');
+    storage.setUserJson(JSON.stringify({ ...sampleUser, emailVerified: true }));
+
+    service.syncFromStorage();
+
+    expect(service.getAccessToken()).toBe('tok-hydrated');
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.user()?.emailVerified).toBeTrue();
+  });
+
   it('posts store review secret to the API', () => {
     service.validateStoreReview('revue-code').subscribe();
 
