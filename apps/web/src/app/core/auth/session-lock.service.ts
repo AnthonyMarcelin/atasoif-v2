@@ -10,6 +10,14 @@ import { SessionGate } from './session-gate';
 /** Ignore app pause/resume churn from the Face ID / system biometric sheet. */
 const BIOMETRIC_APP_STATE_GRACE_MS = 2_000;
 
+/** Face ID must not block login forever (hung native sheet → black screen). */
+const BIOMETRIC_VERIFY_TIMEOUT_MS = 8_000;
+
+type PromptOptions = {
+  /** Full-screen cover hides the cave. Cold start uses login instead (fail-open). */
+  allowCover?: boolean;
+};
+
 @Injectable({ providedIn: 'root' })
 export class SessionLockService {
   private readonly auth = inject(AuthService);
@@ -21,6 +29,8 @@ export class SessionLockService {
   private started = false;
   private prompting = false;
   private ignoreAppStateUntil = 0;
+  /** After fail-open / cancel, do not auto Face ID again until a successful unlock. */
+  private passwordFallback = false;
   private appListener: PluginListenerHandle | null = null;
 
   shouldLock(): boolean {
@@ -37,9 +47,15 @@ export class SessionLockService {
     }
     this.started = true;
 
-    if (this.shouldLock()) {
-      this.gate.requireUnlock();
-      await this.promptUnlock();
+    if (!this.auth.getAccessToken()) {
+      // No session → never biometric-gate the UI; login/welcome must render.
+      this.gate.unlock();
+      this.passwordFallback = false;
+    } else if (this.shouldLock()) {
+      // Cold start: show login immediately (fail-open). Do not blank the WebView
+      // behind a cover while Face ID may hang and never paint a dismiss control.
+      this.failOpenToLogin();
+      void this.promptUnlock({ allowCover: false });
     }
 
     if (!Capacitor.isNativePlatform()) {
@@ -52,36 +68,55 @@ export class SessionLockService {
           return;
         }
         if (!isActive) {
-          if (this.shouldLock()) {
+          if (this.shouldLock() && !this.passwordFallback) {
             this.gate.requireUnlock();
           }
           return;
         }
         // Only prompt when already locked. `shouldLock()` alone is true while unlocked
         // with biometrics on — using it here re-prompts after every Face ID dismissal.
-        if (this.gate.locked()) {
-          void this.promptUnlock();
+        if (this.gate.locked() && !this.passwordFallback) {
+          void this.promptUnlock({ allowCover: true });
         }
       });
     });
   }
 
-  async promptUnlock(): Promise<boolean> {
+  async promptUnlock(options: PromptOptions = {}): Promise<boolean> {
+    const allowCover = options.allowCover !== false;
+
     if (this.prompting) {
       return false;
     }
+
+    // No bearer token → never block on Face ID.
+    if (!this.auth.getAccessToken()) {
+      this.gate.unlock();
+      this.passwordFallback = false;
+      this.failOpenToLogin();
+      return false;
+    }
+
     if (!this.shouldLock()) {
       this.gate.unlock();
+      this.passwordFallback = false;
       return true;
     }
 
-    this.gate.requireUnlock();
+    if (allowCover) {
+      this.gate.requireUnlock();
+    } else {
+      // Keep login visible underneath the system Face ID sheet.
+      this.gate.revealLogin();
+    }
+
     this.prompting = true;
     try {
-      const result = await this.biometrics.verifyUnlock();
+      const result = await this.verifyWithTimeout();
       // Biometric UI backgrounds the WebView; ignore the matching resume burst.
       this.armAppStateGrace();
       if (result.ok) {
+        this.passwordFallback = false;
         this.gate.unlock();
         const target = this.auth.postAuthPath('/cave');
         if (this.router.url === '/' || this.router.url.startsWith('/auth/login')) {
@@ -90,16 +125,17 @@ export class SessionLockService {
         return true;
       }
 
-      this.gate.revealLogin();
-      if (!this.router.url.startsWith('/auth/login')) {
-        void this.router.navigate(['/auth/login'], {
-          queryParams: { returnUrl: '/cave' },
-        });
-      }
+      // Cancel, unavailable, failed, or timeout → always reach login.
+      this.failOpenToLogin();
       return false;
     } finally {
       this.prompting = false;
     }
+  }
+
+  /** User chose password (or fail-open) — keep login reachable, stop auto Face ID. */
+  usePasswordFallback(): void {
+    this.failOpenToLogin();
   }
 
   async stop(): Promise<void> {
@@ -114,13 +150,36 @@ export class SessionLockService {
       return;
     }
     if (!isActive) {
-      if (this.shouldLock()) {
+      if (this.shouldLock() && !this.passwordFallback) {
         this.gate.requireUnlock();
       }
       return;
     }
-    if (this.gate.locked()) {
-      void this.promptUnlock();
+    if (this.gate.locked() && !this.passwordFallback) {
+      void this.promptUnlock({ allowCover: true });
+    }
+  }
+
+  private failOpenToLogin(): void {
+    this.passwordFallback = true;
+    this.gate.revealLogin();
+    if (!this.router.url.startsWith('/auth/login')) {
+      void this.router.navigate(['/auth/login'], {
+        queryParams: { returnUrl: '/cave' },
+      });
+    }
+  }
+
+  private async verifyWithTimeout(): Promise<{ ok: true } | { ok: false; reason: string }> {
+    try {
+      return await Promise.race([
+        this.biometrics.verifyUnlock(),
+        new Promise<{ ok: false; reason: 'timeout' }>((resolve) => {
+          setTimeout(() => resolve({ ok: false, reason: 'timeout' }), BIOMETRIC_VERIFY_TIMEOUT_MS);
+        }),
+      ]);
+    } catch {
+      return { ok: false, reason: 'failed' };
     }
   }
 
