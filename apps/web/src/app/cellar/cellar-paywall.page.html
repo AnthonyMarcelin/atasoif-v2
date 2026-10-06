@@ -1,5 +1,24 @@
 <app-cellar-shell title="Premium" [freemium]="freemium()">
   <section class="cellar-paywall" aria-labelledby="paywall-title">
+    @if (showVignettes()) {
+      <div class="cellar-paywall__vignettes" aria-label="Tes bouteilles en cave">
+        <ul class="cellar-paywall__vignette-strip">
+          @for (entry of vignettes(); track entry.id) {
+            <li class="cellar-paywall__vignette">
+              <app-bottle-photo
+                [src]="photoOf(entry)"
+                [alt]="nameOf(entry)"
+                variant="list"
+              />
+            </li>
+          }
+        </ul>
+        <p class="cellar-paywall__vignette-caption">
+          Tes {{ limit }} bouteilles sont là. La {{ limit + 1 }}e t’attend.
+        </p>
+      </div>
+    }
+
     <h2 id="paywall-title" class="cellar-paywall__title">{{ headline }}</h2>
     <p class="cellar-paywall__lead">{{ lead }}</p>
 
@@ -34,79 +53,102 @@
         <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à ma cave</a>
       </div>
 
-      <p class="cellar-paywall__cancel-note">
-        Sur iPhone : Réglages → [ton nom] → Abonnements. Sur Android : Play Store → profil →
-        Paiements et abonnements. Tu gardes Premium jusqu’à la fin de la période déjà payée (ou de
-        l’essai).
-      </p>
-    } @else {
-      <ul class="cellar-paywall__plans">
-        <li class="cellar-paywall__plan">
-          <span class="cellar-paywall__plan-name">Mensuel</span>
-          <span class="cellar-paywall__plan-price">{{ monthly.priceEur }} € / mois</span>
-          <span class="cellar-paywall__plan-hint">
-            Essai {{ monthly.trialDays }} jours · feuille de paiement dans l’app
-          </span>
-        </li>
-        <li class="cellar-paywall__plan is-featured">
-          <span class="cellar-paywall__plan-name">Annuel</span>
-          <span class="cellar-paywall__plan-price">{{ yearly.priceEur }} € / an</span>
-          <span class="cellar-paywall__plan-hint">
-            Essai {{ yearly.trialDays }} jours · feuille de paiement dans l’app
-          </span>
-        </li>
-      </ul>
-
-      <p class="auth-status" role="status">
-        L’abonnement s’ouvrira dans l’app (fenêtre Apple / Google), jamais par carte sur le site ni
-        via une page produit du store. Le branchement arrive bientôt.
-        @if (reason() === 'limit') {
-          Retirer une bouteille ne libère pas de place.
-        }
-      </p>
-
-      <div class="auth-actions">
-        <button class="auth-btn auth-btn--primary" type="button" disabled>
-          S’abonner dans l’app · bientôt
-        </button>
-        <button
-          class="auth-btn auth-btn--ghost"
-          type="button"
-          disabled
-          (click)="onRestorePlaceholder()"
-        >
-          Restaurer mes achats · bientôt
-        </button>
-        <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à ma cave</a>
-      </div>
-
       <section class="cellar-paywall__cancel" aria-labelledby="paywall-cancel-title">
         <h3 id="paywall-cancel-title" class="cellar-paywall__cancel-title">
-          Annuler avant la fin de l’essai
+          Comment annuler
         </h3>
         <p class="cellar-paywall__cancel-lead">
-          L’essai commence quand tu t’abonnes dans l’app. Tu peux annuler quand tu veux avant la fin
-          : aucun prélèvement si tu coupes l’abonnement à temps. On ne te demande jamais de carte
-          ici.
+          Tu peux couper le renouvellement quand tu veux. Tu gardes Premium jusqu’à la fin de la
+          période déjà payée (ou de l’essai).
         </p>
         <ol class="cellar-paywall__cancel-steps">
           <li>Ouvre la gestion des abonnements de ton magasin (Apple ou Google).</li>
-          <li>Trouve « À ta soif » et arrête le renouvellement avant la fin de l’essai.</li>
-          <li>Tu gardes l’accès premium jusqu’à la fin de la période d’essai.</li>
+          <li>Trouve « À ta soif » et arrête le renouvellement.</li>
+          <li>Tu gardes l’accès premium jusqu’à la fin de la période en cours.</li>
         </ol>
-        <a
-          class="auth-btn auth-btn--secondary"
-          [href]="manageSubscriptionsUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Annuler mon abonnement
-        </a>
         <p class="cellar-paywall__cancel-note">
           Sur iPhone : Réglages → [ton nom] → Abonnements. Sur Android : Play Store → profil →
           Paiements et abonnements.
         </p>
       </section>
+    } @else {
+      <section class="cellar-paywall__benefits" aria-labelledby="paywall-benefits-title">
+        <h3 id="paywall-benefits-title" class="cellar-paywall__benefits-title">
+          Ce que tu débloques
+        </h3>
+        <ul class="cellar-paywall__benefits-list">
+          @for (benefit of benefits(); track benefit.id) {
+            <li class="cellar-paywall__benefit">{{ benefit.label }}</li>
+          }
+        </ul>
+      </section>
+
+      <ul class="cellar-paywall__plans" role="listbox" aria-label="Choisir une formule">
+        <li>
+          <button
+            type="button"
+            class="cellar-paywall__plan is-featured"
+            role="option"
+            [attr.aria-selected]="selectedPlan() === 'yearly'"
+            [class.is-selected]="selectedPlan() === 'yearly'"
+            (click)="selectPlan('yearly')"
+          >
+            <span class="cellar-paywall__plan-name">Annuel</span>
+            <span class="cellar-paywall__plan-price">
+              {{ formatEur(yearly.priceEur) }} €/an · ~{{ yearlyPerMonthLabel }} €/mois · 2 mois
+              offerts
+            </span>
+            <span class="cellar-paywall__plan-hint">
+              Essai {{ yearly.trialDays }} jours
+            </span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            class="cellar-paywall__plan"
+            role="option"
+            [attr.aria-selected]="selectedPlan() === 'monthly'"
+            [class.is-selected]="selectedPlan() === 'monthly'"
+            (click)="selectPlan('monthly')"
+          >
+            <span class="cellar-paywall__plan-name">Mensuel</span>
+            <span class="cellar-paywall__plan-price">
+              {{ formatEur(monthly.priceEur) }} €/mois
+            </span>
+            <span class="cellar-paywall__plan-hint">
+              Essai {{ monthly.trialDays }} jours
+            </span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="cellar-paywall__purchase">
+        <button class="auth-btn auth-btn--primary" type="button" disabled>
+          {{ ctaLabel() }} · bientôt
+        </button>
+        <p class="cellar-paywall__legal">{{ legalLine() }}</p>
+        <nav class="cellar-paywall__links" aria-label="Liens légaux et restauration">
+          <button type="button" class="cellar-paywall__link" disabled (click)="onRestorePlaceholder()">
+            Restaurer
+          </button>
+          <a
+            class="cellar-paywall__link"
+            [href]="cguUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            >CGU</a
+          >
+          <a
+            class="cellar-paywall__link"
+            [href]="privacyUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Confidentialité</a
+          >
+        </nav>
+        <a class="auth-btn auth-btn--secondary" routerLink="/cave">Retour à ma cave</a>
+      </div>
     }
   </section>
 </app-cellar-shell>

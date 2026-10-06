@@ -43,6 +43,9 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
                 <span class="cellar-shell__slot" [class.is-filled]="filled"></span>
               }
             </div>
+            <p class="cellar-shell__freemium-note">
+              Retirer une bouteille ne libère pas de place.
+            </p>
           }
         </header>
       }

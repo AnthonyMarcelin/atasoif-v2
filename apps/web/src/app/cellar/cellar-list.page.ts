@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { memorySheetCompleteness, type MemorySheetCompleteness } from '@atasoif/shared';
 import { finalize } from 'rxjs';
 
 import { BottlePhoto } from './bottle-photo';
@@ -16,7 +17,6 @@ import {
   fillLevelLabel,
   formatAbv,
   formatBottleMeta,
-  formatPriceEur,
   formatVolumeCl,
   type FreemiumMeta,
   type UserBottle,
@@ -120,13 +120,13 @@ export class CellarListPage implements OnInit {
     ]);
   }
 
-  memoryLine(entry: UserBottle): string {
-    const price = formatPriceEur(entry.pricePaid);
-    const place = entry.boughtAt?.trim() || null;
-    if (price && place) {
-      return `${price} · ${place}`;
-    }
-    return price || place || 'Souvenir à compléter';
+  memoryOf(entry: UserBottle): MemorySheetCompleteness {
+    return memorySheetCompleteness({
+      pricePaid: entry.pricePaid,
+      boughtAt: entry.boughtAt,
+      note: entry.note,
+      review: entry.review,
+    });
   }
 
   load(): void {
