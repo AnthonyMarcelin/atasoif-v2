@@ -137,7 +137,7 @@ Générer `APP_KEY` localement : `cd apps/api && node ace generate:key` (ne jama
 | `APP_URL` | `https://api.atasoif.fr` (origine publique HTTPS de l’API) |
 | `FRONTEND_URL` | mail / web OAuth return (prod: `https://www.atasoif.fr`). **Never** `https://api.atasoif.fr` |
 | `NATIVE_OAUTH_RETURN_URL` | Capacitor Ally return (`fr.atasoif.app://auth/oauth/callback`) when redirect uses `?client=native` |
-| `SHARE_LINK_ORIGIN` | Public invite links (default `https://atasoif.fr` → `/i/:code`) |
+| `SHARE_LINK_ORIGIN` | Public invite links — **always https** (default `https://atasoif.fr` → `/i/:code`). Host-only values are normalized. SMS needs the scheme to be tappable. |
 | `SESSION_DRIVER` | `cookie` |
 | `DB_HOST` | `infra-postgis-rfekdz` |
 | `DB_PORT` | `5432` |

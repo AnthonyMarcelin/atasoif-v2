@@ -5,6 +5,7 @@ import { finalize } from 'rxjs';
 import { cellarErrorMessage } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
 import { FriendsService, type ShareSettings } from './friends.service';
+import { absoluteShareInviteUrl } from './share-invite-url';
 
 @Component({
   selector: 'app-share-settings-page',
@@ -60,11 +61,16 @@ export class ShareSettingsPage implements OnInit {
       });
   }
 
+  displayInviteUrl(settings: ShareSettings): string {
+    return absoluteShareInviteUrl(settings.inviteUrl, settings.inviteCode);
+  }
+
   async copyLink(): Promise<void> {
-    const url = this.settings()?.inviteUrl;
-    if (!url) {
+    const settings = this.settings();
+    if (!settings?.inviteCode) {
       return;
     }
+    const url = absoluteShareInviteUrl(settings.inviteUrl, settings.inviteCode);
     try {
       await navigator.clipboard.writeText(url);
       this.ok.set('Lien copié.');

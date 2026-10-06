@@ -4,6 +4,7 @@ import {
   buildFrontendOAuthRedirect,
   buildShareInviteUrl,
   nativeOAuthReturnBase,
+  normalizeShareLinkOrigin,
 } from '#services/frontend_url'
 
 test.group('frontend_url OAuth + share helpers', () => {
@@ -27,7 +28,15 @@ test.group('frontend_url OAuth + share helpers', () => {
     assert.include(url, 'oauthError=apple_denied')
   })
 
-  test('share invite URL uses the public marketing origin', ({ assert }) => {
+  test('share invite URL uses the public marketing origin with https', ({ assert }) => {
     assert.equal(buildShareInviteUrl('F702EA'), 'https://atasoif.fr/i/F702EA')
+    assert.equal(buildShareInviteUrl('f702ea'), 'https://atasoif.fr/i/F702EA')
+  })
+
+  test('normalizeShareLinkOrigin always yields absolute https', ({ assert }) => {
+    assert.equal(normalizeShareLinkOrigin(undefined), 'https://atasoif.fr')
+    assert.equal(normalizeShareLinkOrigin('atasoif.fr'), 'https://atasoif.fr')
+    assert.equal(normalizeShareLinkOrigin('http://atasoif.fr/'), 'https://atasoif.fr')
+    assert.equal(normalizeShareLinkOrigin('https://www.atasoif.fr/path'), 'https://www.atasoif.fr')
   })
 })

@@ -10,6 +10,8 @@ const code = Astro.params.code?.toUpperCase() ?? '';
 const valid = /^[A-Z0-9]{4,16}$/.test(code);
 const iosUrl = import.meta.env.PUBLIC_IOS_URL || '#ios';
 const androidUrl = import.meta.env.PUBLIC_ANDROID_URL || '#android';
+const iosReady = /^https?:\/\//i.test(iosUrl);
+const androidReady = /^https?:\/\//i.test(androidUrl);
 const deepLink = valid ? `fr.atasoif.app://i/${code}` : 'fr.atasoif.app://';
 const title = valid
   ? `Invitation ${code} · À ta soif`
@@ -42,14 +44,85 @@ const title = valid
       {
         valid && (
           <p class="invite__actions">
-            <a class="btn btn--primary" href={deepLink}>Ouvrir dans l’app</a>
+            <a class="btn btn--primary" id="open-app" href={deepLink}>
+              Ouvrir dans l’app
+            </a>
           </p>
         )
       }
-      <StoreCtas iosUrl={iosUrl} androidUrl={androidUrl} align="start" note="PAS ENCORE L’APP · TÉLÉCHARGE-LA" />
+      <div id="download">
+        <StoreCtas
+          iosUrl={iosUrl}
+          androidUrl={androidUrl}
+          align="start"
+          note={
+            iosReady || androidReady
+              ? 'PAS ENCORE L’APP · TÉLÉCHARGE-LA'
+              : 'STORES BIENTÔT · LIENS À CONFIRMER (ANTHONY)'
+          }
+        />
+      </div>
     </main>
   </div>
 </BaseLayout>
+
+{
+  valid && (
+    <script
+      define:vars={{
+        deepLink,
+        iosUrl,
+        androidUrl,
+        iosReady,
+        androidReady,
+      }}
+    >
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const storeUrl = isAndroid
+        ? androidReady
+          ? androidUrl
+          : null
+        : iosReady
+          ? iosUrl
+          : null;
+
+      function tryOpenApp() {
+        const started = Date.now();
+        // Custom scheme: opens the app when installed; no-op (or error sheet) otherwise.
+        window.location.href = deepLink;
+
+        window.setTimeout(() => {
+          if (document.hidden || document.visibilityState === 'hidden') {
+            return;
+          }
+          // Still on the page → app likely missing. Soft store fallback on mobile only.
+          if (isMobile && storeUrl && Date.now() - started < 3500) {
+            window.location.href = storeUrl;
+            return;
+          }
+          document.getElementById('download')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }, 1600);
+      }
+
+      if (isMobile) {
+        // Auto-attempt once; CTAs remain for manual retry.
+        tryOpenApp();
+      }
+
+      document.getElementById('open-app')?.addEventListener('click', (event) => {
+        // Let the href fire; on mobile also schedule the same fallback.
+        if (isMobile) {
+          event.preventDefault();
+          tryOpenApp();
+        }
+      });
+    </script>
+  )
+}
 
 <style lang="scss">
   .invite {
@@ -91,6 +164,32 @@ const title = valid
 
     &__actions {
       margin: 0 0 28px;
+    }
+  }
+
+  .btn {
+    height: 56px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+    border: 1.5px solid transparent;
+    border-radius: 0;
+    transition: background 120ms ease, border-color 120ms ease;
+
+    &--primary {
+      background: #e39a3c;
+      border-color: #e39a3c;
+      color: #1a1410;
+
+      &:hover {
+        background: #f0b05a;
+        border-color: #f0b05a;
+      }
     }
   }
 </style>
