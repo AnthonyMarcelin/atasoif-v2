@@ -3,6 +3,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
+import { AuthService } from './core/auth/auth.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { OauthDeepLinkService } from './core/auth/oauth-deep-link.service';
 import { TokenStorage } from './core/auth/token-storage';
@@ -11,7 +12,12 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideAppInitializer(() => inject(TokenStorage).hydrate()),
+    provideAppInitializer(async () => {
+      const storage = inject(TokenStorage);
+      await storage.hydrate();
+      // AuthService must read the hydrated token before guards / SessionLock run.
+      inject(AuthService).syncFromStorage();
+    }),
     provideAppInitializer(() => inject(OauthDeepLinkService).start()),
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
