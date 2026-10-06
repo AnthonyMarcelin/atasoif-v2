@@ -1,65 +1,45 @@
 import { Injectable } from '@angular/core';
 
+import { AUTH_TOKEN_KEY, AUTH_USER_KEY, AUTH_PERSIST_KEYS } from './persist-keys';
+import { persistHydrate, persistRead, persistRemove, persistWrite } from './persistent-kv';
+
 /**
- * Web MVP token persistence.
+ * Session persistence.
  *
- * Strategy (documented for E1-T05):
- * - In-memory cache via AuthService for the active tab session.
- * - `localStorage` so refresh/reopen keeps the Bearer token (Capacitor Secure Storage later).
- * - XSS can still read localStorage; mitigate with CSP + careful HTML, not custom crypto.
+ * - `localStorage` for synchronous AuthService reads after hydrate.
+ * - Capacitor Preferences on native (UserDefaults) so iOS does not drop the Bearer
+ *   token when WKWebView storage is purged. There is no separate refresh token:
+ *   Adonis access tokens last 30 days.
  * - Never log the raw token.
  */
 @Injectable({ providedIn: 'root' })
 export class TokenStorage {
-  private static readonly TOKEN_KEY = 'atasoif.auth.access_token';
-  private static readonly USER_KEY = 'atasoif.auth.user';
+  async hydrate(): Promise<void> {
+    await persistHydrate(AUTH_PERSIST_KEYS);
+  }
 
   getToken(): string | null {
-    try {
-      return localStorage.getItem(TokenStorage.TOKEN_KEY);
-    } catch {
-      return null;
-    }
+    return persistRead(AUTH_TOKEN_KEY);
   }
 
   setToken(token: string): void {
-    try {
-      localStorage.setItem(TokenStorage.TOKEN_KEY, token);
-    } catch {
-      // Quota / private mode — memory-only fallback handled by AuthService.
-    }
+    persistWrite(AUTH_TOKEN_KEY, token);
   }
 
   clearToken(): void {
-    try {
-      localStorage.removeItem(TokenStorage.TOKEN_KEY);
-    } catch {
-      // ignore
-    }
+    persistRemove(AUTH_TOKEN_KEY);
   }
 
   getUserJson(): string | null {
-    try {
-      return localStorage.getItem(TokenStorage.USER_KEY);
-    } catch {
-      return null;
-    }
+    return persistRead(AUTH_USER_KEY);
   }
 
   setUserJson(json: string): void {
-    try {
-      localStorage.setItem(TokenStorage.USER_KEY, json);
-    } catch {
-      // ignore
-    }
+    persistWrite(AUTH_USER_KEY, json);
   }
 
   clearUser(): void {
-    try {
-      localStorage.removeItem(TokenStorage.USER_KEY);
-    } catch {
-      // ignore
-    }
+    persistRemove(AUTH_USER_KEY);
   }
 
   clearAll(): void {

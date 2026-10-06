@@ -12,7 +12,7 @@
   padding:
     calc(var(--space-lg) + env(safe-area-inset-top, 0px))
     var(--space-lg)
-    calc(72px + env(safe-area-inset-bottom, 0px));
+    calc(80px + env(safe-area-inset-bottom, 0px));
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -112,7 +112,7 @@
   bottom: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr 1.22fr 1fr 1fr;
   align-items: stretch;
   min-height: calc(56px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -169,7 +169,11 @@
   background: var(--color-accent);
   color: var(--color-on-accent);
   border-top-color: var(--color-accent);
+  border-radius: var(--radius);
   gap: 2px;
+  min-height: 64px;
+  margin-top: -8px;
+  padding-top: 10px;
 }
 
 .cellar-nav__add.is-active {
@@ -178,9 +182,9 @@
 
 .cellar-nav__add-mark {
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 0.8;
+  line-height: 0.85;
 }
 
 .cellar-nav__icon {

@@ -1,9 +1,12 @@
 import { Routes } from '@angular/router';
 
+import { signedInHomeGuard } from './core/auth/signed-in-home.guard';
+
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./welcome/welcome.page').then((m) => m.WelcomePage),
+    canActivate: [signedInHomeGuard],
   },
   {
     path: 'auth',

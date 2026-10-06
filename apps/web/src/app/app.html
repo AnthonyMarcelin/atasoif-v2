@@ -1,1 +1,19 @@
-<router-outlet />
+<div class="app-shell" [class.app-shell--locked]="gate.cover()">
+  <div class="app-shell__outlet" [attr.inert]="gate.cover() ? '' : null">
+    <router-outlet />
+  </div>
+
+  @if (gate.cover()) {
+    <div class="session-lock" role="dialog" aria-modal="true" aria-labelledby="session-lock-title">
+      <p class="session-lock__brand">À ta soif</p>
+      <h1 id="session-lock-title" class="session-lock__title">C’est bien toi&nbsp;?</h1>
+      <p class="session-lock__lead">Déverrouille ta cave avec Face ID ou Touch ID. La session reste en mémoire.</p>
+      <button class="auth-btn auth-btn--primary" type="button" (click)="retryUnlock()">
+        Déverrouiller
+      </button>
+      <button class="auth-btn auth-btn--secondary" type="button" (click)="usePassword()">
+        Utiliser le mot de passe
+      </button>
+    </div>
+  }
+</div>
