@@ -56,3 +56,11 @@ docker build -f apps/site/Dockerfile -t atasoif-site .
 
 - Maquette : `docs/conception/landing/`
 - Tokens : `src/styles/_tokens.scss` (copie Nuit)
+
+## SEO (phase 0)
+
+- `@astrojs/sitemap` → `sitemap-index.xml` at build (`site` = `PUBLIC_SITE_URL`)
+- `src/pages/robots.txt.ts` → `/robots.txt` with sitemap link
+- Stubs (noindex, excluded from sitemap): `/categorie/[slug]`, `/bouteille/[idSlug]`
+- Invites `/i/*` are `noindex` and filtered from the sitemap
+- Programmatic SEO plan lives in the Project store (`docs/seo-programmatic.md`), not this repo
