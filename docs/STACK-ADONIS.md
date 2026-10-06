@@ -161,6 +161,8 @@ Never log the PEM or the JWT. `APPLE_CLIENT_SECRET` is legacy/optional when TEAM
 # Capacitor / TestFlight
 NATIVE_OAUTH_RETURN_URL=fr.atasoif.app://auth/oauth/callback
 SHARE_LINK_ORIGIN=https://atasoif.fr
+# Invite clipboard must stay absolute https (SMS tap). Site stub: apps/site /i/:code
+# True Universal Links need Associated Domains + AASA — see docs/CAPACITOR-IOS-TESTFLIGHT.md
 ```
 
 ### Angular Bearer client (E1-T05)

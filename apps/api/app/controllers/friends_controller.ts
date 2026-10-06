@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import FriendsService, { FriendsError } from '#services/friends_service'
+import { buildShareInviteUrl } from '#services/frontend_url'
 
 const inviteValidator = vine.create({
   target: vine.string().trim().minLength(2).maxLength(255),
@@ -26,6 +27,7 @@ export default class FriendsController {
     return {
       data: {
         inviteCode,
+        inviteUrl: buildShareInviteUrl(inviteCode),
         ...lists,
       },
     }

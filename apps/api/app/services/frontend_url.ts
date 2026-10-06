@@ -90,18 +90,40 @@ export function buildFrontendLoginErrorRedirect(
   return `${base}${sep}oauthError=${encodeURIComponent(code)}`
 }
 
+const DEFAULT_SHARE_LINK_ORIGIN = 'https://atasoif.fr'
+
+/**
+ * Normalize a marketing-site origin to an absolute https URL (SMS/tappable links).
+ * Accepts host-only values (`atasoif.fr`) or http(s) URLs; always returns https.
+ */
+export function normalizeShareLinkOrigin(raw: string | undefined | null): string {
+  const trimmed = raw?.trim()
+  if (!trimmed) {
+    return DEFAULT_SHARE_LINK_ORIGIN
+  }
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  try {
+    const url = new URL(withScheme)
+    url.protocol = 'https:'
+    url.pathname = ''
+    url.search = ''
+    url.hash = ''
+    return url.origin
+  } catch {
+    return DEFAULT_SHARE_LINK_ORIGIN
+  }
+}
+
 /**
  * Public invite / share link origin (marketing site). Independent from FRONTEND_URL
  * so Capacitor OAuth / mail deep links can point elsewhere later.
+ * Always https so clipboard / SMS links are tappable.
  */
 export function shareLinkOrigin(): string {
-  const configured = env.get('SHARE_LINK_ORIGIN')?.trim()
-  if (configured) {
-    return configured.replace(/\/$/, '')
-  }
-  return 'https://atasoif.fr'
+  return normalizeShareLinkOrigin(env.get('SHARE_LINK_ORIGIN'))
 }
 
 export function buildShareInviteUrl(inviteCode: string): string {
-  return `${shareLinkOrigin()}/i/${inviteCode}`
+  const code = inviteCode.trim().toUpperCase()
+  return `${shareLinkOrigin()}/i/${code}`
 }
