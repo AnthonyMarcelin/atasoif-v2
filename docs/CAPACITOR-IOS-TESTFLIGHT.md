@@ -12,8 +12,8 @@ Technical runbook for shipping `apps/web` (Angular cave) as a Capacitor iOS shel
 | Capacitor | `@capacitor/core` + `@capacitor/ios` + `@capacitor/cli` (aligned versions) |
 | `webDir` | `dist/web/browser` |
 | Xcode workspace | `apps/web/ios/App/App.xcworkspace` (CocoaPods — open this, not the `.xcodeproj`) |
-| Marketing version | `1.0.4` (`MARKETING_VERSION`) |
-| Build number | `4` (`CURRENT_PROJECT_VERSION`) |
+| Marketing version | `1.0.5` (`MARKETING_VERSION`) |
+| Build number | `5` (`CURRENT_PROJECT_VERSION`) |
 | iOS deps | CocoaPods (`Podfile`) — required for `@capacitor-mlkit/barcode-scanning` (no SPM) |
 
 Distribution preference: **native stores via Capacitor** — not a Dokploy `app.` / `cave.` subdomain (see Context prefs). Next Android AAB is later; do not bump Play versioning here.
@@ -73,6 +73,7 @@ Anthony must complete these steps locally (certs / Apple ID):
 8. Wait for processing in [App Store Connect](https://appstoreconnect.apple.com) → TestFlight.
 9. Add internal (and optionally external) testers; install via TestFlight on device.
 10. Smoke: **SCAN** opens the native barcode camera; **Ajouter une photo** shows the system sheet (Bibliothèque / Appareil photo).
+11. Smoke: double-tap on UI does **not** zoom the WebView (`zoomEnabled: false` + viewport `maximum-scale=1` / `user-scalable=no`).
 
 If signing / provisioning fails, fix in Xcode or Apple Developer certificates — do not paste secrets into the repo or CI.
 

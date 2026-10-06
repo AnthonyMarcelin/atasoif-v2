@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
   appId: 'fr.atasoif.app',
   appName: 'À ta soif',
   webDir: 'dist/web/browser',
+  // Explicit: Capacitor default is false, but iOS double-tap zoom can still fire
+  // (ionic-team/capacitor#8226). Pair with viewport maximum-scale in index.html.
+  zoomEnabled: false,
   server: {
     // Prod API is absolute (https://api.atasoif.fr); no local live-reload server in release builds.
     androidScheme: 'https',
