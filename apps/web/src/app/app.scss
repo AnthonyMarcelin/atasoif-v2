@@ -2,3 +2,57 @@
   display: block;
   min-height: 100%;
 }
+
+.app-shell {
+  min-height: 100%;
+}
+
+.app-shell--locked .app-shell__outlet {
+  visibility: hidden;
+}
+
+.session-lock {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  padding:
+    calc(var(--space-lg) + env(safe-area-inset-top, 0px))
+    var(--space-lg)
+    calc(var(--space-xl) + env(safe-area-inset-bottom, 0px));
+  background: var(--color-bg);
+  border: 0;
+  border-radius: var(--radius);
+}
+
+.session-lock__brand {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  font-weight: 700;
+  letter-spacing: var(--mono-track);
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.session-lock__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 9vw, var(--text-display-l));
+  letter-spacing: var(--display-track);
+  text-transform: uppercase;
+  line-height: 0.95;
+  color: var(--color-ink);
+}
+
+.session-lock__lead {
+  margin: 0 0 var(--space-md);
+  font-size: var(--text-body-s);
+  color: var(--color-ink-muted);
+  line-height: 1.45;
+  max-width: 28ch;
+}

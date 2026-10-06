@@ -1,10 +1,11 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import type { ApiDataEnvelope, AuthTokenResponse, AuthUser } from './auth.types';
+import { SessionGate } from './session-gate';
 import { TokenStorage } from './token-storage';
 
 export interface SignupPayload {
@@ -30,6 +31,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly tokenStorage = inject(TokenStorage);
+  private readonly sessionGate = inject(SessionGate);
 
   private readonly tokenSignal = signal<string | null>(this.tokenStorage.getToken());
   private readonly userSignal = signal<AuthUser | null>(this.readStoredUser());
@@ -96,6 +98,7 @@ export class AuthService {
   completeOAuthLogin(token: string): Observable<AuthUser | null> {
     this.tokenSignal.set(token);
     this.tokenStorage.setToken(token);
+    this.sessionGate.unlock();
     return this.loadProfile();
   }
 
@@ -179,9 +182,12 @@ export class AuthService {
     return this.http.get<ApiDataEnvelope<AuthUser>>(`${this.apiBase}/api/v1/account/profile`).pipe(
       map((body) => body.data),
       tap((user) => this.setUser(user)),
-      catchError(() => {
-        this.clearSession();
-        return of(null);
+      catchError((error: unknown) => {
+        // 401 is already handled by the interceptor. Network / 5xx must not drop the token.
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          return of(null);
+        }
+        return of(this.userSignal());
       }),
     );
   }
@@ -229,6 +235,7 @@ export class AuthService {
     this.tokenSignal.set(null);
     this.userSignal.set(null);
     this.tokenStorage.clearAll();
+    this.sessionGate.unlock();
   }
 
   private persistSession(token: string, user: AuthUser): void {
@@ -236,6 +243,7 @@ export class AuthService {
     this.userSignal.set(user);
     this.tokenStorage.setToken(token);
     this.tokenStorage.setUserJson(JSON.stringify(user));
+    this.sessionGate.unlock();
   }
 
   private setUser(user: AuthUser): void {

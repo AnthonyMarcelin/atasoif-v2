@@ -69,10 +69,21 @@ export class AccountPage implements OnInit {
         this.biometricMessage.set('Biométrie désactivée.');
         return;
       }
+      const verified = await this.biometrics.verifyUnlock();
+      if (!verified.ok) {
+        this.biometricError.set(verified.reason !== 'cancelled');
+        this.biometricEnabled.set(false);
+        this.biometricMessage.set(
+          verified.reason === 'cancelled'
+            ? 'Activation annulée.'
+            : 'Impossible d’activer Face ID. Réessaie.',
+        );
+        return;
+      }
       this.biometrics.setEnabledPreference(true);
       this.biometricEnabled.set(true);
       this.biometricMessage.set(
-        'Biométrie activée. Connecte-toi une fois avec e-mail / mot de passe pour enregistrer Face ID.',
+        'Biométrie activée. Au retour dans l’app, Face ID déverrouille ta cave.',
       );
     } catch {
       this.biometricError.set(true);

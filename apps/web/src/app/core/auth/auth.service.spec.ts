@@ -175,6 +175,25 @@ describe('AuthService', () => {
     expect(service.showAppleLogin).toBeTrue();
   });
 
+  it('keeps the bearer token when profile reload fails without 401', () => {
+    service.login({ email: 'a@b.c', password: 'motdepasse1' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`)
+      .flush({ data: { type: 'bearer', token: 'tok-keep', user: sampleUser } });
+
+    let profile: unknown = 'unset';
+    service.loadProfile().subscribe((value) => {
+      profile = value;
+    });
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/api/v1/account/profile`)
+      .flush({ message: 'down' }, { status: 503, statusText: 'Unavailable' });
+
+    expect(service.getAccessToken()).toBe('tok-keep');
+    expect(storage.getToken()).toBe('tok-keep');
+    expect(profile).toEqual(sampleUser);
+  });
+
   it('completeOAuthLogin stores the token then loads the profile', () => {
     service.completeOAuthLogin('oauth-tok').subscribe();
 
