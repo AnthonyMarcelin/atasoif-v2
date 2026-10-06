@@ -13,11 +13,6 @@ const BIOMETRIC_APP_STATE_GRACE_MS = 2_000;
 /** Face ID must not block login forever (hung native sheet → black screen). */
 const BIOMETRIC_VERIFY_TIMEOUT_MS = 8_000;
 
-type PromptOptions = {
-  /** Full-screen cover hides the cave. Cold start uses login instead (fail-open). */
-  allowCover?: boolean;
-};
-
 @Injectable({ providedIn: 'root' })
 export class SessionLockService {
   private readonly auth = inject(AuthService);
@@ -52,10 +47,10 @@ export class SessionLockService {
       this.gate.unlock();
       this.passwordFallback = false;
     } else if (this.shouldLock()) {
-      // Cold start: show login immediately (fail-open). Do not blank the WebView
-      // behind a cover while Face ID may hang and never paint a dismiss control.
-      this.failOpenToLogin();
-      void this.promptUnlock({ allowCover: false });
+      // Cold start: always land on login first (real route). Never blank the
+      // WebView behind a cover while Face ID may hang before first paint.
+      this.ensureLoginRoute();
+      void this.promptUnlockAfterPaint();
     }
 
     if (!Capacitor.isNativePlatform()) {
@@ -69,22 +64,22 @@ export class SessionLockService {
         }
         if (!isActive) {
           if (this.shouldLock() && !this.passwordFallback) {
-            this.gate.requireUnlock();
+            // Soft-lock: keep a real login route under any overlay (no blank shell).
+            // Do not set cover here — cover only while an unlock prompt is active.
+            this.ensureLoginRoute();
           }
           return;
         }
-        // Only prompt when already locked. `shouldLock()` alone is true while unlocked
-        // with biometrics on — using it here re-prompts after every Face ID dismissal.
+        // Resume with session: Face ID when locked, not merely because bio is on
+        // (#106 loop fix). passwordFallback skips auto-reprompt after cancel.
         if (this.gate.locked() && !this.passwordFallback) {
-          void this.promptUnlock({ allowCover: true });
+          void this.promptUnlockAfterPaint();
         }
       });
     });
   }
 
-  async promptUnlock(options: PromptOptions = {}): Promise<boolean> {
-    const allowCover = options.allowCover !== false;
-
+  async promptUnlock(): Promise<boolean> {
     if (this.prompting) {
       return false;
     }
@@ -103,13 +98,9 @@ export class SessionLockService {
       return true;
     }
 
-    if (allowCover) {
-      this.gate.requireUnlock();
-    } else {
-      // Keep login visible underneath the system Face ID sheet.
-      this.gate.revealLogin();
-    }
-
+    // Login must exist under the cover so a hung Face ID never leaves a blank shell.
+    this.ensureLoginRoute();
+    this.gate.requireUnlock();
     this.prompting = true;
     try {
       const result = await this.verifyWithTimeout();
@@ -151,23 +142,40 @@ export class SessionLockService {
     }
     if (!isActive) {
       if (this.shouldLock() && !this.passwordFallback) {
-        this.gate.requireUnlock();
+        this.ensureLoginRoute();
       }
       return;
     }
     if (this.gate.locked() && !this.passwordFallback) {
-      void this.promptUnlock({ allowCover: true });
+      void this.promptUnlock();
     }
   }
 
-  private failOpenToLogin(): void {
-    this.passwordFallback = true;
+  /**
+   * Defer the native sheet one macrotask so Angular can paint login (and optional
+   * cover) before the bridge call can freeze the WebView.
+   */
+  private promptUnlockAfterPaint(): Promise<boolean> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        void this.promptUnlock().then(resolve);
+      }, 0);
+    });
+  }
+
+  /** Lock + login route, no cover — used on cold start / background / fail-open. */
+  private ensureLoginRoute(): void {
     this.gate.revealLogin();
     if (!this.router.url.startsWith('/auth/login')) {
       void this.router.navigate(['/auth/login'], {
         queryParams: { returnUrl: '/cave' },
       });
     }
+  }
+
+  private failOpenToLogin(): void {
+    this.passwordFallback = true;
+    this.ensureLoginRoute();
   }
 
   private async verifyWithTimeout(): Promise<{ ok: true } | { ok: false; reason: string }> {

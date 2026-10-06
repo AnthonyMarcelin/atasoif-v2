@@ -88,4 +88,36 @@ describe('authGuard', () => {
     expect(auth.getAccessToken()).toBe('tok');
     httpMock.verify();
   });
+
+  it('redirects to login even when the biometric cover is up', () => {
+    const auth = TestBed.inject(AuthService);
+    const httpMock = TestBed.inject(HttpTestingController);
+    const gate = TestBed.inject(SessionGate);
+    const router = TestBed.inject(Router);
+
+    auth.login({ email: 'a@b.c', password: 'x' }).subscribe();
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/auth/login`).flush({
+      data: {
+        type: 'bearer',
+        token: 'tok',
+        user: {
+          id: 1,
+          email: 'a@b.c',
+          fullName: null,
+          pseudo: null,
+          isPublic: false,
+          emailVerified: false,
+        },
+      },
+    });
+    gate.requireUnlock();
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as never, { url: '/cave' } as never),
+    );
+    expect(result).toEqual(
+      router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: '/cave' } }),
+    );
+    httpMock.verify();
+  });
 });
