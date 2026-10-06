@@ -243,28 +243,20 @@
                 <button
                   class="cellar-photo-fab"
                   type="button"
-                  (click)="pickAddPhoto('camera')"
+                  (click)="pickAddPhoto()"
                   [disabled]="saving()"
-                  aria-label="Ajouter une photo avec la caméra"
-                  title="Caméra"
+                  aria-label="Ajouter une photo"
+                  title="Ajouter une photo"
                 >
                   <span aria-hidden="true">＋</span>
                 </button>
                 <button
                   class="auth-btn auth-btn--secondary"
                   type="button"
-                  (click)="pickAddPhoto('library')"
+                  (click)="pickAddPhoto()"
                   [disabled]="saving()"
                 >
-                  Photothèque
-                </button>
-                <button
-                  class="auth-btn auth-btn--secondary"
-                  type="button"
-                  (click)="pickAddPhoto('camera')"
-                  [disabled]="saving()"
-                >
-                  Caméra
+                  {{ pendingPhoto() ? 'Changer la photo' : 'Ajouter une photo' }}
                 </button>
               </div>
             } @else {

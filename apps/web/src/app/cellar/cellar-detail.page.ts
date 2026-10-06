@@ -271,7 +271,7 @@ export class CellarDetailPage implements OnInit {
     this.submitShelfPhoto(file);
   }
 
-  async pickShelfPhoto(source: 'camera' | 'library'): Promise<void> {
+  async pickShelfPhoto(): Promise<void> {
     if (this.uploadingPhoto()) {
       return;
     }
@@ -279,7 +279,7 @@ export class CellarDetailPage implements OnInit {
       this.goPremium('photo');
       return;
     }
-    const result = await this.shelfCamera.pick(source);
+    const result = await this.shelfCamera.pick();
     if (result.ok) {
       this.submitShelfPhoto(result.file);
       return;
