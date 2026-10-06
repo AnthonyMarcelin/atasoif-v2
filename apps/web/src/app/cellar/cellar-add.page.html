@@ -2,7 +2,7 @@
   [hideHeader]="step() === 'search'"
   [hideNav]="true"
   title="Ajouter"
-  lead="Cherche d’abord · moins de 30 secondes."
+  lead="Cherche dans le catalogue ou scanne · l’objectif, c’est d’enregistrer dans ta cave."
   [freemium]="freemium()"
 >
   @if (step() === 'search') {
@@ -23,8 +23,8 @@
             autocomplete="off"
             autocorrect="off"
             spellcheck="false"
-            placeholder="Rechercher un nom ou une marque"
-            aria-label="Recherche catalogue"
+            placeholder="Chercher dans le catalogue ou scanner"
+            aria-label="Chercher dans le catalogue ou scanner"
             [value]="searchControl.value"
             (input)="onQueryInput($any($event.target).value)"
             (focus)="setFocused('q')"

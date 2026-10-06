@@ -4,22 +4,32 @@
   gap: 16px;
 }
 
-.friends-page__head {
+.friends-action {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: var(--stroke) solid var(--color-border);
 }
 
-.friends-page__title {
+.friends-action__title {
   margin: 0;
-  font-size: clamp(2rem, 8vw, 2.6rem);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-s);
+  letter-spacing: var(--mono-track);
   text-transform: uppercase;
+  color: var(--color-accent);
 }
 
-.friends-page__count {
-  color: var(--color-accent);
-  font-size: clamp(2rem, 8vw, 2.6rem);
-  font-weight: 700;
+.friends-action__hint {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-body-s);
+  line-height: 1.4;
+}
+
+.friends-action__settings {
+  align-self: flex-start;
 }
 
 .friends-search {
@@ -120,18 +130,4 @@
   background: transparent;
   color: var(--color-ink);
   cursor: pointer;
-}
-
-.friends-invite-box {
-  margin-top: 8px;
-  border: var(--stroke) dashed var(--color-ink-disabled);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.friends-invite-box p {
-  margin: 0;
-  color: var(--color-ink-3);
 }

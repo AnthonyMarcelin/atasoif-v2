@@ -71,11 +71,6 @@
         >
           {{ magicSending() ? 'Envoi…' : 'Recevoir un lien magique' }}
         </button>
-        @if (biometricAvailable()) {
-          <button class="auth-btn auth-btn--secondary" type="button" (click)="unlockWithBiometrics()">
-            Face ID / Touch ID
-          </button>
-        }
         <button class="auth-btn auth-btn--secondary" type="button" (click)="continueWithGoogle()">
           Continuer avec Google
         </button>
