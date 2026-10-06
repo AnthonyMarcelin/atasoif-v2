@@ -1,4 +1,8 @@
-<app-cellar-shell title="Catalogue" [freemium]="freemium()">
+<app-cellar-shell
+  title="Catalogue"
+  lead="Consulte la base partagée. Pour enrôler une bouteille dans ta cave, utilise +."
+  [freemium]="freemium()"
+>
   <div class="catalog-page">
     <div class="catalog-page__search">
       <span class="catalog-page__search-icon" aria-hidden="true"></span>
@@ -6,8 +10,8 @@
         class="catalog-page__search-input"
         type="search"
         autocomplete="off"
-        placeholder="Nom, marque, code-barres"
-        aria-label="Recherche catalogue"
+        placeholder="Parcourir nom, marque, code-barres"
+        aria-label="Parcourir le catalogue"
         [value]="searchControl.value"
         (input)="onQueryInput($any($event.target).value)"
       />
@@ -38,28 +42,38 @@
       </p>
       @if (searching()) {
         <p class="auth-status" role="status">Recherche…</p>
+      } @else if (results().length === 0) {
+        <p class="auth-status" role="status">
+          Rien dans la base pour ça · pour créer une fiche et l’ajouter à ta cave, tape +.
+        </p>
       }
-      <ul class="catalog-list" aria-label="Résultats">
+      <ul class="catalog-list" aria-label="Résultats catalogue">
         @for (bottle of results(); track bottle.id) {
           <li>
-            <button type="button" class="catalog-row" (click)="openAdd(bottle)">
+            <article class="catalog-row catalog-row--browse">
               <app-bottle-photo
                 class="catalog-row__photo"
                 [src]="bottle.photoUrl"
                 [alt]="titleOf(bottle)"
                 variant="list"
               />
-              <span class="catalog-row__body">
-                <span class="catalog-row__name">{{ titleOf(bottle) }}</span>
+              <div class="catalog-row__body">
+                <p class="catalog-row__name">{{ titleOf(bottle) }}</p>
                 @if (metaOf(bottle); as meta) {
-                  <span class="catalog-row__meta">{{ meta }}</span>
+                  <p class="catalog-row__meta">{{ meta }}</p>
                 }
                 @if (isInCellar(bottle.id)) {
-                  <span class="catalog-row__owned">Dans ta cave</span>
+                  <p class="catalog-row__owned">Dans ta cave</p>
                 }
-              </span>
-              <span class="catalog-row__plus" aria-hidden="true">+</span>
-            </button>
+              </div>
+              <button
+                type="button"
+                class="catalog-row__cta"
+                (click)="openAdd(bottle)"
+              >
+                Ajouter à ma cave
+              </button>
+            </article>
           </li>
         }
       </ul>
@@ -68,7 +82,12 @@
         <p class="catalog-section-label">Déjà dans ta cave</p>
         <div class="catalog-owned" role="list">
           @for (bottle of inCellar(); track bottle.id) {
-            <a class="catalog-owned__card" role="listitem" [routerLink]="['/cave/ajouter']" [queryParams]="{ bottleId: bottle.id }">
+            <a
+              class="catalog-owned__card"
+              role="listitem"
+              [routerLink]="['/cave/ajouter']"
+              [queryParams]="{ bottleId: bottle.id }"
+            >
               <app-bottle-photo [src]="bottle.photoUrl" [alt]="titleOf(bottle)" variant="list" />
               <span class="catalog-owned__name">{{ titleOf(bottle) }}</span>
               <span class="catalog-owned__stamp">Dans ta cave</span>
@@ -81,26 +100,34 @@
       @if (searching()) {
         <p class="auth-status" role="status">Chargement…</p>
       } @else if (recent().length === 0) {
-        <p class="auth-status" role="status">Rien de neuf pour ce filtre · cherche un nom.</p>
+        <p class="auth-status" role="status">
+          Rien de neuf pour ce filtre · parcours la base ici, ou ajoute à ta cave via +.
+        </p>
       }
-      <ul class="catalog-list" aria-label="Ajouts récents">
+      <ul class="catalog-list" aria-label="Ajouts récents au catalogue">
         @for (bottle of recent(); track bottle.id) {
           <li>
-            <button type="button" class="catalog-row" (click)="openAdd(bottle)">
+            <article class="catalog-row catalog-row--browse">
               <app-bottle-photo
                 class="catalog-row__photo"
                 [src]="bottle.photoUrl"
                 [alt]="titleOf(bottle)"
                 variant="list"
               />
-              <span class="catalog-row__body">
-                <span class="catalog-row__name">{{ titleOf(bottle) }}</span>
+              <div class="catalog-row__body">
+                <p class="catalog-row__name">{{ titleOf(bottle) }}</p>
                 @if (metaOf(bottle); as meta) {
-                  <span class="catalog-row__meta">{{ meta }}</span>
+                  <p class="catalog-row__meta">{{ meta }}</p>
                 }
-              </span>
-              <span class="catalog-row__plus" aria-hidden="true">+</span>
-            </button>
+              </div>
+              <button
+                type="button"
+                class="catalog-row__cta"
+                (click)="openAdd(bottle)"
+              >
+                Ajouter à ma cave
+              </button>
+            </article>
           </li>
         }
       </ul>
