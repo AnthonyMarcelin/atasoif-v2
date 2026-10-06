@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { HttpTestingController } from '@angular/common/http/testing';
 
 import { environment } from '../../../environments/environment';
@@ -27,6 +27,9 @@ describe('SessionLockService', () => {
     httpMock = TestBed.inject(HttpTestingController);
     gate = TestBed.inject(SessionGate);
     biometrics = TestBed.inject(BiometricAuthService);
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    spyOn(router, 'navigate').and.resolveTo(true);
   });
 
   afterEach(() => {

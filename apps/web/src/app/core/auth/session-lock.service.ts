@@ -1,7 +1,7 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { App, type PluginListenerHandle } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
 
 import { AuthService } from './auth.service';
 import { BiometricAuthService } from './biometric-auth.service';
