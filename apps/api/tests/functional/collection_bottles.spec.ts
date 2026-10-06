@@ -111,7 +111,13 @@ test.group('Collection bottles API (E2-T03)', (group) => {
         bottle: { photoUrl: string | null }
       }
       meta: {
-        freemium: { count: number; limit: number; remaining: number | null; entitlement: boolean }
+        freemium: {
+          count: number
+          limit: number
+          remaining: number | null
+          entitlement: boolean
+          plan: 'monthly' | 'yearly' | null
+        }
       }
     }
     assert.equal(body.data.boughtAt, 'Nicolas Part-Dieu')
@@ -124,6 +130,7 @@ test.group('Collection bottles API (E2-T03)', (group) => {
     assert.equal(body.meta.freemium.limit, FREE_BOTTLE_LIMIT)
     assert.equal(body.meta.freemium.remaining, FREE_BOTTLE_LIMIT - 1)
     assert.isFalse(body.meta.freemium.entitlement)
+    assert.isNull(body.meta.freemium.plan)
   })
 
   test('11th create is blocked and delete does not free the slot', async ({ client, assert }) => {
@@ -207,11 +214,19 @@ test.group('Collection bottles API (E2-T03)', (group) => {
 
     response.assertStatus(201)
     const body = response.body() as {
-      meta: { freemium: { count: number; remaining: number | null; entitlement: boolean } }
+      meta: {
+        freemium: {
+          count: number
+          remaining: number | null
+          entitlement: boolean
+          plan: 'monthly' | 'yearly' | null
+        }
+      }
     }
     assert.equal(body.meta.freemium.count, FREE_BOTTLE_LIMIT + 1)
     assert.isNull(body.meta.freemium.remaining)
     assert.isTrue(body.meta.freemium.entitlement)
+    assert.equal(body.meta.freemium.plan, 'monthly')
   })
 
   test('free user blocked when setting fillLevel', async ({ client, assert }) => {

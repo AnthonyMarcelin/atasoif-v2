@@ -21,7 +21,14 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
               @if (showBrand) {
                 <p class="cellar-shell__brand">À ta soif !</p>
               }
-              <h1 class="cellar-shell__title">{{ title }}</h1>
+              <div class="cellar-shell__title-row">
+                <h1 class="cellar-shell__title">{{ title }}</h1>
+                @if (freemium?.entitlement) {
+                  <span class="cellar-premium-badge" aria-label="Abonnement Premium actif"
+                    >Premium</span
+                  >
+                }
+              </div>
               @if (lead) {
                 <p class="cellar-shell__lead">{{ lead }}</p>
               }
@@ -76,9 +83,17 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
             <span class="cellar-nav__icon cellar-nav__icon--friends" aria-hidden="true"></span>
             <span class="cellar-nav__label">Amis</span>
           </a>
-          <a class="cellar-nav__item" routerLink="/me" routerLinkActive="is-active">
+          <a
+            class="cellar-nav__item"
+            routerLink="/me"
+            routerLinkActive="is-active"
+            [class.cellar-nav__item--premium]="freemium?.entitlement"
+          >
             <span class="cellar-nav__icon cellar-nav__icon--profile" aria-hidden="true"></span>
             <span class="cellar-nav__label">Mon profil</span>
+            @if (freemium?.entitlement) {
+              <span class="cellar-nav__premium-dot" aria-hidden="true"></span>
+            }
           </a>
         </nav>
       }

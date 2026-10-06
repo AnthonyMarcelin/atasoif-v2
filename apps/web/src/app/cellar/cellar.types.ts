@@ -26,12 +26,16 @@ export interface CatalogBottle {
   lookupOrigin?: string;
 }
 
+export type SubscriptionPlanId = 'monthly' | 'yearly';
+
 export interface FreemiumMeta {
   /** Lifetime creates consumed. Deleting a bottle does not free a slot. */
   count: number;
   limit: number;
   remaining: number | null;
   entitlement: boolean;
+  /** Active plan when entitled; null on freemium (or unknown legacy id). */
+  plan?: SubscriptionPlanId | null;
 }
 
 export interface UserBottle {
