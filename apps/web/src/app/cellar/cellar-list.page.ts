@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { memorySheetCompleteness, type MemorySheetCompleteness } from '@atasoif/shared';
 import { finalize } from 'rxjs';
 
@@ -32,11 +32,13 @@ import { cellarEmptyKind } from './freemium-counter';
 })
 export class CellarListPage implements OnInit {
   private readonly collection = inject(CollectionService);
+  private readonly router = inject(Router);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly bottles = signal<UserBottle[]>([]);
   readonly freemium = signal<FreemiumMeta | null>(null);
+  readonly lockedCount = signal(0);
   readonly category = signal<string | null>(null);
   readonly localQuery = signal('');
   /** Header counter uses freemium meta (lifetime creates), never `bottles().length`. */
@@ -78,7 +80,7 @@ export class CellarListPage implements OnInit {
   readonly brandOf = displayBrand;
   readonly photoOf = displayPhotoUrl;
   readonly categoryOf = displayCategory;
-  readonly levelOf = (entry: UserBottle) => fillLevelLabel(entry.fillLevel);
+  readonly levelOf = (entry: UserBottle) => fillLevelLabel(entry.fillLevel ?? 100);
 
   ngOnInit(): void {
     this.load();
@@ -129,6 +131,14 @@ export class CellarListPage implements OnInit {
     });
   }
 
+  onCardActivate(entry: UserBottle, event: Event): void {
+    if (!entry.locked) {
+      return;
+    }
+    event.preventDefault();
+    void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'locked' } });
+  }
+
   load(): void {
     this.loading.set(true);
     this.error.set(null);
@@ -140,6 +150,7 @@ export class CellarListPage implements OnInit {
         next: (body) => {
           this.bottles.set(body.data);
           this.freemium.set(body.meta.freemium);
+          this.lockedCount.set(body.meta.lockedCount ?? body.data.filter((b) => b.locked).length);
         },
         error: (err: unknown) => {
           this.error.set(cellarErrorMessage(err, 'Impossible de charger ta cave. Réessaie.'));

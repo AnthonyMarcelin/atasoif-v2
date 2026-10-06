@@ -2,6 +2,9 @@
 
 export const FREE_BOTTLE_LIMIT = 10;
 
+/** Max bonus slots from `user_rewards` on top of FREE_BOTTLE_LIMIT (conversion §2). */
+export const FREE_BONUS_CAP = 5;
+
 /**
  * Store IAP prices + intro trial lengths (App Store / Play only — no Stripe).
  * Prefs: 7 days yearly / 3 days monthly.
