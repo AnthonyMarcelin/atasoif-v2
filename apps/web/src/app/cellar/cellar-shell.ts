@@ -1,7 +1,17 @@
-import { Component, HostBinding, Input, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  HostBinding,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  inject,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import type { FreemiumMeta } from './cellar.types';
+import { CellarToastService } from './cellar-toast.service';
 import { FreemiumCounter, freemiumSlots } from './freemium-counter';
 
 @Component({
@@ -33,9 +43,22 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
                 <p class="cellar-shell__lead">{{ lead }}</p>
               }
             </div>
-            @if (freemium) {
-              <app-freemium-counter [freemium]="freemium" />
-            }
+            <div class="cellar-shell__aside">
+              @if (showShare) {
+                <button
+                  type="button"
+                  class="cellar-shell__share"
+                  (click)="share.emit()"
+                  [disabled]="shareBusy"
+                  [attr.aria-busy]="shareBusy"
+                >
+                  {{ shareBusy ? 'Préparation…' : 'Partager' }}
+                </button>
+              }
+              @if (freemium) {
+                <app-freemium-counter [freemium]="freemium" />
+              }
+            </div>
           </div>
           @if (freemium && showSlots && !freemium.entitlement) {
             <div class="cellar-shell__slots" aria-hidden="true">
@@ -43,8 +66,20 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
                 <span class="cellar-shell__slot" [class.is-filled]="filled"></span>
               }
             </div>
+            <p class="cellar-shell__freemium-note">
+              Retirer une bouteille ne libère pas de place.
+            </p>
+            <p class="cellar-shell__bonus-hint">
+              <a routerLink="/cave/amis" class="cellar-shell__bonus-link"
+                >Comment gagner des places</a
+              >
+            </p>
           }
         </header>
+      }
+
+      @if (toast.message(); as toastText) {
+        <div class="cellar-toast" role="status" aria-live="polite">{{ toastText }}</div>
       }
 
       <div class="cellar-shell__body">
@@ -101,6 +136,8 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
   `,
 })
 export class CellarShell implements OnInit, OnDestroy {
+  readonly toast = inject(CellarToastService);
+
   @Input() title = 'Ma cave';
   @Input() lead: string | null = null;
   @Input() freemium: FreemiumMeta | null = null;
@@ -112,6 +149,10 @@ export class CellarShell implements OnInit, OnDestroy {
   @Input() hideNav = false;
   /** Hide the default header (add search has a custom chrome). */
   @Input() hideHeader = false;
+  /** Story share card (cellar list header). */
+  @Input() showShare = false;
+  @Input() shareBusy = false;
+  @Output() readonly share = new EventEmitter<void>();
 
   @HostBinding('class.cellar-shell-host') readonly hostClass = true;
 

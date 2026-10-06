@@ -27,13 +27,17 @@ import EntitlementService from '#services/entitlement_service'
 import { isHeicHeader } from '#services/image_signature'
 import { isCatalogPhotoUrl, isHttpPhotoUrl, isOwnShelfPhotoUrl } from '#services/photo_url'
 import { readPostgresUniqueViolation } from '#services/postgres_error'
+import RewardService, { type GrantedReward } from '#services/reward_service'
 
 export { CollectionError } from '#services/collection/collection_error'
 
 export type FreemiumSnapshot = {
   /** Lifetime creates consumed. Deletes do not free a slot. */
   count: number
+  /** Effective free cap: FREE_BOTTLE_LIMIT + bonus (capped). */
   limit: number
+  /** Bonus slots from user_rewards (0…FREE_BONUS_CAP). */
+  bonus: number
   remaining: number | null
   entitlement: boolean
   /** Active IAP / legacy plan when entitled; null on freemium. */
@@ -105,19 +109,26 @@ export type ListUserBottlesInput = {
  * decrements on delete. Does not mutate global Bottle rows for personal fields.
  */
 export default class CollectionService {
-  constructor(private readonly entitlements: EntitlementService = new EntitlementService()) {}
+  constructor(
+    private readonly entitlements: EntitlementService = new EntitlementService(),
+    private readonly rewards: RewardService = new RewardService()
+  ) {}
 
   /**
    * Freemium payload for API responses. `count` is lifetime creates.
    * `remaining` is null when entitled (uncapped).
+   * `limit` includes bonus slots (conversion §2).
    */
   async freemiumPayload(userId: number): Promise<FreemiumSnapshot> {
     const { entitled: entitlement, plan } = await this.entitlements.snapshot(userId)
     const count = await this.countFor(userId)
+    const bonus = await this.rewards.bonusSlots(userId)
+    const limit = FREE_BOTTLE_LIMIT + bonus
     return {
       count,
-      limit: FREE_BOTTLE_LIMIT,
-      remaining: entitlement ? null : Math.max(0, FREE_BOTTLE_LIMIT - count),
+      limit,
+      bonus,
+      remaining: entitlement ? null : Math.max(0, limit - count),
       entitlement,
       plan,
     }
@@ -158,6 +169,51 @@ export default class CollectionService {
     return query.paginate(page, limit)
   }
 
+  /**
+   * Global unlock set for freemium return-to-free (conversion §3).
+   * Oldest `created_at` (then id) stay unlocked up to the effective limit.
+   */
+  async unlockedBottleIds(userId: number): Promise<Set<number> | null> {
+    const entitlement = await this.entitlements.hasActiveEntitlement(userId)
+    if (entitlement) {
+      return null
+    }
+    const effectiveLimit = await this.rewards.effectiveLimit(userId)
+    const rows = await UserBottle.query()
+      .where('user_id', userId)
+      .orderBy('created_at', 'asc')
+      .orderBy('id', 'asc')
+      .select('id')
+    return new Set(rows.slice(0, effectiveLimit).map((row) => row.id))
+  }
+
+  async isBottleLocked(userId: number, bottleId: number): Promise<boolean> {
+    const unlocked = await this.unlockedBottleIds(userId)
+    if (unlocked === null) {
+      return false
+    }
+    return !unlocked.has(bottleId)
+  }
+
+  async assertUnlocked(userId: number, bottleId: number): Promise<void> {
+    if (await this.isBottleLocked(userId, bottleId)) {
+      throw new CollectionError(
+        'E_PREMIUM_LOCKED',
+        'Cette bouteille est en sommeil · passe premium pour la retrouver',
+        403
+      )
+    }
+  }
+
+  async lockedCount(userId: number): Promise<number> {
+    const unlocked = await this.unlockedBottleIds(userId)
+    if (unlocked === null) {
+      return 0
+    }
+    const total = await UserBottle.query().where('user_id', userId).count('* as total')
+    return Math.max(0, Number(total[0].$extras.total) - unlocked.size)
+  }
+
   async findOwned(userId: number, id: number): Promise<UserBottle> {
     const row = await UserBottle.query()
       .where('id', id)
@@ -178,6 +234,16 @@ export default class CollectionService {
     return row
   }
 
+  /**
+   * Memory rewards for this user + invite side-effect for their referrer.
+   * Only returns grants that belong to `userId` (for toast UX).
+   */
+  async evaluateRewardsAfterBottleWrite(userId: number): Promise<GrantedReward[]> {
+    const memory = await this.rewards.evaluateMemoryRewards(userId)
+    await this.rewards.evaluateInviteRewardsForFriend(userId)
+    return memory
+  }
+
   async create(userId: number, input: CreateUserBottleInput): Promise<UserBottle> {
     const hasBottleId = input.bottleId !== undefined && input.bottleId !== null
     const hasMiss = input.bottle !== undefined && input.bottle !== null
@@ -196,6 +262,9 @@ export default class CollectionService {
       photoUrlOverride: input.photoUrlOverride,
     })
     this.assertStoredPhotoUrls(input)
+    const effectiveLimit = entitlement
+      ? Number.POSITIVE_INFINITY
+      : await this.rewards.effectiveLimit(userId)
 
     try {
       return await db.transaction(async (trx) => {
@@ -206,7 +275,7 @@ export default class CollectionService {
           .select('bottles_created_count')
           .first()
         const createdCount = Number(locked?.bottles_created_count ?? 0)
-        this.assertBottleCap(createdCount, entitlement)
+        this.assertBottleCap(createdCount, entitlement, effectiveLimit)
 
         let bottleId = input.bottleId
         let categorySlug: string | null = null
@@ -321,6 +390,7 @@ export default class CollectionService {
 
   async update(userId: number, id: number, input: UpdateUserBottleInput): Promise<UserBottle> {
     const entitlement = await this.entitlements.hasActiveEntitlement(userId)
+    await this.assertUnlocked(userId, id)
 
     this.assertPremiumWrites(entitlement, {
       fillLevel: input.fillLevel,
@@ -458,6 +528,7 @@ export default class CollectionService {
   }
 
   async delete(userId: number, id: number): Promise<void> {
+    await this.assertUnlocked(userId, id)
     const row = await this.findOwned(userId, id)
     if (row.photoUrlOverride === overridePhotoPath(row.id)) {
       await new CellarPhotoStorage().deleteOverride(userId, row.id)
@@ -482,10 +553,11 @@ export default class CollectionService {
       return mergeWineAttrsOverride(current, null)
     }
 
-    const winePatch: WineAttrsInput = {
-      appellation: patch.appellation,
-      grape: patch.grape,
-      vintage: patch.vintage,
+    const winePatch: WineAttrsInput = {}
+    for (const key of WINE_ATTR_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(patch, key)) {
+        winePatch[key] = patch[key as WineAttrKey]
+      }
     }
     const hasWineKeys = WINE_ATTR_KEYS.some((key) =>
       Object.prototype.hasOwnProperty.call(patch, key)
@@ -629,18 +701,18 @@ export default class CollectionService {
     return error
   }
 
-  private assertBottleCap(count: number, entitlement: boolean): void {
+  private assertBottleCap(count: number, entitlement: boolean, limit: number): void {
     if (entitlement) {
       return
     }
-    if (count >= FREE_BOTTLE_LIMIT) {
+    if (count >= limit) {
       throw new CollectionError(
         'E_BOTTLE_LIMIT',
         'Cave pleine · passe premium pour continuer',
         403,
         {
           count,
-          limit: FREE_BOTTLE_LIMIT,
+          limit,
           remaining: 0,
           entitlement: false,
           plan: null,

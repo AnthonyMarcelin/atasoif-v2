@@ -11,8 +11,14 @@ import {
 } from '@atasoif/shared';
 
 import { BottlePhoto } from './bottle-photo';
-import { apiErrorFeature, cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
+import {
+  apiErrorFeature,
+  cellarErrorMessage,
+  isFreemiumGateError,
+  isPremiumLockedError,
+} from './cellar-errors';
 import { CellarShell } from './cellar-shell';
+import { CellarToastService, rewardSlotsToast } from './cellar-toast.service';
 import { ShelfCameraService } from './shelf-camera.service';
 import { shelfPhotoRejection } from './shelf-photo';
 import {
@@ -25,6 +31,7 @@ import {
 } from './cellar.types';
 import { CollectionService } from './collection.service';
 import { FillGauge } from './fill-gauge';
+import { ShareCardService } from './share-card.service';
 import { wineOverrideFromForm } from './wine-attrs';
 
 @Component({
@@ -39,6 +46,8 @@ export class CellarDetailPage implements OnInit {
   private readonly router = inject(Router);
   private readonly collection = inject(CollectionService);
   private readonly shelfCamera = inject(ShelfCameraService);
+  private readonly toast = inject(CellarToastService);
+  private readonly shareCards = inject(ShareCardService);
   readonly nativePhotoPick = this.shelfCamera.isNative;
 
   readonly loading = signal(true);
@@ -47,10 +56,13 @@ export class CellarDetailPage implements OnInit {
   readonly editing = signal(false);
   readonly confirmDelete = signal(false);
   readonly uploadingPhoto = signal(false);
+  readonly sharing = signal(false);
   readonly error = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
   readonly levelError = signal<string | null>(null);
   readonly photoError = signal<string | null>(null);
+  readonly shareMessage = signal<string | null>(null);
+  readonly shareError = signal<string | null>(null);
   readonly savedOk = signal(false);
   readonly fillSync = signal(0);
   readonly entry = signal<UserBottle | null>(null);
@@ -101,6 +113,10 @@ export class CellarDetailPage implements OnInit {
           this.patchForm(body.data);
         },
         error: (err: unknown) => {
+          if (isPremiumLockedError(err)) {
+            void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'locked' } });
+            return;
+          }
           this.error.set(cellarErrorMessage(err, 'Impossible de charger cette bouteille.'));
         },
       });
@@ -123,6 +139,30 @@ export class CellarDetailPage implements OnInit {
     const current = this.entry();
     if (current) {
       this.patchForm(current);
+    }
+  }
+
+  async shareBottle(): Promise<void> {
+    const current = this.entry();
+    if (!current || this.sharing()) {
+      return;
+    }
+    this.sharing.set(true);
+    this.shareMessage.set(null);
+    this.shareError.set(null);
+    try {
+      const result = await this.shareCards.shareBottle(current);
+      if (result === 'copied') {
+        this.shareMessage.set('Lien https copié · ouvre ton app pour envoyer la carte.');
+      } else if (result === 'shown') {
+        this.shareMessage.set('Partage indisponible · copie le lien depuis Amis.');
+      } else {
+        this.shareMessage.set('Carte prête · choisis où la poster.');
+      }
+    } catch (err: unknown) {
+      this.shareError.set(cellarErrorMessage(err, 'Partage impossible. Réessaie.'));
+    } finally {
+      this.sharing.set(false);
     }
   }
 
@@ -189,8 +229,13 @@ export class CellarDetailPage implements OnInit {
           this.freemium.set(body.meta.freemium);
           this.editing.set(false);
           this.savedOk.set(true);
+          this.showRewardToast(body.meta.rewardsGranted);
         },
         error: (err: unknown) => {
+          if (isPremiumLockedError(err)) {
+            void this.router.navigate(['/cave/premium'], { queryParams: { reason: 'locked' } });
+            return;
+          }
           if (isFreemiumGateError(err)) {
             void this.router.navigate(['/cave/premium'], {
               queryParams: { reason: 'premium' },
@@ -200,6 +245,16 @@ export class CellarDetailPage implements OnInit {
           this.formError.set(cellarErrorMessage(err, 'Enregistrement impossible. Réessaie.'));
         },
       });
+  }
+
+  private showRewardToast(rewards: Array<{ slots: number }> | undefined): void {
+    if (!rewards?.length) {
+      return;
+    }
+    const slots = rewards.reduce((sum, row) => sum + Number(row.slots || 0), 0);
+    if (slots > 0) {
+      this.toast.show(rewardSlotsToast(slots));
+    }
   }
 
   onFillLevel(level: number): void {

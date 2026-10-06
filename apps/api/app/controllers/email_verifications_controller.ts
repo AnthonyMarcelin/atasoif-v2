@@ -2,6 +2,7 @@ import User from '#models/user'
 import AuthEmailTokenService from '#services/auth_email_token_service'
 import { buildFrontendUrl } from '#services/frontend_url'
 import VerifyEmailNotification from '#mails/verify_email_notification'
+import RewardService from '#services/reward_service'
 import { verifyEmailValidator } from '#validators/user'
 import type { HttpContext } from '@adonisjs/core/http'
 import mail from '@adonisjs/mail/services/main'
@@ -32,6 +33,7 @@ export default class EmailVerificationsController {
     if (!user.emailVerified) {
       user.emailVerified = true
       await user.save()
+      await new RewardService().evaluateInviteRewardsForFriend(user.id)
     }
 
     return serialize(UserTransformer.transform(user))

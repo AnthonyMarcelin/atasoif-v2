@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import User from '#models/user'
+import RewardService from '#services/reward_service'
 
 export type AllyProfile = {
   email: string | null
@@ -99,6 +100,7 @@ export default class SocialAuthService {
       dirty = true
       await existing.save()
       await User.accessTokens.deleteAll(existing)
+      await new RewardService().evaluateInviteRewardsForFriend(existing.id)
     }
 
     if (!existing.fullName && profile.name) {

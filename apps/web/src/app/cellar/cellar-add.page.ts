@@ -1,5 +1,6 @@
 import { NgClass } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -9,6 +10,7 @@ import {
   distinctUntilChanged,
   finalize,
   of,
+  startWith,
   switchMap,
   takeUntil,
 } from 'rxjs';
@@ -17,6 +19,8 @@ import {
   FILL_LEVEL_DEFAULT,
   FILL_LEVEL_FINISHED,
   isWineCategorySlug,
+  memorySheetCompleteness,
+  memorySheetMissingHintFr,
   readBottleType,
   readWineAttr,
   WINE_ATTR_LIMITS,
@@ -27,6 +31,7 @@ import { BottlePhoto } from './bottle-photo';
 import { CatalogService, looksLikeBarcode } from './catalog.service';
 import { cellarErrorMessage, isFreemiumGateError } from './cellar-errors';
 import { CellarShell } from './cellar-shell';
+import { CellarToastService, rewardSlotsToast } from './cellar-toast.service';
 import {
   catalogBottleBrand,
   catalogBottleMeta,
@@ -56,6 +61,7 @@ export class CellarAddPage implements OnInit, OnDestroy {
   private readonly collection = inject(CollectionService);
   private readonly barcodeScan = inject(BarcodeScanService);
   private readonly shelfCamera = inject(ShelfCameraService);
+  private readonly toast = inject(CellarToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
@@ -104,6 +110,33 @@ export class CellarAddPage implements OnInit, OnDestroy {
     review: ['', [Validators.maxLength(5000)]],
     fillLevel: [FILL_LEVEL_DEFAULT as number],
   });
+
+  private readonly formSnapshot = toSignal(
+    this.form.valueChanges.pipe(startWith(this.form.getRawValue())),
+    { initialValue: this.form.getRawValue() },
+  );
+
+  /** Soft hint only — never blocks the <30s add path. */
+  readonly memoryHint = computed(() => {
+    const v = this.formSnapshot();
+    return memorySheetMissingHintFr({
+      pricePaid: v.pricePaid,
+      boughtAt: v.boughtAt,
+      note: v.note,
+      review: v.review,
+    });
+  });
+
+  readonly memoryComplete = computed(() => {
+    const v = this.formSnapshot();
+    return memorySheetCompleteness({
+      pricePaid: v.pricePaid,
+      boughtAt: v.boughtAt,
+      note: v.note,
+      review: v.review,
+    }).complete;
+  });
+
   readonly productOpen = signal(false);
   readonly fillPresets = [
     { label: 'Scellée', value: FILL_LEVEL_DEFAULT },
@@ -524,6 +557,13 @@ export class CellarAddPage implements OnInit, OnDestroy {
       .subscribe({
         next: (body) => {
           this.clearPendingPhoto();
+          const rewards = body.meta.rewardsGranted;
+          if (rewards?.length) {
+            const slots = rewards.reduce((sum, row) => sum + Number(row.slots || 0), 0);
+            if (slots > 0) {
+              this.toast.show(rewardSlotsToast(slots));
+            }
+          }
           void this.router.navigate(['/cave', body.data.id]);
         },
         error: (err: unknown) => {

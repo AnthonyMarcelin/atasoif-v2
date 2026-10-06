@@ -1,4 +1,17 @@
-<app-cellar-shell title="Ma cave" [freemium]="freemium()" [showSlots]="true">
+<app-cellar-shell
+  title="Ma cave"
+  [freemium]="freemium()"
+  [showSlots]="true"
+  [showShare]="bottles().length > 0"
+  [shareBusy]="sharing()"
+  (share)="shareCave()"
+>
+  @if (shareMessage(); as message) {
+    <p class="auth-status auth-status--ok" role="status">{{ message }}</p>
+  }
+  @if (shareError(); as message) {
+    <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+  }
   <label class="cellar-search-field" for="cellar-local-search">
     <span class="cellar-search-field__icon" aria-hidden="true"></span>
     <input
@@ -75,13 +88,29 @@
       </div>
     }
   } @else {
+    @if (lockedCount() > 0) {
+      <a
+        class="cellar-locked-banner"
+        routerLink="/cave/premium"
+        [queryParams]="{ reason: 'locked' }"
+      >
+        {{ lockedCount() }}
+        {{ lockedCount() === 1 ? 'bouteille en sommeil' : 'bouteilles en sommeil' }}. Repasse premium
+        pour {{ lockedCount() === 1 ? 'la' : 'les' }} retrouver.
+      </a>
+    }
+
     <ul class="cellar-list" aria-label="Bouteilles en cave">
       @for (entry of visibleBottles(); track entry.id) {
         <li class="cellar-list__item">
           <a
             class="cellar-card"
-            [class.is-empty]="entry.fillLevel <= 0"
-            [routerLink]="['/cave', entry.id]"
+            [class.is-empty]="(entry.fillLevel ?? 100) <= 0 && !entry.locked"
+            [class.is-memory-complete]="!entry.locked && memoryOf(entry).complete"
+            [class.is-locked]="entry.locked"
+            [routerLink]="entry.locked ? null : ['/cave', entry.id]"
+            [attr.href]="entry.locked ? null : undefined"
+            (click)="onCardActivate(entry, $event)"
           >
             <app-bottle-photo
               class="cellar-card__photo"
@@ -92,7 +121,9 @@
             <div class="cellar-card__body">
               <div class="cellar-card__top">
                 <span class="cellar-card__name">{{ nameOf(entry) }}</span>
-                @if (categoryOf(entry); as cat) {
+                @if (entry.locked) {
+                  <span class="cellar-premium-badge cellar-premium-badge--inline">Premium</span>
+                } @else if (categoryOf(entry); as cat) {
                   <span
                     class="cellar-card__stamp"
                     [attr.data-cat]="cat.slug"
@@ -100,20 +131,43 @@
                   >
                 }
               </div>
-              @if (metaOf(entry); as meta) {
+              @if (!entry.locked && metaOf(entry); as meta) {
                 <span class="cellar-card__meta">{{ meta }}</span>
               }
-              <div class="cellar-card__gauge" aria-hidden="true">
-                <div class="cellar-card__gauge-fill" [style.width.%]="entry.fillLevel"></div>
-              </div>
+              @if (!entry.locked) {
+                <div class="cellar-card__gauge" aria-hidden="true">
+                  <div class="cellar-card__gauge-fill" [style.width.%]="entry.fillLevel"></div>
+                </div>
+              }
               <div class="cellar-card__foot">
-                <span class="cellar-card__place">{{ memoryLine(entry) }}</span>
-                <span
-                  class="cellar-card__level"
-                  [class.is-sealed]="entry.fillLevel >= 100"
-                  [class.is-empty-label]="entry.fillLevel <= 0"
-                  >{{ levelOf(entry) }}</span
-                >
+                @if (entry.locked) {
+                  <span class="cellar-card__place">Souvenir en sommeil</span>
+                } @else {
+                  <div
+                    class="cellar-card__memory"
+                    [attr.aria-label]="
+                      'Fiche mémoire ' + memoryOf(entry).filled + ' sur ' + memoryOf(entry).total
+                    "
+                  >
+                    <span class="cellar-card__memory-segs" aria-hidden="true">
+                      @for (filled of memoryOf(entry).segments; track $index) {
+                        <span
+                          class="cellar-card__memory-seg"
+                          [class.is-filled]="filled"
+                        ></span>
+                      }
+                    </span>
+                    <span class="cellar-card__memory-label">
+                      {{ memoryOf(entry).filled }}/{{ memoryOf(entry).total }}
+                    </span>
+                  </div>
+                  <span
+                    class="cellar-card__level"
+                    [class.is-sealed]="(entry.fillLevel ?? 0) >= 100"
+                    [class.is-empty-label]="(entry.fillLevel ?? 100) <= 0"
+                    >{{ levelOf(entry) }}</span
+                  >
+                }
               </div>
             </div>
           </a>

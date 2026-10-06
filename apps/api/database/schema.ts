@@ -278,6 +278,21 @@ export class UserBottleSchema extends BaseModel {
   declare volumeMlOverride: number | null
 }
 
+export class UserRewardSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'rewardKey', 'slots', 'userId'] as const
+  $columns = UserRewardSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare rewardKey: string
+  @column()
+  declare slots: number
+  @column()
+  declare userId: number
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['bottlesCreatedCount', 'createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'inviteCode', 'isPublic', 'magicLinkVersion', 'password', 'passwordResetVersion', 'pseudo', 'shareCellarWithFriends', 'shareNotes', 'sharePrices', 'updatedAt'] as const
   $columns = UserSchema.$columns

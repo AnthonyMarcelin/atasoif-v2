@@ -4,6 +4,8 @@ import '../styles/global.scss';
 interface Props {
   title?: string;
   description?: string;
+  /** Absolute or site-relative OG image. Generic brand stub when omitted. */
+  ogImage?: string;
 }
 
 const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://atasoif.fr';
@@ -12,6 +14,7 @@ const description =
   Astro.props.description ??
   'Le prix, l’endroit, ton avis : tu te souviendras de chaque bouteille. Whisky, rhum, vin, bière. Dix bouteilles offertes.';
 const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+const ogImage = new URL(Astro.props.ogImage ?? '/og-invite.png', siteUrl).toString();
 ---
 
 <!doctype html>
@@ -29,9 +32,11 @@ const canonical = new URL(Astro.url.pathname, siteUrl).toString();
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content="À ta soif" />
+    <meta property="og:image" content={ogImage} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

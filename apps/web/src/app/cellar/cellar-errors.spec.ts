@@ -19,4 +19,12 @@ describe('cellar-errors', () => {
     });
     expect(isFreemiumGateError(err)).toBeTrue();
   });
+
+  it('treats locked cellar rows as freemium gate', () => {
+    const err = new HttpErrorResponse({
+      status: 403,
+      error: { code: 'E_PREMIUM_LOCKED', message: 'Cette bouteille est en sommeil' },
+    });
+    expect(isFreemiumGateError(err)).toBeTrue();
+  });
 });
