@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { memorySheetCompleteness, type MemorySheetCompleteness } from '@atasoif/shared';
-import { finalize } from 'rxjs';
+import { finalize, firstValueFrom } from 'rxjs';
 
 import { BottlePhoto } from './bottle-photo';
 import { cellarErrorMessage } from './cellar-errors';
@@ -23,6 +23,7 @@ import {
 } from './cellar.types';
 import { CollectionService } from './collection.service';
 import { cellarEmptyKind } from './freemium-counter';
+import { ShareCardService } from './share-card.service';
 
 @Component({
   selector: 'app-cellar-list-page',
@@ -33,6 +34,7 @@ import { cellarEmptyKind } from './freemium-counter';
 export class CellarListPage implements OnInit {
   private readonly collection = inject(CollectionService);
   private readonly router = inject(Router);
+  private readonly shareCards = inject(ShareCardService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -41,6 +43,9 @@ export class CellarListPage implements OnInit {
   readonly lockedCount = signal(0);
   readonly category = signal<string | null>(null);
   readonly localQuery = signal('');
+  readonly sharing = signal(false);
+  readonly shareMessage = signal<string | null>(null);
+  readonly shareError = signal<string | null>(null);
   /** Header counter uses freemium meta (lifetime creates), never `bottles().length`. */
   readonly emptyKind = computed(() => cellarEmptyKind(this.freemium()));
 
@@ -156,5 +161,34 @@ export class CellarListPage implements OnInit {
           this.error.set(cellarErrorMessage(err, 'Impossible de charger ta cave. Réessaie.'));
         },
       });
+  }
+
+  async shareCave(): Promise<void> {
+    if (this.sharing() || this.bottles().length === 0) {
+      return;
+    }
+    this.sharing.set(true);
+    this.shareMessage.set(null);
+    this.shareError.set(null);
+    try {
+      let bottles = this.bottles();
+      // Share the full cellar even when a category chip is active.
+      if (this.category() !== null) {
+        const body = await firstValueFrom(this.collection.list({ limit: 100 }));
+        bottles = body.data;
+      }
+      const result = await this.shareCards.shareCave(bottles);
+      if (result === 'copied') {
+        this.shareMessage.set('Lien https copié · ouvre ton app pour envoyer la carte.');
+      } else if (result === 'shown') {
+        this.shareMessage.set('Partage indisponible · copie le lien depuis Amis.');
+      } else {
+        this.shareMessage.set('Carte prête · choisis où la poster.');
+      }
+    } catch (err: unknown) {
+      this.shareError.set(cellarErrorMessage(err, 'Partage impossible. Réessaie.'));
+    } finally {
+      this.sharing.set(false);
+    }
   }
 }

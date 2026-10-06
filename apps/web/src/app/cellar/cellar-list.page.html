@@ -1,4 +1,17 @@
-<app-cellar-shell title="Ma cave" [freemium]="freemium()" [showSlots]="true">
+<app-cellar-shell
+  title="Ma cave"
+  [freemium]="freemium()"
+  [showSlots]="true"
+  [showShare]="bottles().length > 0"
+  [shareBusy]="sharing()"
+  (share)="shareCave()"
+>
+  @if (shareMessage(); as message) {
+    <p class="auth-status auth-status--ok" role="status">{{ message }}</p>
+  }
+  @if (shareError(); as message) {
+    <p class="auth-status auth-status--error" role="alert">{{ message }}</p>
+  }
   <label class="cellar-search-field" for="cellar-local-search">
     <span class="cellar-search-field__icon" aria-hidden="true"></span>
     <input

@@ -31,6 +31,7 @@ import {
 } from './cellar.types';
 import { CollectionService } from './collection.service';
 import { FillGauge } from './fill-gauge';
+import { ShareCardService } from './share-card.service';
 import { wineOverrideFromForm } from './wine-attrs';
 
 @Component({
@@ -46,6 +47,7 @@ export class CellarDetailPage implements OnInit {
   private readonly collection = inject(CollectionService);
   private readonly shelfCamera = inject(ShelfCameraService);
   private readonly toast = inject(CellarToastService);
+  private readonly shareCards = inject(ShareCardService);
   readonly nativePhotoPick = this.shelfCamera.isNative;
 
   readonly loading = signal(true);
@@ -54,10 +56,13 @@ export class CellarDetailPage implements OnInit {
   readonly editing = signal(false);
   readonly confirmDelete = signal(false);
   readonly uploadingPhoto = signal(false);
+  readonly sharing = signal(false);
   readonly error = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
   readonly levelError = signal<string | null>(null);
   readonly photoError = signal<string | null>(null);
+  readonly shareMessage = signal<string | null>(null);
+  readonly shareError = signal<string | null>(null);
   readonly savedOk = signal(false);
   readonly fillSync = signal(0);
   readonly entry = signal<UserBottle | null>(null);
@@ -134,6 +139,30 @@ export class CellarDetailPage implements OnInit {
     const current = this.entry();
     if (current) {
       this.patchForm(current);
+    }
+  }
+
+  async shareBottle(): Promise<void> {
+    const current = this.entry();
+    if (!current || this.sharing()) {
+      return;
+    }
+    this.sharing.set(true);
+    this.shareMessage.set(null);
+    this.shareError.set(null);
+    try {
+      const result = await this.shareCards.shareBottle(current);
+      if (result === 'copied') {
+        this.shareMessage.set('Lien https copié · ouvre ton app pour envoyer la carte.');
+      } else if (result === 'shown') {
+        this.shareMessage.set('Partage indisponible · copie le lien depuis Amis.');
+      } else {
+        this.shareMessage.set('Carte prête · choisis où la poster.');
+      }
+    } catch (err: unknown) {
+      this.shareError.set(cellarErrorMessage(err, 'Partage impossible. Réessaie.'));
+    } finally {
+      this.sharing.set(false);
     }
   }
 

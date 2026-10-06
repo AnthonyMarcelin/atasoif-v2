@@ -1,4 +1,13 @@
-import { Component, HostBinding, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  HostBinding,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  inject,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import type { FreemiumMeta } from './cellar.types';
@@ -34,9 +43,22 @@ import { FreemiumCounter, freemiumSlots } from './freemium-counter';
                 <p class="cellar-shell__lead">{{ lead }}</p>
               }
             </div>
-            @if (freemium) {
-              <app-freemium-counter [freemium]="freemium" />
-            }
+            <div class="cellar-shell__aside">
+              @if (showShare) {
+                <button
+                  type="button"
+                  class="cellar-shell__share"
+                  (click)="share.emit()"
+                  [disabled]="shareBusy"
+                  [attr.aria-busy]="shareBusy"
+                >
+                  {{ shareBusy ? 'Préparation…' : 'Partager' }}
+                </button>
+              }
+              @if (freemium) {
+                <app-freemium-counter [freemium]="freemium" />
+              }
+            </div>
           </div>
           @if (freemium && showSlots && !freemium.entitlement) {
             <div class="cellar-shell__slots" aria-hidden="true">
@@ -127,6 +149,10 @@ export class CellarShell implements OnInit, OnDestroy {
   @Input() hideNav = false;
   /** Hide the default header (add search has a custom chrome). */
   @Input() hideHeader = false;
+  /** Story share card (cellar list header). */
+  @Input() showShare = false;
+  @Input() shareBusy = false;
+  @Output() readonly share = new EventEmitter<void>();
 
   @HostBinding('class.cellar-shell-host') readonly hostClass = true;
 

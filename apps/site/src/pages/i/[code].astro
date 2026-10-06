@@ -16,9 +16,12 @@ const deepLink = valid ? `fr.atasoif.app://i/${code}` : 'fr.atasoif.app://';
 const title = valid
   ? `Invitation ${code} · À ta soif`
   : 'Invitation · À ta soif';
+const description = valid
+  ? `On t’invite dans une cave À ta soif · code ${code}. Ouvre l’app pour rejoindre ton ami.`
+  : 'Rejoins un ami sur À ta soif et partagez vos caves.';
 ---
 
-<BaseLayout title={title} description="Rejoins un ami sur À ta soif et partagez vos caves.">
+<BaseLayout title={title} description={description} ogImage="/og-invite.png">
   <div class="page invite">
     <header class="header">
       <div class="shell">
