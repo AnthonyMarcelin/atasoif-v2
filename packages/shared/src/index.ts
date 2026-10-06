@@ -2,9 +2,13 @@
 
 export const FREE_BOTTLE_LIMIT = 10;
 
+/**
+ * Store IAP prices + intro trial lengths (App Store / Play only — no Stripe).
+ * Prefs: 7 days yearly / 3 days monthly.
+ */
 export const PLANS = {
-  monthly: { id: 'monthly', priceEur: 3.99, interval: 'month' },
-  yearly: { id: 'yearly', priceEur: 39.99, interval: 'year' },
+  monthly: { id: 'monthly', priceEur: 3.99, interval: 'month', trialDays: 3 },
+  yearly: { id: 'yearly', priceEur: 39.99, interval: 'year', trialDays: 7 },
 } as const;
 
 export const ALCOHOL_CATEGORIES = [

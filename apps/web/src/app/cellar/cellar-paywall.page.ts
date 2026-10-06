@@ -5,6 +5,7 @@ import { FREE_BOTTLE_LIMIT, PLANS } from '@atasoif/shared';
 import { CellarShell } from './cellar-shell';
 import type { FreemiumMeta } from './cellar.types';
 import { CollectionService } from './collection.service';
+import { NativeShareService } from './native-share.service';
 
 @Component({
   selector: 'app-cellar-paywall-page',
@@ -15,6 +16,7 @@ import { CollectionService } from './collection.service';
 export class CellarPaywallPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly collection = inject(CollectionService);
+  private readonly share = inject(NativeShareService);
 
   readonly freemium = signal<FreemiumMeta | null>(null);
   readonly reason = signal<'limit' | 'jauge' | 'photo' | 'premium'>('limit');
@@ -22,6 +24,7 @@ export class CellarPaywallPage implements OnInit {
   readonly monthly = PLANS.monthly;
   readonly yearly = PLANS.yearly;
   readonly limit = FREE_BOTTLE_LIMIT;
+  readonly manageSubscriptionsUrl = this.share.subscriptionManageUrl();
 
   ngOnInit(): void {
     const raw = this.route.snapshot.queryParamMap.get('reason');

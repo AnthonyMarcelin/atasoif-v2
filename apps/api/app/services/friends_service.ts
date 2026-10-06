@@ -88,15 +88,16 @@ export default class FriendsService {
   }
 
   /**
-   * Invite by email or invite code / pseudo. Sends mail + creates PENDING friendship.
+   * Invite by pseudo, invite code, pasted `/i/CODE` (or full https URL), or email.
+   * Sends mail + creates PENDING friendship.
    */
   async invite(requesterId: number, target: string) {
     const requester = await User.findOrFail(requesterId)
     await this.ensureInviteCode(requester)
 
-    const needle = target.trim()
+    const needle = this.normalizeInviteTarget(target)
     if (!needle) {
-      throw new FriendsError('E_FRIEND_TARGET', 'Indique un email, un pseudo ou un code', 422)
+      throw new FriendsError('E_FRIEND_TARGET', 'Indique un pseudo ou un lien d’invitation', 422)
     }
 
     let targetUser: User | null = null
@@ -239,5 +240,18 @@ export default class FriendsService {
     }
     await user.save()
     return this.shareSettings(userId)
+  }
+
+  /** Pseudo, invite code, path `/i/CODE`, or absolute https invite URL. */
+  private normalizeInviteTarget(raw: string): string {
+    const needle = raw.trim()
+    if (!needle) {
+      return ''
+    }
+    const fromPath = needle.match(/\/i\/([A-Za-z0-9]{4,16})\b/i)
+    if (fromPath?.[1]) {
+      return fromPath[1].toUpperCase()
+    }
+    return needle.replace(/^@/, '')
   }
 }

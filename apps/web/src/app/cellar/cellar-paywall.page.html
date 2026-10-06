@@ -7,20 +7,52 @@
       <li class="cellar-paywall__plan">
         <span class="cellar-paywall__plan-name">Mensuel</span>
         <span class="cellar-paywall__plan-price">{{ monthly.priceEur }} € / mois</span>
+        <span class="cellar-paywall__plan-hint">
+          Essai {{ monthly.trialDays }} jours · App Store / Play uniquement
+        </span>
       </li>
       <li class="cellar-paywall__plan is-featured">
         <span class="cellar-paywall__plan-name">Annuel</span>
         <span class="cellar-paywall__plan-price">{{ yearly.priceEur }} € / an</span>
-        <span class="cellar-paywall__plan-hint">Deux mois offerts</span>
+        <span class="cellar-paywall__plan-hint">
+          Essai {{ yearly.trialDays }} jours · App Store / Play uniquement
+        </span>
       </li>
     </ul>
 
     <p class="auth-status" role="status">
-      Le paiement se fera dans l’app (App Store ou Google Play), jamais sur le site.
+      Le paiement se fait dans l’app (App Store ou Google Play), jamais par carte sur le site.
       @if (reason() === 'limit') {
         Retirer une bouteille ne libère pas de place.
       }
     </p>
+
+    <section class="cellar-paywall__cancel" aria-labelledby="paywall-cancel-title">
+      <h3 id="paywall-cancel-title" class="cellar-paywall__cancel-title">
+        Annuler avant la fin de l’essai
+      </h3>
+      <p class="cellar-paywall__cancel-lead">
+        L’essai commence quand tu t’abonnes dans l’app. Tu peux annuler quand tu veux avant la fin :
+        aucun prélèvement si tu coupes l’abonnement à temps. On ne te demande jamais de carte ici.
+      </p>
+      <ol class="cellar-paywall__cancel-steps">
+        <li>Ouvre la gestion des abonnements de ton magasin (Apple ou Google).</li>
+        <li>Trouve « À ta soif » et arrête le renouvellement avant la fin de l’essai.</li>
+        <li>Tu gardes l’accès premium jusqu’à la fin de la période d’essai.</li>
+      </ol>
+      <a
+        class="auth-btn auth-btn--secondary"
+        [href]="manageSubscriptionsUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Gérer mes abonnements
+      </a>
+      <p class="cellar-paywall__cancel-note">
+        Sur iPhone : Réglages → [ton nom] → Abonnements. Sur Android : Play Store → profil →
+        Paiements et abonnements.
+      </p>
+    </section>
 
     <div class="auth-actions">
       <button class="auth-btn auth-btn--primary" type="button" disabled>
