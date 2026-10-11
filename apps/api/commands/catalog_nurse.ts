@@ -78,10 +78,7 @@ export default class CatalogNurse extends BaseCommand {
       ? this.resolvePath(this.state)
       : join(app.tmpPath(), 'catalog-nurse-state.json')
 
-    const dailyLimit =
-      this.dailyLimit ??
-      env.get('CATALOG_NURSE_DAILY_LIMIT') ??
-      100
+    const dailyLimit = this.dailyLimit ?? env.get('CATALOG_NURSE_DAILY_LIMIT') ?? 100
 
     this.logger.info(`EAN list: ${listPath}`)
     this.logger.info(`State file: ${statePath}`)

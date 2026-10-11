@@ -30,11 +30,7 @@ const CURATED_TAG_PREFIXES = [
 ] as const
 
 /** Parent tags accepted in curated mode when a child curated signal is present, or ABV is spirit/beer-like. */
-const CURATED_PARENT_TAGS = [
-  'en:alcoholic-beverages',
-  'en:spirits',
-  'fr:spiritueux',
-] as const
+const CURATED_PARENT_TAGS = ['en:alcoholic-beverages', 'en:spirits', 'fr:spiritueux'] as const
 
 const FULL_TAG_PREFIXES = [
   ...CURATED_TAG_PREFIXES,
@@ -107,7 +103,7 @@ function tagMatchesPrefixes(tag: string, prefixes: readonly string[]): boolean {
  * without this, `.map` on a string would iterate characters and drop all alcohol matches.
  */
 export function normalizeOffTagList(raw: unknown): string[] {
-  if (raw == null) {
+  if (raw === null || raw === undefined) {
     return []
   }
 
@@ -141,7 +137,12 @@ export function normalizeOffTagList(raw: unknown): string[] {
 
   return trimmed
     .split(/[,;|]/)
-    .map((tag) => tag.trim().toLowerCase().replace(/^["']|["']$/g, ''))
+    .map((tag) =>
+      tag
+        .trim()
+        .toLowerCase()
+        .replace(/^["']|["']$/g, '')
+    )
     .filter(Boolean)
 }
 

@@ -84,8 +84,8 @@ export function parseEanList(content: string): NurseEanEntry[] {
   let kind: NurseEanKind = 'unmarked'
   const lines = content.split(/\r?\n/)
 
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i] ?? ''
+  for (const [i, line] of lines.entries()) {
+    const raw = line ?? ''
     const trimmed = raw.trim()
     if (!trimmed) {
       continue
@@ -133,7 +133,10 @@ export function utcDayKey(now: DateTime = DateTime.utc()): string {
   return now.toUTC().toISODate() ?? '1970-01-01'
 }
 
-export async function loadNurseState(path: string, now: DateTime = DateTime.utc()): Promise<NurseStateFile> {
+export async function loadNurseState(
+  path: string,
+  now: DateTime = DateTime.utc()
+): Promise<NurseStateFile> {
   const today = utcDayKey(now)
   try {
     const raw = await readFile(path, 'utf8')

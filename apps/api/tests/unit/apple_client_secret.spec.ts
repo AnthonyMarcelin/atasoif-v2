@@ -8,7 +8,9 @@ import {
 
 test.group('generateAppleClientSecret', () => {
   test('normalizes escaped newlines in PEM from env', ({ assert }) => {
-    const normalized = normalizeApplePrivateKeyPem('-----BEGIN PRIVATE KEY-----\\nABC\\n-----END PRIVATE KEY-----\\n')
+    const normalized = normalizeApplePrivateKeyPem(
+      '-----BEGIN PRIVATE KEY-----\\nABC\\n-----END PRIVATE KEY-----\\n'
+    )
     assert.include(normalized, '\nABC\n')
     assert.notInclude(normalized, '\\n')
   })

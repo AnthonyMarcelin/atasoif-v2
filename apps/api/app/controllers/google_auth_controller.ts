@@ -7,10 +7,7 @@ import {
   buildFrontendLoginErrorRedirect,
   buildFrontendUrl,
 } from '#services/frontend_url'
-import {
-  consumeOAuthReturnClient,
-  rememberOAuthReturnClient,
-} from '#services/oauth_return_client'
+import { consumeOAuthReturnClient, rememberOAuthReturnClient } from '#services/oauth_return_client'
 import type { HttpContext } from '@adonisjs/core/http'
 import mail from '@adonisjs/mail/services/main'
 

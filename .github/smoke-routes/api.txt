@@ -1,0 +1,4 @@
+# Exact HTTP 200 required. Paths are relative to PROD_API_URL.
+# Catalog reads require auth — keep only public routes here.
+/health
+/

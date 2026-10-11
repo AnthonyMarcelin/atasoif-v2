@@ -1,0 +1,304 @@
+# Production deploy — GHCR full-SHA tags then Dokploy Applications, after green CI on main.
+#
+# Do not enable Dokploy Git auto-deploy or latest webhooks.
+# Only path-filtered targets are built/deployed: api, site, ops.
+# On deploy/smoke failure, restore that service's previous image only. Job stays red.
+# Never migrate or otherwise mutate the production database.
+# Runbook: docs/DEPLOY-PROD.md
+#
+# Images:
+#   ghcr.io/anthonymarcelin/atasoif-api:<full-sha>
+#   ghcr.io/anthonymarcelin/atasoif-site:<full-sha>
+#   ghcr.io/anthonymarcelin/atasoif-ops:<full-sha>  (when apps/ops/Dockerfile exists)
+# Never :latest for prod pull (Swarm will not notice an unchanged tag name).
+
+name: Deploy production
+
+on:
+  workflow_call:
+    inputs:
+      base_sha:
+        description: Previous ref SHA (github.event.before). Empty rebuilds api, site, and ops.
+        required: false
+        type: string
+        default: ""
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/anthonymarcelin
+  PROD_API_URL: https://api.atasoif.fr
+  PROD_SITE_URL: https://atasoif.fr
+  PROD_OPS_URL: https://ops.atasoif.fr
+  DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+
+jobs:
+  guard:
+    name: Require main
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+      api: ${{ steps.targets.outputs.api }}
+      site: ${{ steps.targets.outputs.site }}
+      ops: ${{ steps.targets.outputs.ops }}
+    steps:
+      - name: Reject non-main dispatch
+        if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main'
+        run: |
+          echo "Images and Dokploy deploy run only from main."
+          exit 1
+
+      - name: Record commit SHA
+        id: sha
+        run: echo "sha=${GITHUB_SHA}" >>"$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Detect which images this push needs
+        id: targets
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch; publishing api, site, and ops."
+            echo "api=true" >>"$GITHUB_OUTPUT"
+            echo "site=true" >>"$GITHUB_OUTPUT"
+            echo "ops=true" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          bash .github/scripts/detect-prod-targets.sh "$BASE_SHA" "$GITHUB_SHA"
+
+  publish-api:
+    name: Publish API image
+    needs: guard
+    if: needs.guard.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: production
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/atasoif-api:${{ needs.guard.outputs.sha }}
+
+  publish-site:
+    name: Publish site image
+    needs: guard
+    if: needs.guard.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve PUBLIC_* build args
+        id: args
+        env:
+          VAR_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+          VAR_CTA_MODE: ${{ vars.PUBLIC_CTA_MODE }}
+          VAR_IOS_URL: ${{ vars.PUBLIC_IOS_URL }}
+          VAR_ANDROID_URL: ${{ vars.PUBLIC_ANDROID_URL }}
+        run: |
+          set -euo pipefail
+          resolve() {
+            local var="$1" default="$2"
+            if [ -n "${var:-}" ]; then
+              printf '%s' "$var"
+            else
+              printf '%s' "$default"
+            fi
+          }
+          {
+            echo "public_site_url=$(resolve "${VAR_SITE_URL:-}" "https://atasoif.fr")"
+            echo "public_cta_mode=$(resolve "${VAR_CTA_MODE:-}" "waitlist")"
+            echo "public_ios_url=$(resolve "${VAR_IOS_URL:-}" "#ios")"
+            echo "public_android_url=$(resolve "${VAR_ANDROID_URL:-}" "#android")"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Build and push site
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/site/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/atasoif-site:${{ needs.guard.outputs.sha }}
+          build-args: |
+            PUBLIC_SITE_URL=${{ steps.args.outputs.public_site_url }}
+            PUBLIC_CTA_MODE=${{ steps.args.outputs.public_cta_mode }}
+            PUBLIC_IOS_URL=${{ steps.args.outputs.public_ios_url }}
+            PUBLIC_ANDROID_URL=${{ steps.args.outputs.public_android_url }}
+          cache-from: type=gha,scope=atasoif-site
+          cache-to: type=gha,mode=max,scope=atasoif-site
+
+  publish-ops:
+    name: Publish ops image
+    needs: guard
+    if: needs.guard.outputs.ops == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - name: Skip when apps/ops is not ready
+        id: gate
+        run: |
+          if [ -f apps/ops/Dockerfile ]; then
+            echo "ready=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >>"$GITHUB_OUTPUT"
+            echo "apps/ops/Dockerfile missing — ops publish skipped (pipeline ready for when ops lands)."
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.gate.outputs.ready == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: steps.gate.outputs.ready == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ops
+        if: steps.gate.outputs.ready == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/ops/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/atasoif-ops:${{ needs.guard.outputs.sha }}
+          cache-from: type=gha,scope=atasoif-ops
+          cache-to: type=gha,mode=max,scope=atasoif-ops
+
+  dokploy:
+    name: Dokploy pull SHA
+    needs: [guard, publish-api, publish-site, publish-ops]
+    if: >-
+      always() &&
+      !cancelled() &&
+      needs.guard.result == 'success' &&
+      (needs.publish-api.result == 'success' || needs.publish-api.result == 'skipped') &&
+      (needs.publish-site.result == 'success' || needs.publish-site.result == 'skipped') &&
+      (needs.publish-ops.result == 'success' || needs.publish-ops.result == 'skipped') &&
+      (needs.guard.outputs.api == 'true' ||
+       needs.guard.outputs.site == 'true' ||
+       needs.guard.outputs.ops == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - name: Decide whether Dokploy is configured
+        id: gate
+        env:
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_API_APPLICATION_ID: ${{ secrets.DOKPLOY_API_APPLICATION_ID }}
+          DOKPLOY_SITE_APPLICATION_ID: ${{ secrets.DOKPLOY_SITE_APPLICATION_ID }}
+          DOKPLOY_OPS_APPLICATION_ID: ${{ secrets.DOKPLOY_OPS_APPLICATION_ID }}
+          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
+          WANT_API: ${{ needs.guard.outputs.api }}
+          WANT_SITE: ${{ needs.guard.outputs.site }}
+          WANT_OPS: ${{ needs.guard.outputs.ops }}
+        run: |
+          set -euo pipefail
+          has_target=
+          if [ "$WANT_API" = true ] && [ -n "${DOKPLOY_API_APPLICATION_ID:-}" ]; then has_target=1; fi
+          if [ "$WANT_SITE" = true ] && [ -n "${DOKPLOY_SITE_APPLICATION_ID:-}" ]; then has_target=1; fi
+          if [ "$WANT_OPS" = true ] && [ -n "${DOKPLOY_OPS_APPLICATION_ID:-}" ]; then has_target=1; fi
+          if [ -n "${DOKPLOY_API_TOKEN:-}" ] && [ -n "${DOKPLOY_URL:-}" ] && [ -n "$has_target" ] \
+            && { [ -n "${TS_OAUTH_CLIENT_ID:-}" ] || [ -n "${TS_AUTHKEY:-}" ]; }; then
+            echo "ready=true" >>"$GITHUB_OUTPUT"
+            echo "ts_oauth=$([ -n "${TS_OAUTH_CLIENT_ID:-}" ] && echo true || echo false)" >>"$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >>"$GITHUB_OUTPUT"
+            echo "ts_oauth=false" >>"$GITHUB_OUTPUT"
+            echo "Skipping Dokploy. Images (if built) are on GHCR as ${IMAGE_PREFIX}/atasoif-{api,site,ops}:${{ needs.guard.outputs.sha }}"
+            echo "Set repo variable DOKPLOY_URL and secrets DOKPLOY_API_TOKEN, Tailscale (TS_OAUTH_* or TS_AUTHKEY),"
+            echo "plus DOKPLOY_API_APPLICATION_ID / DOKPLOY_SITE_APPLICATION_ID / DOKPLOY_OPS_APPLICATION_ID as needed."
+            echo "See docs/DEPLOY-PROD.md"
+          fi
+
+      - name: Connect Tailscale (OAuth)
+        if: steps.gate.outputs.ready == 'true' && steps.gate.outputs.ts_oauth == 'true'
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          version: latest
+
+      - name: Connect Tailscale (auth key)
+        if: steps.gate.outputs.ready == 'true' && steps.gate.outputs.ts_oauth != 'true'
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+          tags: tag:ci
+          version: latest
+
+      - name: Deploy, smoke, rollback on failure
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_API_APPLICATION_ID: ${{ secrets.DOKPLOY_API_APPLICATION_ID }}
+          DOKPLOY_SITE_APPLICATION_ID: ${{ secrets.DOKPLOY_SITE_APPLICATION_ID }}
+          DOKPLOY_OPS_APPLICATION_ID: ${{ secrets.DOKPLOY_OPS_APPLICATION_ID }}
+          IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
+          IMAGE_TAG: ${{ needs.guard.outputs.sha }}
+          DEPLOY_API: ${{ needs.guard.outputs.api }}
+          DEPLOY_SITE: ${{ needs.guard.outputs.site }}
+          DEPLOY_OPS: ${{ needs.guard.outputs.ops }}
+          PROD_API_URL: ${{ env.PROD_API_URL }}
+          PROD_SITE_URL: ${{ env.PROD_SITE_URL }}
+          PROD_OPS_URL: ${{ env.PROD_OPS_URL }}
+        run: bash .github/scripts/dokploy-release.sh

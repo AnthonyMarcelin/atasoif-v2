@@ -41,11 +41,8 @@ test.group('memory sheet completeness', () => {
         boughtAt: 'Lidl',
         note: 6,
         review: 'Un whisky tourbé assez long en bouche',
-      }),
+      })
     )
-    assert.match(
-      memorySheetMissingHintFr({ boughtAt: 'Nicolas' }) ?? '',
-      /fiche complète/,
-    )
+    assert.match(memorySheetMissingHintFr({ boughtAt: 'Nicolas' }) ?? '', /fiche complète/)
   })
 })

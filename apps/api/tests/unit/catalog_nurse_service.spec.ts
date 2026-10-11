@@ -117,7 +117,7 @@ test.group('CatalogNurseService', () => {
     let lookupCalls = 0
 
     const lookup = {
-      findLocalByBarcode: async () => ({ id: 42 } as Bottle),
+      findLocalByBarcode: async () => ({ id: 42 }) as Bottle,
       lookupByBarcode: async () => {
         lookupCalls += 1
         return null

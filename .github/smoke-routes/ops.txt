@@ -1,0 +1,3 @@
+# Exact HTTP 200 required. Paths are relative to PROD_OPS_URL.
+# Scaffold until apps/ops ships a health route — adjust when the UI lands.
+/

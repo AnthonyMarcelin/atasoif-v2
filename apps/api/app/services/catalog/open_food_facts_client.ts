@@ -1,5 +1,8 @@
 import env from '#start/env'
-import { mapOffApiPayloadToDraft, type OffProductPayload } from '#services/catalog/off_product_mapper'
+import {
+  mapOffApiPayloadToDraft,
+  type OffProductPayload,
+} from '#services/catalog/off_product_mapper'
 import type { CatalogProductDraft } from '#services/catalog/catalog_types'
 
 type FetchLike = typeof fetch
@@ -37,7 +40,7 @@ export default class OpenFoodFactsClient {
     const response = await this.fetchImpl(url, {
       method: 'GET',
       headers: {
-        Accept: 'application/json',
+        'Accept': 'application/json',
         'User-Agent': userAgent,
       },
       signal: AbortSignal.timeout(8_000),

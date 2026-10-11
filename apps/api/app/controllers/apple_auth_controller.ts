@@ -7,10 +7,7 @@ import {
   buildFrontendLoginErrorRedirect,
   buildFrontendUrl,
 } from '#services/frontend_url'
-import {
-  consumeOAuthReturnClient,
-  rememberOAuthReturnClient,
-} from '#services/oauth_return_client'
+import { consumeOAuthReturnClient, rememberOAuthReturnClient } from '#services/oauth_return_client'
 import type { HttpContext } from '@adonisjs/core/http'
 import mail from '@adonisjs/mail/services/main'
 
@@ -70,8 +67,7 @@ export default class AppleAuthController {
       return response.redirect(buildFrontendOAuthRedirect(token.value!.release(), client))
     } catch (error) {
       if (error instanceof SocialAuthError) {
-        const code =
-          error.code === 'E_SOCIAL_EMAIL_UNVERIFIED' ? 'apple_unverified' : 'apple_email'
+        const code = error.code === 'E_SOCIAL_EMAIL_UNVERIFIED' ? 'apple_unverified' : 'apple_email'
         return response.redirect(buildFrontendLoginErrorRedirect(code, client))
       }
       throw error

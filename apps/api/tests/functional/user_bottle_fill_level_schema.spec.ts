@@ -16,7 +16,9 @@ test.group('UserBottle fill level schema (E2-T01)', (group) => {
        FROM information_schema.columns
        WHERE table_schema = 'public' AND table_name = 'user_bottles'`
     )
-    const columnNames = (result.rows as Array<{ column_name: string }>).map((row) => row.column_name)
+    const columnNames = (result.rows as Array<{ column_name: string }>).map(
+      (row) => row.column_name
+    )
 
     assert.include(columnNames, 'fill_level')
     assert.include(columnNames, 'fill_level_updates_count')

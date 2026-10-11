@@ -38,5 +38,5 @@ RUN npm install --omit=dev
 COPY --from=build /app/apps/site/dist ./dist
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/ >/dev/null || exit 1
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||80)+'/').then((r)=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "./dist/server/entry.mjs"]

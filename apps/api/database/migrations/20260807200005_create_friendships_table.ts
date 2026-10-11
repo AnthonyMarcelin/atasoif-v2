@@ -20,10 +20,7 @@ export default class extends BaseSchema {
         .references('id')
         .inTable('users')
         .onDelete('CASCADE')
-      table
-        .enum('status', ['PENDING', 'ACCEPTED', 'BLOCKED'])
-        .notNullable()
-        .defaultTo('PENDING')
+      table.enum('status', ['PENDING', 'ACCEPTED', 'BLOCKED']).notNullable().defaultTo('PENDING')
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').nullable()
 

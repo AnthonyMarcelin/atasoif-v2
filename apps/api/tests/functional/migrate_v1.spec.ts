@@ -140,9 +140,7 @@ test.group('migrate:v1 service', (group) => {
     const count = await UserBottle.query().where('user_id', owner.id).count('* as total')
     assert.equal(Number(count[0].$extras.total), 2)
 
-    const catalog = await BottleSource.query()
-      .where('source', V1_BOTTLE_SOURCE)
-      .preload('bottle')
+    const catalog = await BottleSource.query().where('source', V1_BOTTLE_SOURCE).preload('bottle')
     for (const row of catalog) {
       assert.isNull(row.bottle.photoUrl)
     }

@@ -50,7 +50,7 @@ export default class UpcItemDbClient {
     url.searchParams.set('upc', barcode)
 
     const headers: Record<string, string> = {
-      Accept: 'application/json',
+      'Accept': 'application/json',
       'Content-Type': 'application/json',
     }
 

@@ -47,7 +47,9 @@ test.group('isAlcoholicOffProduct', () => {
   })
 
   test('curated rejects wine-only tags; full accepts them', ({ assert }) => {
-    assert.isFalse(isAlcoholicOffProduct({ categories_tags: ['en:wines', 'en:red-wines'] }, 'curated'))
+    assert.isFalse(
+      isAlcoholicOffProduct({ categories_tags: ['en:wines', 'en:red-wines'] }, 'curated')
+    )
     assert.isTrue(isAlcoholicOffProduct({ categories_tags: ['en:wines', 'en:red-wines'] }, 'full'))
   })
 
@@ -179,7 +181,10 @@ test.group('CatalogImageMirror', () => {
         }),
     })
 
-    const result = await mirror.mirrorFrontImage('https://images.example/front.jpg', '5000267024202')
+    const result = await mirror.mirrorFrontImage(
+      'https://images.example/front.jpg',
+      '5000267024202'
+    )
     assert.isNotNull(result)
     assert.equal(result!.photoUrl, 'https://api.example/media/catalog/5000267024202.jpg')
     const written = await readFile(result!.localPath)

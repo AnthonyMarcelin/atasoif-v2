@@ -10,8 +10,7 @@ import UserTransformer from '#transformers/user_transformer'
 const SIGNUP_REJECTED = {
   errors: [
     {
-      message:
-        'Impossible de créer ce compte. Connecte-toi ou réinitialise ton mot de passe.',
+      message: 'Impossible de créer ce compte. Connecte-toi ou réinitialise ton mot de passe.',
     },
   ],
 }

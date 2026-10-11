@@ -48,10 +48,12 @@ test.group('CatalogLookupService', (group) => {
     let offCalls = 0
     let upcCalls = 0
     const service = new CatalogLookupService(
-      { lookupByBarcode: async () => {
-        offCalls++
-        return null
-      } } as unknown as OpenFoodFactsClient,
+      {
+        lookupByBarcode: async () => {
+          offCalls++
+          return null
+        },
+      } as unknown as OpenFoodFactsClient,
       {
         isEnabled: () => true,
         lookupByBarcode: async () => {

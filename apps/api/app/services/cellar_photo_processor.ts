@@ -12,7 +12,10 @@ export type ProcessedCellarPhoto = {
  * Requires libheif in the runtime image for iPhone HEIC.
  */
 export default class CellarPhotoProcessor {
-  async process(input: Buffer, opts: { forceEncode?: boolean } = {}): Promise<ProcessedCellarPhoto> {
+  async process(
+    input: Buffer,
+    opts: { forceEncode?: boolean } = {}
+  ): Promise<ProcessedCellarPhoto> {
     if (!input.length) {
       throw new CollectionError('E_PHOTO_INVALID', 'Format ou taille de photo refusé', 422)
     }

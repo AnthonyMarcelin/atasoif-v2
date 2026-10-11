@@ -2,10 +2,7 @@ import { BOTTLE_SOURCES } from '@atasoif/shared'
 import { mapCategorySlug } from '#services/catalog/map_category'
 import { parseAbv, parseVolumeMl } from '#services/catalog/parse_quantity'
 import { cleanRetailName } from '#services/catalog/clean_retail_name'
-import {
-  normalizeOffTagList,
-  type OffDumpProductLike,
-} from '#services/catalog/off_alcohol_filter'
+import { normalizeOffTagList, type OffDumpProductLike } from '#services/catalog/off_alcohol_filter'
 import type { CatalogProductDraft } from '#services/catalog/catalog_types'
 
 export type OffProductPayload = {
@@ -34,7 +31,9 @@ export function mapOffProductToDraft(
   }
 
   const nutriments = product.nutriments ?? {}
-  const abv = parseAbv(nutriments.alcohol ?? nutriments['alcohol_100g'] ?? product.alcohol_100g ?? null)
+  const abv = parseAbv(
+    nutriments.alcohol ?? nutriments['alcohol_100g'] ?? product.alcohol_100g ?? null
+  )
 
   const code = String(product.code || barcodeHint).trim()
   if (!code) {
