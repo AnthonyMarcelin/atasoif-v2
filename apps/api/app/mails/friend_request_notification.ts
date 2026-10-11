@@ -20,9 +20,7 @@ export default class FriendRequestNotification extends BaseMail {
 
   prepare() {
     const who = this.requester.pseudo || this.requester.fullName || 'Un ami'
-    const greeting = this.recipient.fullName
-      ? `Salut ${this.recipient.fullName},`
-      : 'Salut,'
+    const greeting = this.recipient.fullName ? `Salut ${this.recipient.fullName},` : 'Salut,'
 
     this.message
       .to(this.recipient.email)

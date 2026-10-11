@@ -4,7 +4,7 @@ import { createGunzip } from 'node:zlib'
 import { normalizeBarcode } from '#services/catalog/catalog_lookup_service'
 import CatalogLookupService from '#services/catalog/catalog_lookup_service'
 import { CatalogDedupeBuffer } from '#services/catalog/catalog_dedupe'
-import CatalogImageMirror from '#services/catalog/catalog_image_mirror'
+import type CatalogImageMirror from '#services/catalog/catalog_image_mirror'
 import {
   isAlcoholicOffProduct,
   type OffDumpFilterProfile,
@@ -155,8 +155,8 @@ export default class CatalogOffDumpService {
     summary.drafted = drafts.length
     summary.byCategory = countByCategory(drafts)
 
-    for (let index = 0; index < drafts.length; index++) {
-      const draft = drafts[index]!
+    for (const [index, draftItem] of drafts.entries()) {
+      const draft = draftItem!
       if (mirrorImages && options.imageMirror && draft.photoUrl) {
         try {
           const mirrored = await options.imageMirror.mirrorFrontImage(draft.photoUrl, draft.barcode)
@@ -177,8 +177,7 @@ export default class CatalogOffDumpService {
         } catch (error) {
           summary.mirrorErrors += 1
           if (!summary.firstMirrorError) {
-            summary.firstMirrorError =
-              error instanceof Error ? error.message : String(error)
+            summary.firstMirrorError = error instanceof Error ? error.message : String(error)
           }
         }
       }

@@ -40,7 +40,8 @@ test.group('SocialAuthService Google', (group) => {
       emailVerified: false,
     })
     await User.accessTokens.create(existing)
-    assert.isAbove((await User.accessTokens.all(existing)).length, 0)
+    const existingTokens = await User.accessTokens.all(existing)
+    assert.isAbove(existingTokens.length, 0)
 
     const social = new SocialAuthService()
     const { user, created } = await social.findOrCreateFromGoogle({

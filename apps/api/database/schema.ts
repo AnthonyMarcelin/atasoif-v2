@@ -8,7 +8,18 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
 export class AuthAccessTokenSchema extends BaseModel {
-  static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
+  static $columns = [
+    'abilities',
+    'createdAt',
+    'expiresAt',
+    'hash',
+    'id',
+    'lastUsedAt',
+    'name',
+    'tokenableId',
+    'type',
+    'updatedAt',
+  ] as const
   $columns = AuthAccessTokenSchema.$columns
   @column()
   declare abilities: string
@@ -33,7 +44,15 @@ export class AuthAccessTokenSchema extends BaseModel {
 }
 
 export class BottleSourceSchema extends BaseModel {
-  static $columns = ['bottleId', 'createdAt', 'externalId', 'id', 'lastSyncedAt', 'rawHash', 'source'] as const
+  static $columns = [
+    'bottleId',
+    'createdAt',
+    'externalId',
+    'id',
+    'lastSyncedAt',
+    'rawHash',
+    'source',
+  ] as const
   $columns = BottleSourceSchema.$columns
   @column()
   declare bottleId: number
@@ -52,7 +71,22 @@ export class BottleSourceSchema extends BaseModel {
 }
 
 export class BottleSchema extends BaseModel {
-  static $columns = ['abv', 'attrs', 'barcode', 'brand', 'categoryId', 'createdAt', 'deletedAt', 'id', 'name', 'origin', 'photoStatus', 'photoUrl', 'updatedAt', 'volumeMl'] as const
+  static $columns = [
+    'abv',
+    'attrs',
+    'barcode',
+    'brand',
+    'categoryId',
+    'createdAt',
+    'deletedAt',
+    'id',
+    'name',
+    'origin',
+    'photoStatus',
+    'photoUrl',
+    'updatedAt',
+    'volumeMl',
+  ] as const
   $columns = BottleSchema.$columns
   @column()
   declare abv: string | null
@@ -100,7 +134,15 @@ export class CategorySchema extends BaseModel {
 }
 
 export class FriendshipSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'requesterId', 'status', 'updatedAt', 'userAId', 'userBId'] as const
+  static $columns = [
+    'createdAt',
+    'id',
+    'requesterId',
+    'status',
+    'updatedAt',
+    'userAId',
+    'userBId',
+  ] as const
   $columns = FriendshipSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -136,7 +178,18 @@ export class MessageSchema extends BaseModel {
 }
 
 export class QueueJobSchema extends BaseModel {
-  static $columns = ['acquiredAt', 'data', 'error', 'executeAt', 'finishedAt', 'id', 'queue', 'score', 'status', 'workerId'] as const
+  static $columns = [
+    'acquiredAt',
+    'data',
+    'error',
+    'executeAt',
+    'finishedAt',
+    'id',
+    'queue',
+    'score',
+    'status',
+    'workerId',
+  ] as const
   $columns = QueueJobSchema.$columns
   @column()
   declare acquiredAt: bigint | number | null
@@ -161,7 +214,22 @@ export class QueueJobSchema extends BaseModel {
 }
 
 export class QueueScheduleSchema extends BaseModel {
-  static $columns = ['createdAt', 'cronExpression', 'everyMs', 'fromDate', 'id', 'lastRunAt', 'name', 'nextRunAt', 'payload', 'runCount', 'runLimit', 'status', 'timezone', 'toDate'] as const
+  static $columns = [
+    'createdAt',
+    'cronExpression',
+    'everyMs',
+    'fromDate',
+    'id',
+    'lastRunAt',
+    'name',
+    'nextRunAt',
+    'payload',
+    'runCount',
+    'runLimit',
+    'status',
+    'timezone',
+    'toDate',
+  ] as const
   $columns = QueueScheduleSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -211,7 +279,18 @@ export class ReportSchema extends BaseModel {
 }
 
 export class SubscriptionSchema extends BaseModel {
-  static $columns = ['createdAt', 'currentPeriodEnd', 'id', 'plan', 'provider', 'providerCustomerId', 'providerSubscriptionId', 'status', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'createdAt',
+    'currentPeriodEnd',
+    'id',
+    'plan',
+    'provider',
+    'providerCustomerId',
+    'providerSubscriptionId',
+    'status',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = SubscriptionSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -236,7 +315,27 @@ export class SubscriptionSchema extends BaseModel {
 }
 
 export class UserBottleSchema extends BaseModel {
-  static $columns = ['abvOverride', 'attrsOverride', 'bottleId', 'boughtAt', 'brandOverride', 'createdAt', 'fillLevel', 'fillLevelUpdatesCount', 'id', 'isPublic', 'nameOverride', 'note', 'originOverride', 'photoUrlOverride', 'pricePaid', 'review', 'updatedAt', 'userId', 'volumeMlOverride'] as const
+  static $columns = [
+    'abvOverride',
+    'attrsOverride',
+    'bottleId',
+    'boughtAt',
+    'brandOverride',
+    'createdAt',
+    'fillLevel',
+    'fillLevelUpdatesCount',
+    'id',
+    'isPublic',
+    'nameOverride',
+    'note',
+    'originOverride',
+    'photoUrlOverride',
+    'pricePaid',
+    'review',
+    'updatedAt',
+    'userId',
+    'volumeMlOverride',
+  ] as const
   $columns = UserBottleSchema.$columns
   @column()
   declare abvOverride: string | null
@@ -294,7 +393,25 @@ export class UserRewardSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['bottlesCreatedCount', 'createdAt', 'email', 'emailVerified', 'fullName', 'id', 'image', 'inviteCode', 'isPublic', 'magicLinkVersion', 'password', 'passwordResetVersion', 'pseudo', 'shareCellarWithFriends', 'shareNotes', 'sharePrices', 'updatedAt'] as const
+  static $columns = [
+    'bottlesCreatedCount',
+    'createdAt',
+    'email',
+    'emailVerified',
+    'fullName',
+    'id',
+    'image',
+    'inviteCode',
+    'isPublic',
+    'magicLinkVersion',
+    'password',
+    'passwordResetVersion',
+    'pseudo',
+    'shareCellarWithFriends',
+    'shareNotes',
+    'sharePrices',
+    'updatedAt',
+  ] as const
   $columns = UserSchema.$columns
   @column()
   declare bottlesCreatedCount: number

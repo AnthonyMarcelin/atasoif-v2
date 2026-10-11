@@ -6,11 +6,7 @@ import app from '@adonisjs/core/services/app'
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import env from '#start/env'
 import { CollectionError } from '#services/collection/collection_error'
-import {
-  imageExtForHeader,
-  isHeicHeader,
-  type ImageExt,
-} from '#services/image_signature'
+import { imageExtForHeader, isHeicHeader, type ImageExt } from '#services/image_signature'
 
 /** Absolute max upload (queue path). Default 10 MiB for HEIC camera originals. */
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024
@@ -191,11 +187,7 @@ export default class CellarPhotoStorage {
     const header = await readFileHeader(tmpPath)
     if (isHeicHeader(header)) {
       // Caller must convert HEIC via Sharp before calling storeOverride.
-      throw new CollectionError(
-        'E_PHOTO_INVALID',
-        'Photo HEIC : utilise le pipeline Sharp',
-        422
-      )
+      throw new CollectionError('E_PHOTO_INVALID', 'Photo HEIC : utilise le pipeline Sharp', 422)
     }
     const ext = imageExtForHeader(header)
     if (!ext) {

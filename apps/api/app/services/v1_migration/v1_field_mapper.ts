@@ -105,7 +105,10 @@ export function mergeReviewAndDescription(
   return { review: null, descriptionAttr: null }
 }
 
-export function buildCatalogAttrs(bottle: V1BottleRow, categorySlug: V1CategorySlug): Record<string, unknown> {
+export function buildCatalogAttrs(
+  bottle: V1BottleRow,
+  categorySlug: V1CategorySlug
+): Record<string, unknown> {
   const attrs: Record<string, unknown> = {
     v1: { table: categorySlug, id: bottle.id },
   }
@@ -194,7 +197,8 @@ export function mapBottleMemoryFields(bottle: V1BottleRow, categorySlug: V1Categ
     review,
     note: parseNote(bottle.note),
     pricePaid: parsePrice(bottle.price),
-    boughtAt: formatBoughtAt(bottle.supplier_name, bottle.supplier_address) ?? V1_BOUGHT_AT_FALLBACK,
+    boughtAt:
+      formatBoughtAt(bottle.supplier_name, bottle.supplier_address) ?? V1_BOUGHT_AT_FALLBACK,
     photoUrlOverride: sanitizeV1PhotoUrl(bottle.photo),
     fillLevel: 100,
     fillLevelUpdatesCount: 0,

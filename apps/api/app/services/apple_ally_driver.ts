@@ -114,7 +114,9 @@ export class AppleDriver extends Oauth2Driver<AppleAccessToken, AppleScopes> {
     }
   }
 
-  async user(callback?: (request: ApiRequestContract) => void): Promise<AllyUserContract<AppleAccessToken>> {
+  async user(
+    callback?: (request: ApiRequestContract) => void
+  ): Promise<AllyUserContract<AppleAccessToken>> {
     const token = await this.accessToken(callback)
     const formUser = this.readFormUser()
     const profile = await this.getUserInfo(token.idToken, formUser)

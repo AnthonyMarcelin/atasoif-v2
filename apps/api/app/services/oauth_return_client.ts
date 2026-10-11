@@ -19,7 +19,10 @@ export function rememberOAuthReturnClient(ctx: HttpContext): void {
       maxAge: '15m',
       httpOnly: true,
       // Cross-site Apple form_post needs None+Secure in production.
-      sameSite: ctx.request.secure() || ctx.request.header('x-forwarded-proto') === 'https' ? 'none' : 'lax',
+      sameSite:
+        ctx.request.secure() || ctx.request.header('x-forwarded-proto') === 'https'
+          ? 'none'
+          : 'lax',
       secure: ctx.request.secure() || ctx.request.header('x-forwarded-proto') === 'https',
       path: '/',
     })

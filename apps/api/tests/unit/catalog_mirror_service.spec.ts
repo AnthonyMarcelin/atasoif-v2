@@ -24,7 +24,10 @@ test.group('CatalogImageMirror defaults', () => {
         }),
     })
 
-    const result = await mirror.mirrorFrontImage('https://images.example/front.jpg', '5000267024202')
+    const result = await mirror.mirrorFrontImage(
+      'https://images.example/front.jpg',
+      '5000267024202'
+    )
     assert.isNotNull(result)
     assert.equal(result!.photoUrl, '/api/v1/media/off/5000267024202.jpg')
     const written = await readFile(result!.localPath)

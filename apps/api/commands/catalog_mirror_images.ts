@@ -77,9 +77,7 @@ export default class CatalogMirrorImages extends BaseCommand {
 
     this.logger.info(`Image mirror root: ${storageRoot}`)
     this.logger.info(`Public base: ${publicBaseUrl}`)
-    this.logger.info(
-      `Mode: ${this.dryRun ? 'dry-run' : 'persist'} · limit=${this.limit ?? 'none'}`
-    )
+    this.logger.info(`Mode: ${this.dryRun ? 'dry-run' : 'persist'} · limit=${this.limit ?? 'none'}`)
     this.logger.info(OFF_ATTRIBUTION_EN)
 
     const service = new CatalogMirrorService()

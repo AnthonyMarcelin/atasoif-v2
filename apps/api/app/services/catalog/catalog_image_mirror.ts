@@ -51,7 +51,7 @@ export default class CatalogImageMirror {
     const response = await fetchImpl(url, {
       headers: {
         'User-Agent': this.options.userAgent,
-        Accept: 'image/*',
+        'Accept': 'image/*',
       },
       redirect: 'follow',
     })

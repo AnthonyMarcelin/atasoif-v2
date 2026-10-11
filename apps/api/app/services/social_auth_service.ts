@@ -50,7 +50,10 @@ export default class SocialAuthService {
     return this.findOrCreateFromAlly(profile, 'apple')
   }
 
-  async findOrCreateFromAlly(profile: AllyProfile, provider: SocialProvider): Promise<SocialAuthResult> {
+  async findOrCreateFromAlly(
+    profile: AllyProfile,
+    provider: SocialProvider
+  ): Promise<SocialAuthResult> {
     if (!profile.email) {
       throw new SocialAuthError('E_SOCIAL_EMAIL_REQUIRED', EMAIL_MISSING_MESSAGE[provider])
     }

@@ -91,8 +91,7 @@ test.group('Collection rewards + lock (conversion §2–3)', (group) => {
       pseudo: 'memory5_user',
     })
 
-    let lastBody: { meta: { rewardsGranted?: Array<{ key: string; slots: number }> } } | null =
-      null
+    let lastBody: { meta: { rewardsGranted?: Array<{ key: string; slots: number }> } } | null = null
     for (let i = 0; i < 5; i++) {
       const bottle = await seedBottle(`m5-${i}`)
       const created = await addCompleteSheet(client, token, bottle.id)
@@ -109,9 +108,13 @@ test.group('Collection rewards + lock (conversion §2–3)', (group) => {
     assert.equal(rewards[0].rewardKey, 'memory_5')
     assert.equal(Number(rewards[0].slots), 2)
 
-    const freemium = (
-      await client.get('/api/v1/collection/bottles').bearerToken(token).header('Accept', 'application/json')
-    ).body() as { meta: { freemium: { bonus: number; limit: number } } }
+    const freemiumResponse = await client
+      .get('/api/v1/collection/bottles')
+      .bearerToken(token)
+      .header('Accept', 'application/json')
+    const freemium = freemiumResponse.body() as {
+      meta: { freemium: { bonus: number; limit: number } }
+    }
     assert.equal(freemium.meta.freemium.bonus, 2)
     assert.equal(freemium.meta.freemium.limit, FREE_BOTTLE_LIMIT + 2)
   })

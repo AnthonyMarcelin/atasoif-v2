@@ -183,7 +183,9 @@ export default class CatalogOffDump extends BaseCommand {
     }
 
     if (!this.dryRun) {
-      this.logger.success('OFF alcohol dump import finished (idempotent upsert by barcode / BottleSource).')
+      this.logger.success(
+        'OFF alcohol dump import finished (idempotent upsert by barcode / BottleSource).'
+      )
     } else {
       this.logger.success('Dry-run finished — re-run without --dry-run to persist.')
     }

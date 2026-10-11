@@ -29,7 +29,12 @@ import {
 export type V1MigrationSummary = {
   dryRun: boolean
   users: { created: number; skippedExisting: number; skippedDuplicate: number }
-  bottles: { catalogCreated: number; catalogMatched: number; userBottlesCreated: number; userBottlesSkipped: number }
+  bottles: {
+    catalogCreated: number
+    catalogMatched: number
+    userBottlesCreated: number
+    userBottlesSkipped: number
+  }
   subscriptions: { upserted: number }
 }
 
@@ -135,7 +140,9 @@ export default class V1MigrationService {
     for (const bottle of bottles) {
       const v2UserId = v1ToV2UserId.get(bottle.user_id)
       if (v2UserId === undefined) {
-        log.warning?.(`skip bottle ${bottle.categorySlug}:${bottle.id} — owner v1 user not migrated`)
+        log.warning?.(
+          `skip bottle ${bottle.categorySlug}:${bottle.id} — owner v1 user not migrated`
+        )
         continue
       }
 
@@ -378,7 +385,10 @@ export default class V1MigrationService {
     return this.loadEverythingFromRailway(databaseUrl)
   }
 
-  private async withV1Client<T>(databaseUrl: string, run: (client: pg.Client) => Promise<T>): Promise<T> {
+  private async withV1Client<T>(
+    databaseUrl: string,
+    run: (client: pg.Client) => Promise<T>
+  ): Promise<T> {
     const client = new pg.Client({
       connectionString: databaseUrl,
       ssl: { rejectUnauthorized: false },

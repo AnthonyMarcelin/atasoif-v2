@@ -18,5 +18,5 @@ export const catalogBarcodeValidator = vine.create({
   barcode: vine
     .string()
     .trim()
-    .regex(/^\d{8,14}$/)
+    .regex(/^\d{8,14}$/),
 })

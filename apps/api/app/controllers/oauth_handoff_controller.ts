@@ -9,9 +9,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 export default class OauthHandoffController {
   async callback({ response }: HttpContext) {
     const deepBase = nativeOAuthReturnBase().replace(/\/$/, '')
-    const deepCallback = deepBase.includes('/auth/')
-      ? deepBase
-      : `${deepBase}/auth/oauth/callback`
+    const deepCallback = deepBase.includes('/auth/') ? deepBase : `${deepBase}/auth/oauth/callback`
     const deepLogin = deepCallback.replace(/\/auth\/oauth\/callback\/?$/, '/auth/login')
 
     const html = `<!DOCTYPE html>

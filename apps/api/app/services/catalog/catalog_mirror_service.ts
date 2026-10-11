@@ -1,5 +1,5 @@
 import Bottle from '#models/bottle'
-import CatalogImageMirror from '#services/catalog/catalog_image_mirror'
+import type CatalogImageMirror from '#services/catalog/catalog_image_mirror'
 import { isHttpPhotoUrl, isOffCatalogPhotoUrl, OFF_CATALOG_MEDIA_PREFIX } from '#services/photo_url'
 
 export type CatalogMirrorRunOptions = {

@@ -31,10 +31,7 @@ export default class ProcessCellarPhoto extends Job<ProcessCellarPhotoPayload> {
     const processed = await processor.process(input, { forceEncode: true })
     await storage.storeOverrideBuffer(userId, userBottleId, processed.buffer, processed.ext)
 
-    const row = await UserBottle.query()
-      .where('id', userBottleId)
-      .where('user_id', userId)
-      .first()
+    const row = await UserBottle.query().where('id', userBottleId).where('user_id', userId).first()
     if (row) {
       row.photoUrlOverride = overridePhotoPath(userBottleId)
       await row.save()
@@ -44,10 +41,7 @@ export default class ProcessCellarPhoto extends Job<ProcessCellarPhotoPayload> {
   }
 
   async failed(error: Error) {
-    logger.error(
-      { err: error, payload: this.payload },
-      'ProcessCellarPhoto failed after retries'
-    )
+    logger.error({ err: error, payload: this.payload }, 'ProcessCellarPhoto failed after retries')
     await unlink(this.payload.inboxPath).catch(() => undefined)
   }
 }
