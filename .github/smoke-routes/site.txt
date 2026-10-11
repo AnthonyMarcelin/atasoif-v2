@@ -1,0 +1,4 @@
+# Exact HTTP 200 required. Paths are relative to PROD_SITE_URL.
+/
+/mentions-legales
+/cgu
